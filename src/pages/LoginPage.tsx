@@ -31,10 +31,12 @@ export default function LoginPage() {
     const ok = await login(data.email, data.password);
     setLoading(false);
     if (ok) {
-      toast.success('Signed in successfully!');
-      navigate('/account');
+      const { user } = useAuthStore.getState();
+      toast.success('Вход выполнен успешно!');
+      // Администратор → панель управления, пользователь → аккаунт
+      navigate(user?.role === 'admin' ? '/admin' : '/account');
     } else {
-      toast.error('Invalid email or password');
+      toast.error('Неверный email или пароль');
     }
   };
 
@@ -101,8 +103,16 @@ export default function LoginPage() {
             <Link to="/register" className="text-primary hover:underline font-medium">Register</Link>
           </p>
 
-          <div className="mt-4 p-3 rounded-lg bg-muted text-xs text-muted-foreground">
-            <p className="font-medium">Demo: any email + 6+ char password</p>
+          <div className="mt-4 p-3 rounded-lg bg-muted text-xs text-muted-foreground flex flex-col gap-1.5">
+            <p className="font-semibold text-foreground">Тестовые аккаунты:</p>
+            <div className="flex items-center justify-between">
+              <span>👤 Пользователь: <span className="font-medium">demo@enter.tj</span></span>
+              <span className="text-muted-foreground">любой пароль 6+ симв.</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>🔐 Администратор: <span className="font-medium">admin@enter.tj</span></span>
+              <span className="font-medium text-primary">admin123</span>
+            </div>
           </div>
         </div>
       </div>

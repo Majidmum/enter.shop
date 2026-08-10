@@ -9,11 +9,20 @@ interface AuthState {
   logout: () => void;
 }
 
+const ADMIN_USER: User = {
+  id: 'admin1',
+  name: 'Администратор',
+  email: 'admin@enter.tj',
+  phone: '+992 000 000000',
+  role: 'admin',
+};
+
 const DEMO_USER: User = {
   id: 'u1',
   name: 'Rustam Karimov',
   email: 'demo@enter.tj',
   phone: '+992 901 234567',
+  role: 'user',
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -22,6 +31,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email, password) => {
     await new Promise((r) => setTimeout(r, 500));
+    // Вход администратора
+    if (email === 'admin@enter.tj' && password === 'admin123') {
+      set({ user: ADMIN_USER, isAuthenticated: true });
+      return true;
+    }
+    // Демо-вход любого пользователя
     if (email && password.length >= 6) {
       const user: User = { ...DEMO_USER, email };
       set({ user, isAuthenticated: true });
