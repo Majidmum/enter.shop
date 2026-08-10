@@ -23,10 +23,10 @@ export default function HomePage() {
   const nextBanner = () => setBannerIdx((i) => (i + 1) % activeBanners.length);
 
   const advantages = [
-    { icon: Truck, title: 'Free Delivery', desc: 'Free delivery across Dushanbe on orders over 500 TJS' },
-    { icon: Shield, title: 'Official Warranty', desc: 'All products come with official manufacturer warranty' },
-    { icon: Headphones, title: 'Expert Support', desc: 'Our specialists will help you choose the right product' },
-    { icon: Building2, title: 'Corporate Clients', desc: 'Special conditions for businesses and organizations' },
+    { icon: Truck, title: 'Бесплатная доставка', desc: 'Бесплатная доставка по Душанбе при заказе от 500 сомони' },
+    { icon: Shield, title: 'Официальная гарантия', desc: 'Все товары имеют официальную гарантию производителя' },
+    { icon: Headphones, title: 'Экспертная поддержка', desc: 'Наши специалисты помогут выбрать подходящий товар' },
+    { icon: Building2, title: 'Корпоративным клиентам', desc: 'Специальные условия для бизнеса и организаций' },
   ];
 
   return (
@@ -53,7 +53,7 @@ export default function HomePage() {
                   </Link>
                   <Link to="/sale">
                     <Button variant="ghost" className="border border-white/60 text-white hover:bg-white/10 px-6">
-                      View Sale
+                      Акции
                     </Button>
                   </Link>
                 </div>
@@ -83,9 +83,9 @@ export default function HomePage() {
       {/* Categories */}
       <section className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">Product Categories</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">Категории товаров</h2>
           <Link to="/categories" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-            All categories <ArrowRight className="h-4 w-4" />
+            Все категории <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -99,9 +99,9 @@ export default function HomePage() {
       <section className="bg-muted/50 py-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground">Popular Products</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">Популярные товары</h2>
             <Link to="/catalog?sort=featured" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-              View all <ArrowRight className="h-4 w-4" />
+              Смотреть все <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -114,11 +114,11 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-10">
         <div className="relative rounded-2xl overflow-hidden bg-gradient-primary p-8 text-white">
           <div className="relative z-10">
-            <p className="text-sm font-semibold text-white/80 uppercase tracking-wider mb-2">Special Offer</p>
-            <h2 className="text-2xl md:text-4xl font-bold mb-2">Discounts up to 20%</h2>
-            <p className="text-white/80 mb-4">Office chairs, monitors, laptops and more</p>
+            <p className="text-sm font-semibold text-white/80 uppercase tracking-wider mb-2">Специальное предложение</p>
+            <h2 className="text-2xl md:text-4xl font-bold mb-2">Скидки до 20%</h2>
+            <p className="text-white/80 mb-4">Офисные кресла, мониторы, ноутбуки и многое другое</p>
             <Button asChild className="bg-white hover:bg-white/90 font-semibold" style={{ color: 'hsl(var(--primary))' }}>
-              <Link to="/sale">View Deals <ArrowRight className="h-4 w-4 ml-1" /></Link>
+              <Link to="/sale">Смотреть акции <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
         </div>
@@ -127,9 +127,9 @@ export default function HomePage() {
       {/* New Products */}
       <section className="container mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">New Arrivals</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">Новинки</h2>
           <Link to="/catalog?filter=new" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-            View all <ArrowRight className="h-4 w-4" />
+            Смотреть все <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -141,19 +141,19 @@ export default function HomePage() {
       <section className="bg-secondary py-12">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1 min-w-0">
-            <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">For Business</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Office Turnkey</h2>
+            <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">Для бизнеса</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Офис под ключ</h2>
             <p className="text-white/70 mb-6">
-              We will fully equip your office — from computers and furniture to network equipment. Special pricing for corporate clients.
+              Мы полностью оснастим ваш офис — от компьютеров и мебели до сетевого оборудования. Специальные цены для корпоративных клиентов.
             </p>
             <Link to="/office">
               <Button className="bg-primary hover:bg-primary/90 text-white">
-                Learn More <ArrowRight className="h-4 w-4 ml-1" />
+                Узнать подробнее <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3 flex-1 min-w-0">
-            {['Computers', 'Furniture', 'Printers', 'Network'].map((item) => (
+            {['Компьютеры', 'Мебель', 'Принтеры', 'Сети'].map((item) => (
               <div key={item} className="rounded-xl bg-white/10 p-4 text-center border border-white/10">
                 <p className="text-white font-medium text-sm">{item}</p>
               </div>
@@ -164,7 +164,7 @@ export default function HomePage() {
 
       {/* Why choose us */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Why Choose ENTER.TJ</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Почему выбирают ENTER.TJ</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {advantages.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex flex-col items-center text-center p-5 rounded-xl bg-card border border-border card-shadow">
@@ -181,7 +181,7 @@ export default function HomePage() {
       {/* Brands */}
       <section className="bg-muted/50 py-10">
         <div className="container mx-auto px-4">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Our Brands</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Наши бренды</h2>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-4 items-center justify-items-center">
             {brands.map((brand) => (
               <div key={brand.id} className="flex h-12 items-center justify-center px-2 opacity-60 hover:opacity-100 transition-opacity">
@@ -194,7 +194,7 @@ export default function HomePage() {
 
       {/* Reviews */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Customer Reviews</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Отзывы покупателей</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {approvedReviews.map((r) => (
             <div key={r.id} className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2">
@@ -216,8 +216,8 @@ export default function HomePage() {
       {/* Instagram CTA */}
       <section className="bg-gradient-primary py-10">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Follow us on Instagram</h2>
-          <p className="text-white/80 mb-4 text-sm">New arrivals, promotions and useful tips</p>
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Подписывайтесь на Instagram</h2>
+          <p className="text-white/80 mb-4 text-sm">Новинки, акции и полезные советы</p>
           <Button asChild className="bg-white hover:bg-white/90 font-semibold" style={{ color: 'hsl(var(--primary))' }}>
             <a href="https://instagram.com" target="_blank" rel="noreferrer">@enter.tj</a>
           </Button>

@@ -20,7 +20,7 @@ export default function CategoryCard({ category }: CategoryCardProps) {
         <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
           {category.name}
         </h3>
-        <p className="text-xs text-muted-foreground mt-0.5">{category.productCount} products</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{category.productCount} товаров</p>
       </div>
     </Link>
   );

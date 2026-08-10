@@ -4,11 +4,11 @@ import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 
 const navItems = [
-  { icon: Home, label: 'Home', href: '/' },
-  { icon: Grid3X3, label: 'Catalog', href: '/catalog' },
-  { icon: Heart, label: 'Favorites', href: '/favorites' },
-  { icon: ShoppingCart, label: 'Cart', href: '/cart' },
-  { icon: User, label: 'Profile', href: '/account' },
+  { icon: Home, label: 'Главная', href: '/' },
+  { icon: Grid3X3, label: 'Каталог', href: '/catalog' },
+  { icon: Heart, label: 'Избранное', href: '/favorites' },
+  { icon: ShoppingCart, label: 'Корзина', href: '/cart' },
+  { icon: User, label: 'Профиль', href: '/account' },
 ];
 
 export default function MobileBottomNav() {

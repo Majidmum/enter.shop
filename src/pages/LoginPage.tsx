@@ -11,8 +11,8 @@ import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Некорректный email'),
+  password: z.string().min(6, 'Пароль должен содержать не менее 6 символов'),
 });
 
 export default function LoginPage() {
@@ -49,7 +49,7 @@ export default function LoginPage() {
             <Laptop className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">ENTER<span className="text-primary">.TJ</span></h1>
-          <p className="text-white/70">Computer technology and office furniture in Dushanbe</p>
+          <p className="text-white/70">Компьютерная техника и офисная мебель в Душанбе</p>
         </div>
       </div>
 
@@ -63,8 +63,8 @@ export default function LoginPage() {
             <span className="text-xl font-bold">ENTER<span className="text-primary">.TJ</span></span>
           </div>
 
-          <h2 className="text-2xl font-bold text-foreground mb-1">Sign In</h2>
-          <p className="text-muted-foreground text-sm mb-6">Enter your credentials</p>
+          <h2 className="text-2xl font-bold text-foreground mb-1">Вход</h2>
+          <p className="text-muted-foreground text-sm mb-6">Введите свои данные</p>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -77,7 +77,7 @@ export default function LoginPage() {
               )} />
               <FormField control={form.control} name="password" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Пароль</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input type={showPw ? 'text' : 'password'} placeholder="••••••••" {...field} className="pr-10" />
@@ -90,17 +90,17 @@ export default function LoginPage() {
                 </FormItem>
               )} />
               <div className="text-right">
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">Забыли пароль?</Link>
               </div>
               <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Вход...' : 'Войти'}
               </Button>
             </form>
           </Form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            No account?{' '}
-            <Link to="/register" className="text-primary hover:underline font-medium">Register</Link>
+            Нет аккаунта?{' '}
+            <Link to="/register" className="text-primary hover:underline font-medium">Зарегистрироваться</Link>
           </p>
 
           <div className="mt-4 p-3 rounded-lg bg-muted text-xs text-muted-foreground flex flex-col gap-1.5">

@@ -9,16 +9,16 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/categories', label: 'Categories', icon: Tag },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-  { href: '/admin/customers', label: 'Customers', icon: Users },
-  { href: '/admin/brands',     label: 'Brands',      icon: Bookmark },
-  { href: '/admin/promotions', label: 'Promotions',  icon: Megaphone },
-  { href: '/admin/banners',    label: 'Banners',     icon: Image },
-  { href: '/admin/reviews',    label: 'Reviews',     icon: Star },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin', label: 'Дашборд', icon: LayoutDashboard, exact: true },
+  { href: '/admin/products', label: 'Товары', icon: Package },
+  { href: '/admin/categories', label: 'Категории', icon: Tag },
+  { href: '/admin/orders', label: 'Заказы', icon: ShoppingBag },
+  { href: '/admin/customers', label: 'Клиенты', icon: Users },
+  { href: '/admin/brands',     label: 'Бренды',      icon: Bookmark },
+  { href: '/admin/promotions', label: 'Акции',  icon: Megaphone },
+  { href: '/admin/banners',    label: 'Баннеры',     icon: Image },
+  { href: '/admin/reviews',    label: 'Отзывы',     icon: Star },
+  { href: '/admin/settings', label: 'Настройки', icon: Settings },
 ];
 
 function SidebarNav({ onClose }: { onClose?: () => void }) {
@@ -37,12 +37,12 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
         </div>
         <div>
           <span className="text-sm font-bold text-sidebar-foreground">ENTER<span className="text-primary">.TJ</span></span>
-          <p className="text-[10px] text-sidebar-foreground/50">Admin Panel</p>
+          <p className="text-[10px] text-sidebar-foreground/50">Панель управления</p>
         </div>
       </div>
 
       <nav className="flex-1 p-2 overflow-y-auto">
-        <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Navigation</p>
+        <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Навигация</p>
         {navItems.map((item) => {
           const active = isActive(item);
           return (
@@ -66,13 +66,13 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
 
       <div className="p-3 border-t border-sidebar-border">
         <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors mb-1">
-          <Truck className="h-4 w-4" /> Back to Store
+          <Truck className="h-4 w-4" /> В магазин
         </Link>
         <button
           onClick={() => { logout(); navigate('/login'); }}
           className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
         >
-          <LogOut className="h-4 w-4" /> Sign Out
+          <LogOut className="h-4 w-4" /> Выйти
         </button>
       </div>
     </div>

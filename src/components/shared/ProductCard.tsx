@@ -20,13 +20,13 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     addToCart(product);
-    toast.success(`${product.name} added to cart`);
+    toast.success(`${product.name} добавлен в корзину`);
   };
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     toggle(product);
-    toast(fav ? 'Removed from favorites' : 'Added to favorites');
+    toast(fav ? 'Удалено из избранного' : 'Добавлено в избранное');
   };
 
   return (
@@ -89,12 +89,12 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
 
         {/* Availability */}
         <p className={`text-xs font-medium ${product.stock > 0 ? 'text-green-600' : 'text-destructive'}`}>
-          {product.stock > 0 ? `In stock` : 'Out of stock'}
+          {product.stock > 0 ? `В наличии` : 'Нет в наличии'}
         </p>
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mt-auto">
-          <span className="text-base font-bold text-foreground">{product.price.toLocaleString()} TJS</span>
+          <span className="text-base font-bold text-foreground">{product.price.toLocaleString()} сом.</span>
           {product.oldPrice && (
             <span className="text-xs text-muted-foreground line-through">{product.oldPrice.toLocaleString()}</span>
           )}
@@ -108,7 +108,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           className="w-full mt-1 bg-primary hover:bg-primary/90 text-white"
         >
           <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
-          Add to Cart
+          В корзину
         </Button>
       </div>
     </div>

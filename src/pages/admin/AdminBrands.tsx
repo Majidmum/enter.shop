@@ -27,10 +27,10 @@ export default function AdminBrands() {
   const openEdit = (b: Brand) => { setEditing(b); setDraft({ ...b }); setOpen(true); };
 
   const handleSave = () => {
-    if (!draft.name) { toast.error('Enter brand name'); return; }
+    if (!draft.name) { toast.error('Введите название бренда'); return; }
     if (editing) {
       setItems((prev) => prev.map((b) => b.id === editing.id ? { ...b, ...draft } as Brand : b));
-      toast.success('Brand updated');
+      toast.success('Бренд обновлён');
     } else {
       const newBrand: Brand = {
         id: `b_${Date.now()}`,
@@ -41,7 +41,7 @@ export default function AdminBrands() {
         productCount: 0,
       };
       setItems((prev) => [...prev, newBrand]);
-      toast.success('Brand added');
+      toast.success('Бренд добавлен');
     }
     setOpen(false);
   };
@@ -50,14 +50,14 @@ export default function AdminBrands() {
     if (!deleteId) return;
     setItems((prev) => prev.filter((b) => b.id !== deleteId));
     setDeleteId(null);
-    toast.success('Brand deleted');
+    toast.success('Бренд удалён');
   };
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <Button onClick={openNew} className="bg-primary hover:bg-primary/90 text-white h-9">
-          <Plus className="h-4 w-4 mr-1.5" /> Add Brand
+          <Plus className="h-4 w-4 mr-1.5" /> Добавить бренд
         </Button>
       </div>
 
@@ -66,11 +66,11 @@ export default function AdminBrands() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Brand</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Description</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Products</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Бренд</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Описание</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Статус</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Действия</th>
               </tr>
             </thead>
             <tbody>
@@ -84,7 +84,7 @@ export default function AdminBrands() {
                         </div>
                       ) : (
                         <div className="h-8 w-16 rounded bg-muted border border-border flex items-center justify-center text-xs text-muted-foreground shrink-0">
-                          No logo
+                          Нет лого
                         </div>
                       )}
                       <span className="font-medium">{b.name}</span>
@@ -96,7 +96,7 @@ export default function AdminBrands() {
                   </td>
                   <td className="px-4 py-3">
                     <Badge className={b.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
-                      {b.status}
+                      {b.status === 'active' ? 'Активен' : 'Неактивен'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -118,31 +118,31 @@ export default function AdminBrands() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? 'Edit Brand' : 'Add Brand'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? 'Редактировать бренд' : 'Добавить бренд'}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <div>
-              <Label>Brand Name *</Label>
+              <Label>Название бренда *</Label>
               <Input className="mt-1" value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>Описание</Label>
               <Textarea className="mt-1" rows={2} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>Статус</Label>
               <Select value={draft.status} onValueChange={(v) => setDraft({ ...draft, status: v as 'active' | 'inactive' })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Активен</SelectItem>
+                  <SelectItem value="inactive">Неактивен</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
             <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> Save
+              <Check className="h-4 w-4 mr-1.5" /> Сохранить
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -151,12 +151,12 @@ export default function AdminBrands() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Brand?</AlertDialogTitle>
-            <AlertDialogDescription>Products with this brand will need to be updated.</AlertDialogDescription>
+            <AlertDialogTitle>Удалить бренд?</AlertDialogTitle>
+            <AlertDialogDescription>Товары этого бренда нужно будет обновить.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

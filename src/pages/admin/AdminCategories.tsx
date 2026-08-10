@@ -23,10 +23,10 @@ export default function AdminCategories() {
   const openEdit = (c: Category) => { setEditing(c); setDraft({ ...c }); setOpen(true); };
 
   const handleSave = () => {
-    if (!draft.name) { toast.error('Enter category name'); return; }
+    if (!draft.name) { toast.error('Введите название категории'); return; }
     if (editing) {
       setItems((prev) => prev.map((c) => c.id === editing.id ? { ...c, ...draft } as Category : c));
-      toast.success('Category updated');
+      toast.success('Категория обновлена');
     } else {
       const newCat: Category = {
         id: `c_${Date.now()}`,
@@ -36,7 +36,7 @@ export default function AdminCategories() {
         productCount: 0,
       };
       setItems((prev) => [...prev, newCat]);
-      toast.success('Category added');
+      toast.success('Категория добавлена');
     }
     setOpen(false);
   };
@@ -45,14 +45,14 @@ export default function AdminCategories() {
     if (!deleteId) return;
     setItems((prev) => prev.filter((c) => c.id !== deleteId));
     setDeleteId(null);
-    toast.success('Category deleted');
+    toast.success('Категория удалена');
   };
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <Button onClick={openNew} className="bg-primary hover:bg-primary/90 text-white h-9">
-          <Plus className="h-4 w-4 mr-1.5" /> Add Category
+          <Plus className="h-4 w-4 mr-1.5" /> Добавить категорию
         </Button>
       </div>
 
@@ -61,10 +61,10 @@ export default function AdminCategories() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Category</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Категория</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Slug</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Products</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Действия</th>
               </tr>
             </thead>
             <tbody>
@@ -101,21 +101,21 @@ export default function AdminCategories() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? 'Edit Category' : 'Add Category'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? 'Редактировать категорию' : 'Добавить категорию'}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <div>
-              <Label>Name *</Label>
-              <Input className="mt-1" value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Category name" />
+              <Label>Название *</Label>
+              <Input className="mt-1" value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Название категории" />
             </div>
             <div>
               <Label>Slug</Label>
-              <Input className="mt-1" value={draft.slug || ''} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="auto-generated" />
+              <Input className="mt-1" value={draft.slug || ''} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="генерируется автоматически" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
             <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> Save
+              <Check className="h-4 w-4 mr-1.5" /> Сохранить
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -124,12 +124,12 @@ export default function AdminCategories() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category?</AlertDialogTitle>
-            <AlertDialogDescription>All products in this category will need to be reassigned.</AlertDialogDescription>
+            <AlertDialogTitle>Удалить категорию?</AlertDialogTitle>
+            <AlertDialogDescription>Товары этой категории нужно будет переназначить.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

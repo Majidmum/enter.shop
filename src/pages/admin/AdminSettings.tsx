@@ -28,12 +28,12 @@ interface Settings {
 
 const defaultSettings: Settings = {
   storeName: 'ENTER.TJ',
-  storeDesc: 'Computer technology and office furniture store in Dushanbe',
+  storeDesc: 'Магазин компьютерной техники и офисной мебели в Душанбе',
   phone: '+992 555 000 070',
   phone2: '+992 901 234 567',
   email: 'info@enter.tj',
-  address: 'Rudaki Ave 42, Dushanbe, Tajikistan',
-  workingHours: 'Mon–Sat: 9:00–19:00, Sun: 10:00–17:00',
+  address: 'просп. Рудаки 42, Душанбе, Таджикистан',
+  workingHours: 'Пн–Сб: 9:00–19:00, Вс: 10:00–17:00',
   freeDeliveryThreshold: 500,
   deliveryCost: 30,
   cashEnabled: true,
@@ -65,16 +65,16 @@ export default function AdminSettings() {
 
   const handleSave = () => {
     setSaved(true);
-    toast.success('Settings saved successfully');
+    toast.success('Настройки сохранены');
   };
 
   return (
     <div className="flex flex-col gap-5 max-w-3xl">
       {/* General */}
-      <Section title="General Settings">
+      <Section title="Основные настройки">
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label>Store Name</Label>
+            <Label>Название магазина</Label>
             <Input className="mt-1" value={settings.storeName} onChange={(e) => set('storeName', e.target.value)} />
           </div>
           <div>
@@ -82,39 +82,39 @@ export default function AdminSettings() {
             <Input className="mt-1" type="email" value={settings.email} onChange={(e) => set('email', e.target.value)} />
           </div>
           <div className="md:col-span-2">
-            <Label>Description</Label>
+            <Label>Описание</Label>
             <Textarea className="mt-1" rows={2} value={settings.storeDesc} onChange={(e) => set('storeDesc', e.target.value)} />
           </div>
           <div>
-            <Label>Phone 1</Label>
+            <Label>Телефон 1</Label>
             <Input className="mt-1" value={settings.phone} onChange={(e) => set('phone', e.target.value)} />
           </div>
           <div>
-            <Label>Phone 2</Label>
+            <Label>Телефон 2</Label>
             <Input className="mt-1" value={settings.phone2} onChange={(e) => set('phone2', e.target.value)} />
           </div>
           <div className="md:col-span-2">
-            <Label>Address</Label>
+            <Label>Адрес</Label>
             <Input className="mt-1" value={settings.address} onChange={(e) => set('address', e.target.value)} />
           </div>
           <div className="md:col-span-2">
-            <Label>Working Hours</Label>
+            <Label>Часы работы</Label>
             <Input className="mt-1" value={settings.workingHours} onChange={(e) => set('workingHours', e.target.value)} />
           </div>
         </div>
       </Section>
 
       {/* Delivery */}
-      <Section title="Delivery Settings">
+      <Section title="Настройки доставки">
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label>Free Delivery Threshold (TJS)</Label>
+            <Label>Порог бесплатной доставки (сом.)</Label>
             <Input className="mt-1" type="number" value={settings.freeDeliveryThreshold}
               onChange={(e) => set('freeDeliveryThreshold', Number(e.target.value))} />
-            <p className="text-xs text-muted-foreground mt-1">Orders above this amount get free delivery</p>
+            <p className="text-xs text-muted-foreground mt-1">Заказы выше этой суммы доставляются бесплатно</p>
           </div>
           <div>
-            <Label>Delivery Cost (TJS)</Label>
+            <Label>Стоимость доставки (сом.)</Label>
             <Input className="mt-1" type="number" value={settings.deliveryCost}
               onChange={(e) => set('deliveryCost', Number(e.target.value))} />
           </div>
@@ -122,12 +122,12 @@ export default function AdminSettings() {
       </Section>
 
       {/* Payment */}
-      <Section title="Payment Methods">
+      <Section title="Способы оплаты">
         <div className="flex flex-col gap-4">
           {[
-            { key: 'cashEnabled' as keyof Settings, label: 'Cash on Delivery', desc: 'Customers pay with cash when receiving the order' },
-            { key: 'transferEnabled' as keyof Settings, label: 'Bank Transfer', desc: 'Customers can pay by bank transfer' },
-            { key: 'onlinePayEnabled' as keyof Settings, label: 'Online Payment', desc: 'ALIF Pay, TBC Pay and other online methods' },
+            { key: 'cashEnabled' as keyof Settings, label: 'Наличными при получении', desc: 'Клиент платит наличными при получении заказа' },
+            { key: 'transferEnabled' as keyof Settings, label: 'Банковский перевод', desc: 'Клиент может оплатить банковским переводом' },
+            { key: 'onlinePayEnabled' as keyof Settings, label: 'Онлайн-оплата', desc: 'ALIF Pay, TBC Pay и другие онлайн-методы' },
           ].map(({ key, label, desc }) => (
             <div key={key} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/40">
               <div>
@@ -144,17 +144,17 @@ export default function AdminSettings() {
       </Section>
 
       {/* Notifications */}
-      <Section title="Notifications">
+      <Section title="Уведомления">
         <div>
-          <Label>Order Notification Email</Label>
+          <Label>Email для уведомлений о заказах</Label>
           <Input className="mt-1" type="email" value={settings.notifEmail}
             onChange={(e) => set('notifEmail', e.target.value)} />
-          <p className="text-xs text-muted-foreground mt-1">New order notifications will be sent to this email</p>
+          <p className="text-xs text-muted-foreground mt-1">Уведомления о новых заказах будут приходить на этот email</p>
         </div>
       </Section>
 
       {/* Social */}
-      <Section title="Social Media">
+      <Section title="Социальные сети">
         <div className="grid md:grid-cols-3 gap-4">
           <div>
             <Label>Instagram</Label>
@@ -174,11 +174,11 @@ export default function AdminSettings() {
       <div className="flex items-center justify-between">
         {saved && (
           <span className="flex items-center gap-1.5 text-green-600 text-sm font-medium">
-            <CheckCircle className="h-4 w-4" /> Changes saved
+            <CheckCircle className="h-4 w-4" /> Изменения сохранены
           </span>
         )}
         <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white ml-auto">
-          <Save className="h-4 w-4 mr-1.5" /> Save Settings
+          <Save className="h-4 w-4 mr-1.5" /> Сохранить настройки
         </Button>
       </div>
     </div>

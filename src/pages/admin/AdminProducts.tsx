@@ -44,10 +44,10 @@ export default function AdminProducts() {
   };
 
   const handleSave = () => {
-    if (!draft.name || !draft.price) { toast.error('Fill in required fields'); return; }
+    if (!draft.name || !draft.price) { toast.error('Заполните обязательные поля'); return; }
     if (editing) {
       setItems((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...draft } as Product : p));
-      toast.success('Product updated');
+      toast.success('Товар обновлён');
     } else {
       const cat = categories.find((c) => c.id === draft.categoryId);
       const brand = brands.find((b) => b.id === draft.brandId);
@@ -70,7 +70,7 @@ export default function AdminProducts() {
         brandId: draft.brandId || brands[0]?.id || '',
       };
       setItems((prev) => [newProduct, ...prev]);
-      toast.success('Product added');
+      toast.success('Товар добавлен');
     }
     setOpen(false);
   };
@@ -79,7 +79,7 @@ export default function AdminProducts() {
     if (!deleteId) return;
     setItems((prev) => prev.filter((p) => p.id !== deleteId));
     setDeleteId(null);
-    toast.success('Product deleted');
+    toast.success('Товар удалён');
   };
 
   return (
@@ -88,25 +88,25 @@ export default function AdminProducts() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-0 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name or SKU..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
+          <Input placeholder="Поиск по названию или SKU..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
         </div>
         <Select value={catFilter} onValueChange={setCatFilter}>
           <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">Все категории</SelectItem>
             {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-28 h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="all">Все</SelectItem>
+            <SelectItem value="active">Активен</SelectItem>
+            <SelectItem value="inactive">Неактивен</SelectItem>
           </SelectContent>
         </Select>
         <Button onClick={openNew} className="bg-primary hover:bg-primary/90 text-white h-9 ml-auto shrink-0">
-          <Plus className="h-4 w-4 mr-1.5" /> Add Product
+          <Plus className="h-4 w-4 mr-1.5" /> Добавить товар
         </Button>
       </div>
 
@@ -116,13 +116,13 @@ export default function AdminProducts() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Product</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Category</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Brand</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Price</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Stock</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товар</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Категория</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Бренд</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Цена</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Склад</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Статус</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Действия</th>
               </tr>
             </thead>
             <tbody>
@@ -141,7 +141,7 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{p.categoryName}</td>
                   <td className="px-4 py-3 text-muted-foreground">{p.brandName}</td>
-                  <td className="px-4 py-3 font-semibold">{p.price.toLocaleString()} TJS</td>
+                  <td className="px-4 py-3 font-semibold">{p.price.toLocaleString()} сом.</td>
                   <td className="px-4 py-3">
                     <span className={p.stock > 0 ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
                       {p.stock}
@@ -149,7 +149,7 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-4 py-3">
                     <Badge className={p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
-                      {p.status}
+                      {p.status === 'active' ? 'Активен' : 'Неактивен'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -168,7 +168,7 @@ export default function AdminProducts() {
           </table>
         </div>
         {filtered.length === 0 && (
-          <div className="py-12 text-center text-muted-foreground text-sm">No products found</div>
+          <div className="py-12 text-center text-muted-foreground text-sm">Товары не найдены</div>
         )}
       </div>
 
@@ -176,23 +176,23 @@ export default function AdminProducts() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Product' : 'Add Product'}</DialogTitle>
+            <DialogTitle>{editing ? 'Редактировать товар' : 'Добавить товар'}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
             <div className="md:col-span-2">
-              <Label>Product Name *</Label>
-              <Input className="mt-1" value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Product name" />
+              <Label>Название товара *</Label>
+              <Input className="mt-1" value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Название товара" />
             </div>
             <div>
-              <Label>Price (TJS) *</Label>
+              <Label>Цена (сом.) *</Label>
               <Input className="mt-1" type="number" value={draft.price || ''} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} />
             </div>
             <div>
-              <Label>Old Price</Label>
+              <Label>Старая цена</Label>
               <Input className="mt-1" type="number" value={draft.oldPrice || ''} onChange={(e) => setDraft({ ...draft, oldPrice: Number(e.target.value) || undefined })} />
             </div>
             <div>
-              <Label>Category</Label>
+              <Label>Категория</Label>
               <Select value={draft.categoryId} onValueChange={(v) => setDraft({ ...draft, categoryId: v })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -201,7 +201,7 @@ export default function AdminProducts() {
               </Select>
             </div>
             <div>
-              <Label>Brand</Label>
+              <Label>Бренд</Label>
               <Select value={draft.brandId} onValueChange={(v) => setDraft({ ...draft, brandId: v })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -210,28 +210,28 @@ export default function AdminProducts() {
               </Select>
             </div>
             <div>
-              <Label>Stock</Label>
+              <Label>Остаток</Label>
               <Input className="mt-1" type="number" value={draft.stock ?? ''} onChange={(e) => setDraft({ ...draft, stock: Number(e.target.value) })} />
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>Статус</Label>
               <Select value={draft.status} onValueChange={(v) => setDraft({ ...draft, status: v as 'active' | 'inactive' })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Активен</SelectItem>
+                  <SelectItem value="inactive">Неактивен</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="md:col-span-2">
-              <Label>Description</Label>
+              <Label>Описание</Label>
               <Textarea className="mt-1" rows={3} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
             <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> {editing ? 'Save Changes' : 'Add Product'}
+              <Check className="h-4 w-4 mr-1.5" /> {editing ? 'Сохранить' : 'Добавить товар'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -241,12 +241,12 @@ export default function AdminProducts() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>Удалить товар?</AlertDialogTitle>
+            <AlertDialogDescription>Это действие нельзя отменить.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

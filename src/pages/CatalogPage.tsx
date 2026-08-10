@@ -77,14 +77,14 @@ export default function CatalogPage() {
     <div className="flex flex-col gap-5">
       {hasFilters && (
         <Button variant="outline" size="sm" onClick={clearFilters} className="flex items-center gap-1 text-destructive border-destructive hover:bg-destructive/5">
-          <X className="h-3.5 w-3.5" /> Clear Filters
+          <X className="h-3.5 w-3.5" /> Сбросить фильтры
         </Button>
       )}
 
       {/* Categories */}
       <div>
         <button className="flex w-full items-center justify-between font-semibold text-sm mb-2" onClick={() => setCatExpanded(!catExpanded)}>
-          Category {catExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          Категория {catExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {catExpanded && (
           <div className="flex flex-col gap-2">
@@ -101,7 +101,7 @@ export default function CatalogPage() {
       {/* Brands */}
       <div>
         <button className="flex w-full items-center justify-between font-semibold text-sm mb-2" onClick={() => setBrandExpanded(!brandExpanded)}>
-          Brand {brandExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          Бренд {brandExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {brandExpanded && (
           <div className="flex flex-col gap-2">
@@ -117,7 +117,7 @@ export default function CatalogPage() {
 
       {/* Price */}
       <div>
-        <p className="font-semibold text-sm mb-3">Price (TJS)</p>
+        <p className="font-semibold text-sm mb-3">Цена (сомони)</p>
         <Slider
           min={0} max={10000} step={100}
           value={priceRange}
@@ -134,11 +134,11 @@ export default function CatalogPage() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <Checkbox id="instock" checked={onlyInStock} onCheckedChange={(v) => { setOnlyInStock(!!v); setPage(1); }} />
-          <Label htmlFor="instock" className="text-sm font-normal cursor-pointer">In Stock Only</Label>
+          <Label htmlFor="instock" className="text-sm font-normal cursor-pointer">Только в наличии</Label>
         </div>
         <div className="flex items-center gap-2">
           <Checkbox id="discount" checked={onlyDiscount} onCheckedChange={(v) => { setOnlyDiscount(!!v); setPage(1); }} />
-          <Label htmlFor="discount" className="text-sm font-normal cursor-pointer">On Sale Only</Label>
+          <Label htmlFor="discount" className="text-sm font-normal cursor-pointer">Только со скидкой</Label>
         </div>
       </div>
     </div>
@@ -146,9 +146,9 @@ export default function CatalogPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
-      <Breadcrumb items={[{ label: 'Catalog' }]} />
+      <Breadcrumb items={[{ label: 'Каталог' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">
-        {searchQuery ? `Search: "${searchQuery}"` : 'Product Catalog'}
+        {searchQuery ? `Поиск: "${searchQuery}"` : 'Каталог товаров'}
       </h1>
 
       <div className="flex gap-6">
@@ -166,27 +166,27 @@ export default function CatalogPage() {
             <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="md:hidden flex items-center gap-1.5">
-                  <SlidersHorizontal className="h-4 w-4" /> Filters {hasFilters && <span className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">{selCategories.length + selBrands.length}</span>}
+                  <SlidersHorizontal className="h-4 w-4" /> Фильтры {hasFilters && <span className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">{selCategories.length + selBrands.length}</span>}
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-4 overflow-y-auto">
-                <h3 className="font-bold text-base mb-4">Filters</h3>
+                <h3 className="font-bold text-base mb-4">Фильтры</h3>
                 {FilterContent}
               </SheetContent>
             </Sheet>
 
-            <p className="text-sm text-muted-foreground flex-1 min-w-0">{filtered.length} products found</p>
+            <p className="text-sm text-muted-foreground flex-1 min-w-0">{filtered.length} товаров найдено</p>
 
             <Select value={sort} onValueChange={(v) => { setSort(v as SortOption); setPage(1); }}>
               <SelectTrigger className="w-44 h-8 text-sm">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder="Сортировка" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="featured">Popular</SelectItem>
-                <SelectItem value="new">New First</SelectItem>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Best Rating</SelectItem>
+                <SelectItem value="featured">Популярные</SelectItem>
+                <SelectItem value="new">Сначала новые</SelectItem>
+                <SelectItem value="price-asc">Цена: по возрастанию</SelectItem>
+                <SelectItem value="price-desc">Цена: по убыванию</SelectItem>
+                <SelectItem value="rating">Лучший рейтинг</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -198,8 +198,8 @@ export default function CatalogPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-muted-foreground text-lg">No products found</p>
-              <Button variant="outline" onClick={clearFilters} className="mt-3">Clear Filters</Button>
+              <p className="text-muted-foreground text-lg">Товары не найдены</p>
+              <Button variant="outline" onClick={clearFilters} className="mt-3">Сбросить фильтры</Button>
             </div>
           )}
 

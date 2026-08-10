@@ -11,13 +11,13 @@ import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
 const schema = z.object({
-  name: z.string().min(2, 'Enter your full name'),
-  phone: z.string().min(9, 'Enter a valid phone number'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  name: z.string().min(2, 'Введите полное имя'),
+  phone: z.string().min(9, 'Введите корректный номер телефона'),
+  email: z.string().email('Некорректный email'),
+  password: z.string().min(8, 'Пароль должен содержать не менее 8 символов'),
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, {
-  message: 'Passwords do not match',
+  message: 'Пароли не совпадают',
   path: ['confirmPassword'],
 });
 
@@ -38,7 +38,7 @@ export default function RegisterPage() {
     setLoading(true);
     await register(data.name, data.email, data.phone, data.password);
     setLoading(false);
-    toast.success('Account created! Welcome!');
+    toast.success('Аккаунт создан! Добро пожаловать!');
     navigate('/account');
   };
 
@@ -50,7 +50,7 @@ export default function RegisterPage() {
             <Laptop className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">ENTER<span className="text-primary">.TJ</span></h1>
-          <p className="text-white/70">Join thousands of satisfied customers</p>
+          <p className="text-white/70">Присоединяйтесь к тысячам довольных покупателей</p>
         </div>
       </div>
 
@@ -63,21 +63,21 @@ export default function RegisterPage() {
             <span className="text-xl font-bold">ENTER<span className="text-primary">.TJ</span></span>
           </div>
 
-          <h2 className="text-2xl font-bold mb-1">Create Account</h2>
-          <p className="text-muted-foreground text-sm mb-6">Fill in your details to register</p>
+          <h2 className="text-2xl font-bold mb-1">Создать аккаунт</h2>
+          <p className="text-muted-foreground text-sm mb-6">Заполните данные для регистрации</p>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-3">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input placeholder="Rustam Karimov" {...field} /></FormControl>
+                  <FormLabel>Полное имя</FormLabel>
+                  <FormControl><Input placeholder="Рустам Каримов" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="phone" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Телефон</FormLabel>
                   <FormControl><Input placeholder="+992 9XX XXX XXX" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -91,10 +91,10 @@ export default function RegisterPage() {
               )} />
               <FormField control={form.control} name="password" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Пароль</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input type={showPw ? 'text' : 'password'} placeholder="Min 8 characters" {...field} className="pr-10" />
+                      <Input type={showPw ? 'text' : 'password'} placeholder="Минимум 8 символов" {...field} className="pr-10" />
                       <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -105,20 +105,20 @@ export default function RegisterPage() {
               )} />
               <FormField control={form.control} name="confirmPassword" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl><Input type="password" placeholder="Repeat password" {...field} /></FormControl>
+                  <FormLabel>Подтвердить пароль</FormLabel>
+                  <FormControl><Input type="password" placeholder="Повторите пароль" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white font-semibold mt-2">
-                {loading ? 'Creating...' : 'Create Account'}
+                {loading ? 'Создание...' : 'Создать аккаунт'}
               </Button>
             </form>
           </Form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Already have an account?{' '}
-            <Link to="/login" className="text-primary hover:underline font-medium">Sign In</Link>
+            Уже есть аккаунт?{' '}
+            <Link to="/login" className="text-primary hover:underline font-medium">Войти</Link>
           </p>
         </div>
       </div>

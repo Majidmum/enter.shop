@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Laptop, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-const schema = z.object({ email: z.string().email('Invalid email address') });
+const schema = z.object({ email: z.string().email('Некорректный email') });
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
   const onSubmit = (data: z.infer<typeof schema>) => {
     console.log('Reset email for:', data.email);
     setSent(true);
-    toast.success('Reset link sent!');
+    toast.success('Ссылка для сброса отправлена!');
   };
 
   return (
@@ -34,14 +34,14 @@ export default function ForgotPasswordPage() {
         {sent ? (
           <div className="text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Email Sent!</h2>
-            <p className="text-muted-foreground text-sm mb-6">Check your inbox and follow the instructions to reset your password.</p>
-            <Link to="/login"><Button className="bg-primary hover:bg-primary/90 text-white">Back to Sign In</Button></Link>
+            <h2 className="text-2xl font-bold mb-2">Письмо отправлено!</h2>
+            <p className="text-muted-foreground text-sm mb-6">Проверьте почту и следуйте инструкциям для сброса пароля.</p>
+            <Link to="/login"><Button className="bg-primary hover:bg-primary/90 text-white">Вернуться ко входу</Button></Link>
           </div>
         ) : (
           <>
-            <h2 className="text-2xl font-bold mb-1">Forgot Password?</h2>
-            <p className="text-muted-foreground text-sm mb-6">Enter your email and we'll send you a reset link</p>
+            <h2 className="text-2xl font-bold mb-1">Забыли пароль?</h2>
+            <p className="text-muted-foreground text-sm mb-6">Введите email и мы отправим вам ссылку для сброса</p>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <FormField control={form.control} name="email" render={({ field }) => (
@@ -51,11 +51,11 @@ export default function ForgotPasswordPage() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">Send Reset Link</Button>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">Отправить ссылку</Button>
               </form>
             </Form>
             <p className="text-center text-sm text-muted-foreground mt-4">
-              <Link to="/login" className="text-primary hover:underline">Back to Sign In</Link>
+              <Link to="/login" className="text-primary hover:underline">Вернуться ко входу</Link>
             </p>
           </>
         )}

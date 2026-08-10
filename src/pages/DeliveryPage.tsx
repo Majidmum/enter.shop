@@ -6,9 +6,9 @@ export default function DeliveryPage() {
     <div className="pb-16 md:pb-0">
       <div className="bg-secondary text-white py-12">
         <div className="container mx-auto px-4">
-          <Breadcrumb items={[{ label: 'Delivery & Payment' }]} />
-          <h1 className="text-3xl font-bold mt-4">Delivery & Payment</h1>
-          <p className="text-white/70 mt-2">All information about delivery methods and payment options</p>
+          <Breadcrumb items={[{ label: 'Доставка и оплата' }]} />
+          <h1 className="text-3xl font-bold mt-4">Доставка и оплата</h1>
+          <p className="text-white/70 mt-2">Вся информация о способах доставки и вариантах оплаты</p>
         </div>
       </div>
 
@@ -17,24 +17,24 @@ export default function DeliveryPage() {
           {/* Delivery */}
           <div>
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Truck className="h-6 w-6 text-primary" /> Delivery
+              <Truck className="h-6 w-6 text-primary" /> Доставка
             </h2>
             <div className="flex flex-col gap-4">
               {[
                 {
-                  icon: Truck, title: 'Delivery across Dushanbe',
-                  price: 'Free on orders over 500 TJS · 30 TJS below',
-                  desc: 'We deliver to any address in Dushanbe within 1–2 business days. Same-day delivery available for orders placed before noon.',
+                  icon: Truck, title: 'Доставка по Душанбе',
+                  price: 'Бесплатно от 500 сомони · 30 сомони ниже',
+                  desc: 'Доставляем по любому адресу в Душанбе за 1–2 рабочих дня. При заказе до полудня возможна доставка в тот же день.',
                 },
                 {
-                  icon: MapPin, title: 'Pickup',
-                  price: 'Free',
-                  desc: 'Pick up your order from our store at Rudaki Ave 42. Ready within 2 hours of confirmation.',
+                  icon: MapPin, title: 'Самовывоз',
+                  price: 'Бесплатно',
+                  desc: 'Заберите заказ из нашего магазина по пр. Рудаки, 42. Готов через 2 часа после подтверждения.',
                 },
                 {
-                  icon: Clock, title: 'Delivery to Regions',
-                  price: 'On request',
-                  desc: 'Delivery available throughout Tajikistan. Terms and cost are calculated individually based on your location.',
+                  icon: Clock, title: 'Доставка по регионам',
+                  price: 'По запросу',
+                  desc: 'Доставка по всему Таджикистану. Условия и стоимость рассчитываются индивидуально в зависимости от вашего местоположения.',
                 },
               ].map(({ icon: Icon, title, price, desc }) => (
                 <div key={title} className="bg-card border border-border rounded-xl p-5 card-shadow">
@@ -58,21 +58,21 @@ export default function DeliveryPage() {
           {/* Payment */}
           <div>
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <CreditCard className="h-6 w-6 text-primary" /> Payment
+              <CreditCard className="h-6 w-6 text-primary" /> Оплата
             </h2>
             <div className="flex flex-col gap-4">
               {[
                 {
-                  icon: Banknote, title: 'Cash on Delivery',
-                  desc: 'Pay in cash to the courier upon receiving your order. No prepayment required.',
+                  icon: Banknote, title: 'Наличными при получении',
+                  desc: 'Оплата наличными курьеру при получении заказа. Предоплата не требуется.',
                 },
                 {
-                  icon: CreditCard, title: 'Bank Transfer',
-                  desc: 'Transfer to our company account. We send you a receipt immediately after confirmation.',
+                  icon: CreditCard, title: 'Банковский перевод',
+                  desc: 'Перевод на расчётный счёт компании. Квитанцию высылаем сразу после подтверждения.',
                 },
                 {
-                  icon: Smartphone, title: 'Mobile Payments',
-                  desc: 'ALIF Pay, TBC Pay, and other popular payment systems in Tajikistan.',
+                  icon: Smartphone, title: 'Мобильные платежи',
+                  desc: 'ALIF Pay, TBC Pay и другие популярные платёжные системы Таджикистана.',
                 },
               ].map(({ icon: Icon, title, desc }) => (
                 <div key={title} className="bg-card border border-border rounded-xl p-5 card-shadow">
@@ -94,15 +94,15 @@ export default function DeliveryPage() {
         {/* Return policy */}
         <div className="mt-12">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <RotateCcw className="h-6 w-6 text-primary" /> Return Policy
+            <RotateCcw className="h-6 w-6 text-primary" /> Возврат товара
           </h2>
           <div className="bg-card border border-border rounded-xl p-6 card-shadow">
             <div className="grid md:grid-cols-2 gap-6">
               {[
-                'Return within 14 days from date of purchase if the item has not been used and its original packaging is intact.',
-                'Warranty returns: manufacturer defects are repaired or replaced free of charge.',
-                'For return contact us at +992 555 000 070 or info@enter.tj.',
-                'Refunds are processed within 3–5 business days after we receive the item.',
+                'Возврат в течение 14 дней с момента покупки при условии, что товар не использовался и оригинальная упаковка не нарушена.',
+                'Гарантийный возврат: производственные дефекты устраняются или товар заменяется бесплатно.',
+                'Для возврата обратитесь по телефону +992 555 000 070 или на email info@enter.tj.',
+                'Возврат средств осуществляется в течение 3–5 рабочих дней после получения товара.',
               ].map((text) => (
                 <div key={text} className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />

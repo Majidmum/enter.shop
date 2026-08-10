@@ -30,20 +30,20 @@ export default function SalePage() {
       {/* Hero */}
       <div className="bg-gradient-to-r from-secondary via-secondary to-primary/80 text-white py-14">
         <div className="container mx-auto px-4">
-          <Breadcrumb items={[{ label: 'Sale' }]} />
+          <Breadcrumb items={[{ label: 'Распродажа' }]} />
           <div className="mt-4 flex flex-col md:flex-row md:items-end gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Tag className="h-6 w-6 text-primary" />
-                <span className="text-primary font-semibold uppercase tracking-wider text-sm">Special Offers</span>
+                <span className="text-primary font-semibold uppercase tracking-wider text-sm">Специальные предложения</span>
               </div>
-              <h1 className="text-3xl md:text-5xl font-bold">Sale & Discounts</h1>
-              <p className="text-white/70 mt-2">Discounts up to 20% on computers, furniture and accessories</p>
+              <h1 className="text-3xl md:text-5xl font-bold">Распродажа</h1>
+              <p className="text-white/70 mt-2">Скидки до 20% на компьютеры, мебель и аксессуары</p>
             </div>
             <div className="md:ml-auto shrink-0">
               <div className="bg-primary/20 border border-primary/30 rounded-xl px-6 py-4 text-center">
                 <p className="text-4xl font-bold">{saleProducts.length}</p>
-                <p className="text-white/70 text-sm">products on sale</p>
+                <p className="text-white/70 text-sm">товаров со скидкой</p>
               </div>
             </div>
           </div>
@@ -54,14 +54,14 @@ export default function SalePage() {
       {activePromotions.length > 0 && (
         <div className="bg-muted/50 border-b border-border">
           <div className="container mx-auto px-4 py-6">
-            <h2 className="text-lg font-bold mb-4">Active Promotions</h2>
+            <h2 className="text-lg font-bold mb-4">Активные акции</h2>
             <div className="flex flex-wrap gap-3">
               {activePromotions.map((promo) => (
                 <div key={promo.id} className="bg-card border border-border rounded-xl px-5 py-3 card-shadow flex items-center gap-3">
                   <Badge className="bg-destructive text-white font-bold">-{promo.discount}%</Badge>
                   <div>
                     <p className="font-semibold text-sm">{promo.name}</p>
-                    <p className="text-xs text-muted-foreground">Until {promo.endDate}</p>
+                    <p className="text-xs text-muted-foreground">До {promo.endDate}</p>
                   </div>
                 </div>
               ))}
@@ -73,16 +73,16 @@ export default function SalePage() {
       {/* Products */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <p className="text-muted-foreground">{saleProducts.length} products on sale</p>
+          <p className="text-muted-foreground">{saleProducts.length} товаров со скидкой</p>
           <Select value={sort} onValueChange={(v) => { setSort(v); setPage(1); }}>
             <SelectTrigger className="w-44 h-9 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="discount">Biggest Discount</SelectItem>
-              <SelectItem value="price-asc">Price: Low to High</SelectItem>
-              <SelectItem value="price-desc">Price: High to Low</SelectItem>
-              <SelectItem value="rating">Best Rating</SelectItem>
+              <SelectItem value="discount">Наибольшая скидка</SelectItem>
+              <SelectItem value="price-asc">Цена: по возрастанию</SelectItem>
+              <SelectItem value="price-desc">Цена: по убыванию</SelectItem>
+              <SelectItem value="rating">Лучший рейтинг</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -99,11 +99,11 @@ export default function SalePage() {
 
         {/* CTA */}
         <div className="mt-12 bg-card border border-border rounded-2xl p-8 text-center card-shadow">
-          <h3 className="text-xl font-bold mb-2">Want to see the full catalog?</h3>
-          <p className="text-muted-foreground mb-4">More than 2000 products at competitive prices</p>
+          <h3 className="text-xl font-bold mb-2">Хотите увидеть весь каталог?</h3>
+          <p className="text-muted-foreground mb-4">Более 2000 товаров по конкурентным ценам</p>
           <Link to="/catalog">
             <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-colors">
-              Go to Catalog <ArrowRight className="h-4 w-4" />
+              Перейти в каталог <ArrowRight className="h-4 w-4" />
             </button>
           </Link>
         </div>

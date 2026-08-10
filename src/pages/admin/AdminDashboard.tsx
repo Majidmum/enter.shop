@@ -24,10 +24,10 @@ export default function AdminDashboard() {
   const newOrders = orders.filter((o) => o.status === 'new').length;
 
   const stats = [
-    { label: 'Total Revenue', value: `${totalRevenue.toLocaleString()} TJS`, icon: TrendingUp, delta: '+12%', color: 'text-green-600' },
-    { label: 'Orders', value: orders.length, icon: ShoppingBag, delta: `${newOrders} new`, color: 'text-blue-600' },
-    { label: 'Products', value: products.length, icon: Package, delta: 'In catalog', color: 'text-purple-600' },
-    { label: 'Customers', value: customers.length, icon: Users, delta: '+3 this week', color: 'text-orange-600' },
+    { label: 'Выручка', value: `${totalRevenue.toLocaleString()} сом.`, icon: TrendingUp, delta: '+12%', color: 'text-green-600' },
+    { label: 'Заказы', value: orders.length, icon: ShoppingBag, delta: `${newOrders} новых`, color: 'text-blue-600' },
+    { label: 'Товары', value: products.length, icon: Package, delta: 'В каталоге', color: 'text-purple-600' },
+    { label: 'Клиенты', value: customers.length, icon: Users, delta: '+3 на этой неделе', color: 'text-orange-600' },
   ];
 
   const recentOrders = orders.slice(0, 8);
@@ -57,8 +57,8 @@ export default function AdminDashboard() {
         {/* Revenue chart */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 card-shadow">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-bold">Revenue by Month</h2>
-            <span className="text-xs text-muted-foreground">TJS</span>
+            <h2 className="font-bold">Выручка по месяцам</h2>
+            <span className="text-xs text-muted-foreground">сом.</span>
           </div>
           <div className="w-full min-w-0 overflow-hidden" style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
                 <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={55} />
                 <Tooltip
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }}
-                  formatter={(value: number) => [`${value.toLocaleString()} TJS`, 'Revenue']}
+                  formatter={(value: number) => [`${value.toLocaleString()} сом.`, 'Выручка']}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="hsl(220 78% 48%)" fill="url(#colorRevenue)" strokeWidth={2} />
               </AreaChart>
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
 
         {/* Orders chart */}
         <div className="bg-card border border-border rounded-xl p-5 card-shadow">
-          <h2 className="font-bold mb-5">Orders per Month</h2>
+          <h2 className="font-bold mb-5">Заказы по месяцам</h2>
           <div className="w-full min-w-0 overflow-hidden" style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={salesData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -106,17 +106,17 @@ export default function AdminDashboard() {
         {/* Orders table */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl overflow-hidden card-shadow">
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="font-bold">Recent Orders</h2>
+            <h2 className="font-bold">Последние заказы</h2>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm whitespace-nowrap">
               <thead>
                 <tr className="bg-muted/40">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Order #</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Customer</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Total</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Заказ №</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Клиент</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Сумма</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Статус</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                   <tr key={order.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-2.5 font-medium text-primary">{order.orderNumber}</td>
                     <td className="px-4 py-2.5 text-muted-foreground truncate max-w-[120px]">{order.customerName}</td>
-                    <td className="px-4 py-2.5 font-semibold">{order.total.toLocaleString()} TJS</td>
+                    <td className="px-4 py-2.5 font-semibold">{order.total.toLocaleString()} сом.</td>
                     <td className="px-4 py-2.5">
                       <Badge className={`text-xs ${ORDER_STATUS_COLORS[order.status]}`}>
                         {ORDER_STATUS_LABELS[order.status]}
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
         {/* Top products */}
         <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
           <div className="p-4 border-b border-border">
-            <h2 className="font-bold">Popular Products</h2>
+            <h2 className="font-bold">Популярные товары</h2>
           </div>
           <div className="p-3 flex flex-col gap-3">
             {topProducts.map((p, i) => (
@@ -151,9 +151,9 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold truncate">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{p.price.toLocaleString()} TJS</p>
+                  <p className="text-xs text-muted-foreground">{p.price.toLocaleString()} сом.</p>
                 </div>
-                <span className="text-xs text-green-600 font-medium shrink-0">{p.stock} pcs</span>
+                <span className="text-xs text-green-600 font-medium shrink-0">{p.stock} шт.</span>
               </div>
             ))}
           </div>

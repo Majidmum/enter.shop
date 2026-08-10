@@ -11,19 +11,19 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { toast } from 'sonner';
 
 const schema = z.object({
-  name: z.string().min(2, 'Enter your name'),
-  phone: z.string().min(9, 'Enter a valid phone number'),
-  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
+  name: z.string().min(2, 'Введите ваше имя'),
+  phone: z.string().min(9, 'Введите корректный номер телефона'),
+  email: z.string().email('Введите корректный email').optional().or(z.literal('')),
+  message: z.string().min(10, 'Сообщение должно содержать не менее 10 символов'),
 });
 
 type FormData = z.infer<typeof schema>;
 
 const contacts = [
-  { icon: MapPin, title: 'Address', lines: ['Rudaki Ave 42, Dushanbe', 'Tajikistan'] },
-  { icon: Phone, title: 'Phone', lines: ['+992 555 000 070', '+992 901 234 567'] },
+  { icon: MapPin, title: 'Адрес', lines: ['пр. Рудаки, 42, Душанбе', 'Таджикистан'] },
+  { icon: Phone, title: 'Телефон', lines: ['+992 555 000 070', '+992 901 234 567'] },
   { icon: Mail, title: 'Email', lines: ['info@enter.tj', 'sales@enter.tj'] },
-  { icon: Clock, title: 'Working Hours', lines: ['Mon–Sat: 9:00–19:00', 'Sun: 10:00–17:00'] },
+  { icon: Clock, title: 'Режим работы', lines: ['Пн–Сб: 9:00–19:00', 'Вс: 10:00–17:00'] },
 ];
 
 export default function ContactsPage() {
@@ -37,16 +37,16 @@ export default function ContactsPage() {
   const onSubmit = (data: FormData) => {
     console.log('Contact form submitted:', data);
     setSent(true);
-    toast.success('Message sent! We will contact you shortly.');
+    toast.success('Сообщение отправлено! Мы свяжемся с вами в ближайшее время.');
   };
 
   return (
     <div className="pb-16 md:pb-0">
       <div className="bg-secondary text-white py-12">
         <div className="container mx-auto px-4">
-          <Breadcrumb items={[{ label: 'Contacts' }]} />
-          <h1 className="text-3xl font-bold mt-4">Contacts</h1>
-          <p className="text-white/70 mt-2">We're here to help — reach out any time</p>
+          <Breadcrumb items={[{ label: 'Контакты' }]} />
+          <h1 className="text-3xl font-bold mt-4">Контакты</h1>
+          <p className="text-white/70 mt-2">Мы всегда готовы помочь — обращайтесь в любое время</p>
         </div>
       </div>
 
@@ -54,7 +54,7 @@ export default function ContactsPage() {
         <div className="grid md:grid-cols-2 gap-10">
           {/* Contact info */}
           <div>
-            <h2 className="text-xl font-bold mb-6">Get in Touch</h2>
+            <h2 className="text-xl font-bold mb-6">Наши контакты</h2>
             <div className="grid grid-cols-1 gap-4 mb-8">
               {contacts.map(({ icon: Icon, title, lines }) => (
                 <div key={title} className="flex items-start gap-4 bg-card border border-border rounded-xl p-4 card-shadow">
@@ -71,7 +71,7 @@ export default function ContactsPage() {
 
             {/* Social */}
             <div className="bg-card border border-border rounded-xl p-5 card-shadow">
-              <h3 className="font-semibold mb-3">Follow Us</h3>
+              <h3 className="font-semibold mb-3">Мы в соцсетях</h3>
               <div className="flex gap-3">
                 {[
                   { icon: Instagram, label: 'Instagram', href: 'https://instagram.com', color: 'hover:bg-pink-50 hover:text-pink-600' },
@@ -104,13 +104,13 @@ export default function ContactsPage() {
 
           {/* Contact form */}
           <div>
-            <h2 className="text-xl font-bold mb-6">Send a Message</h2>
+            <h2 className="text-xl font-bold mb-6">Написать нам</h2>
             {sent ? (
               <div className="flex flex-col items-center justify-center py-16 text-center gap-4 bg-card border border-border rounded-xl">
                 <CheckCircle className="h-16 w-16 text-green-500" />
-                <h3 className="text-xl font-bold">Message Sent!</h3>
-                <p className="text-muted-foreground text-sm">We'll get back to you within 2 hours during business hours.</p>
-                <Button onClick={() => setSent(false)} variant="outline">Send Another Message</Button>
+                <h3 className="text-xl font-bold">Сообщение отправлено!</h3>
+                <p className="text-muted-foreground text-sm">Мы ответим вам в течение 2 часов в рабочее время.</p>
+                <Button onClick={() => setSent(false)} variant="outline">Написать ещё раз</Button>
               </div>
             ) : (
               <div className="bg-card border border-border rounded-xl p-6 card-shadow">
@@ -118,14 +118,14 @@ export default function ContactsPage() {
                   <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <FormField control={form.control} name="name" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Your Name *</FormLabel>
-                        <FormControl><Input placeholder="Rustam Karimov" {...field} /></FormControl>
+                        <FormLabel>Ваше имя *</FormLabel>
+                        <FormControl><Input placeholder="Рустам Каримов" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="phone" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone *</FormLabel>
+                        <FormLabel>Телефон *</FormLabel>
                         <FormControl><Input placeholder="+992 9XX XXX XXX" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -139,15 +139,15 @@ export default function ContactsPage() {
                     )} />
                     <FormField control={form.control} name="message" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Message *</FormLabel>
+                        <FormLabel>Сообщение *</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="How can we help you?" rows={5} {...field} />
+                          <Textarea placeholder="Чем мы можем вам помочь?" rows={5} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
-                      Send Message
+                      Отправить сообщение
                     </Button>
                   </form>
                 </Form>

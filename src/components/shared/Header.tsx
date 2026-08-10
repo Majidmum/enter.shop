@@ -10,12 +10,12 @@ import { useAuthStore } from '@/store/authStore';
 import { categories } from '@/lib/mockData';
 
 const navLinks = [
-  { label: 'Catalog', href: '/catalog' },
-  { label: 'Sale', href: '/sale' },
-  { label: 'Office Turnkey', href: '/office' },
-  { label: 'Delivery', href: '/delivery' },
-  { label: 'About', href: '/about' },
-  { label: 'Contacts', href: '/contacts' },
+  { label: 'Каталог', href: '/catalog' },
+  { label: 'Акции', href: '/sale' },
+  { label: 'Офис под ключ', href: '/office' },
+  { label: 'Доставка', href: '/delivery' },
+  { label: 'О нас', href: '/about' },
+  { label: 'Контакты', href: '/contacts' },
 ];
 
 export default function Header() {
@@ -41,10 +41,10 @@ export default function Header() {
       {/* Top bar */}
       <div className="bg-secondary text-white/70 text-xs hidden md:block">
         <div className="container mx-auto px-4 flex items-center justify-between h-8">
-          <span>Dushanbe, Tajikistan · Mon–Sat 9:00–19:00</span>
+          <span>Душанбе, Таджикистан · Пн–Сб 9:00–19:00</span>
           <div className="flex items-center gap-4">
             <a href="tel:+992555000070" className="hover:text-white transition-colors">+992 555 000 070</a>
-            <Link to="/delivery" className="hover:text-white transition-colors">Delivery Info</Link>
+            <Link to="/delivery" className="hover:text-white transition-colors">Доставка</Link>
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function Header() {
                 </Link>
               ))}
               <div className="border-t border-sidebar-border my-2" />
-              <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">Categories</p>
+              <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">Категории</p>
               {categories.slice(0, 8).map((cat) => (
                 <Link key={cat.id} to={`/category/${cat.slug}`} onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
@@ -100,7 +100,7 @@ export default function Header() {
             className="flex items-center gap-1 px-3 h-9 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
           >
             <Menu className="h-4 w-4" />
-            <span>Catalog</span>
+            <span>Каталог</span>
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
           {catOpen && (
@@ -127,12 +127,12 @@ export default function Header() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search products..."
+              placeholder="Поиск товаров..."
               className="pl-9 h-9 w-full"
             />
           </div>
           <Button type="submit" className="h-9 bg-primary hover:bg-primary/90 text-white hidden sm:flex shrink-0">
-            Search
+            Найти
           </Button>
         </form>
 

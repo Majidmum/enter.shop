@@ -3,18 +3,18 @@ import { Phone, MapPin, Instagram, Send, MessageCircle, Laptop } from 'lucide-re
 
 const footerLinks = {
   catalog: [
-    { label: 'Laptops', href: '/category/laptops' },
-    { label: 'Monitors', href: '/category/monitors' },
-    { label: 'Printers', href: '/category/printers' },
-    { label: 'Office Chairs', href: '/category/office-chairs' },
-    { label: 'Accessories', href: '/category/accessories' },
+    { label: 'Ноутбуки', href: '/category/laptops' },
+    { label: 'Мониторы', href: '/category/monitors' },
+    { label: 'Принтеры', href: '/category/printers' },
+    { label: 'Офисные кресла', href: '/category/office-chairs' },
+    { label: 'Аксессуары', href: '/category/accessories' },
   ],
   info: [
-    { label: 'About Us', href: '/about' },
-    { label: 'Delivery & Payment', href: '/delivery' },
-    { label: 'Sale', href: '/sale' },
-    { label: 'Office Turnkey', href: '/office' },
-    { label: 'Contacts', href: '/contacts' },
+    { label: 'О нас', href: '/about' },
+    { label: 'Доставка и оплата', href: '/delivery' },
+    { label: 'Акции', href: '/sale' },
+    { label: 'Офис под ключ', href: '/office' },
+    { label: 'Контакты', href: '/contacts' },
   ],
 };
 
@@ -32,7 +32,7 @@ export default function Footer() {
               <span className="text-xl font-bold text-white">ENTER<span className="text-primary">.TJ</span></span>
             </Link>
             <p className="text-sm text-white/60 mb-4">
-              Computer technology and office furniture. Equipment for home and business in Dushanbe.
+              Компьютерная техника и офисная мебель. Оборудование для дома и бизнеса в Душанбе.
             </p>
             <div className="flex items-center gap-3">
               <a href="https://instagram.com" target="_blank" rel="noreferrer"
@@ -52,7 +52,7 @@ export default function Footer() {
 
           {/* Catalog */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Catalog</h4>
+            <h4 className="font-semibold text-white mb-4">Каталог</h4>
             <ul className="space-y-2">
               {footerLinks.catalog.map((link) => (
                 <li key={link.href}>
@@ -66,7 +66,7 @@ export default function Footer() {
 
           {/* Info */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Information</h4>
+            <h4 className="font-semibold text-white mb-4">Информация</h4>
             <ul className="space-y-2">
               {footerLinks.info.map((link) => (
                 <li key={link.href}>
@@ -80,7 +80,7 @@ export default function Footer() {
 
           {/* Contacts */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Contacts</h4>
+            <h4 className="font-semibold text-white mb-4">Контакты</h4>
             <div className="space-y-3">
               <a href="tel:+992555000070" className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors">
                 <Phone className="h-4 w-4 text-primary shrink-0" />
@@ -88,11 +88,11 @@ export default function Footer() {
               </a>
               <div className="flex items-start gap-2 text-sm text-white/60">
                 <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <span>Dushanbe, Tajikistan</span>
+                <span>Душанбе, Таджикистан</span>
               </div>
               <div className="text-sm text-white/60">
-                <p>Mon–Sat: 9:00–19:00</p>
-                <p>Sun: 10:00–17:00</p>
+                <p>Пн–Сб: 9:00–19:00</p>
+                <p>Вс: 10:00–17:00</p>
               </div>
             </div>
           </div>
@@ -101,8 +101,8 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2">
-          <p className="text-xs text-white/40">© 2025 ENTER.TJ. All rights reserved.</p>
-          <p className="text-xs text-white/40">Computer technology and office equipment in Dushanbe</p>
+          <p className="text-xs text-white/40">© 2025 ENTER.TJ. Все права защищены.</p>
+          <p className="text-xs text-white/40">Компьютерная техника и офисное оборудование в Душанбе</p>
         </div>
       </div>
     </footer>

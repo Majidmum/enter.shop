@@ -15,7 +15,7 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
     <nav className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
       <Link to="/" className="flex items-center gap-1 hover:text-primary transition-colors shrink-0">
         <Home className="h-3.5 w-3.5" />
-        <span>Home</span>
+        <span>Главная</span>
       </Link>
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1 min-w-0">

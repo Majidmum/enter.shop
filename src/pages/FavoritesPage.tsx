@@ -13,12 +13,12 @@ export default function FavoritesPage() {
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
-        <Breadcrumb items={[{ label: 'Favorites' }]} />
+        <Breadcrumb items={[{ label: 'Избранное' }]} />
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <Heart className="h-16 w-16 text-muted" />
-          <h2 className="text-xl font-bold">No favorites yet</h2>
-          <p className="text-muted-foreground text-sm">Save products you love</p>
-          <Link to="/catalog"><Button className="bg-primary hover:bg-primary/90 text-white mt-2">Go to Catalog</Button></Link>
+          <h2 className="text-xl font-bold">Избранное пусто</h2>
+          <p className="text-muted-foreground text-sm">Сохраняйте понравившиеся товары</p>
+          <Link to="/catalog"><Button className="bg-primary hover:bg-primary/90 text-white mt-2">Перейти в каталог</Button></Link>
         </div>
       </div>
     );
@@ -26,8 +26,8 @@ export default function FavoritesPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
-      <Breadcrumb items={[{ label: 'Favorites' }]} />
-      <h1 className="text-2xl font-bold mt-4 mb-6">Favorites ({items.length})</h1>
+      <Breadcrumb items={[{ label: 'Избранное' }]} />
+      <h1 className="text-2xl font-bold mt-4 mb-6">Избранное ({items.length})</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((product) => (
           <div key={product.id} className="flex gap-4 rounded-xl bg-card border border-border p-4 card-shadow">
@@ -41,11 +41,11 @@ export default function FavoritesPage() {
               <Link to={`/product/${product.slug}`}>
                 <h3 className="font-semibold text-sm line-clamp-2 hover:text-primary transition-colors">{product.name}</h3>
               </Link>
-              <p className="font-bold text-foreground mt-auto">{product.price.toLocaleString()} TJS</p>
+              <p className="font-bold text-foreground mt-auto">{product.price.toLocaleString()} сом.</p>
               <div className="flex gap-2 mt-1">
                 <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90 text-white text-xs"
-                  onClick={() => { addToCart(product); toast.success('Added to cart'); }}>
-                  <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Buy
+                  onClick={() => { addToCart(product); toast.success('Добавлено в корзину'); }}>
+                  <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Купить
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => removeItem(product.id)}
                   className="text-muted-foreground hover:text-destructive">

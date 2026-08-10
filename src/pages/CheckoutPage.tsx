@@ -16,12 +16,12 @@ import { toast } from 'sonner';
 import type { CheckoutForm } from '@/types';
 
 const schema = z.object({
-  firstName: z.string().min(2, 'Enter your first name'),
-  lastName: z.string().min(2, 'Enter your last name'),
-  phone: z.string().min(9, 'Enter a valid phone number'),
+  firstName: z.string().min(2, 'Введите имя'),
+  lastName: z.string().min(2, 'Введите фамилию'),
+  phone: z.string().min(9, 'Введите корректный номер телефона'),
   whatsapp: z.string().optional(),
-  address: z.string().min(5, 'Enter your delivery address'),
-  district: z.string().min(2, 'Enter your district'),
+  address: z.string().min(5, 'Введите адрес доставки'),
+  district: z.string().min(2, 'Введите район'),
   comment: z.string().optional(),
   deliveryMethod: z.enum(['delivery', 'pickup']),
   paymentMethod: z.enum(['cash', 'transfer', 'online']),
@@ -76,14 +76,14 @@ export default function CheckoutPage() {
       comment: data.comment,
     });
     clearCart();
-    toast.success(`Order ${order.orderNumber} placed successfully!`);
+    toast.success(`Заказ ${order.orderNumber} успешно оформлен!`);
     navigate('/account');
   };
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
-      <Breadcrumb items={[{ label: 'Cart', href: '/cart' }, { label: 'Checkout' }]} />
-      <h1 className="text-2xl font-bold mt-4 mb-6">Checkout</h1>
+      <Breadcrumb items={[{ label: 'Корзина', href: '/cart' }, { label: 'Оформление заказа' }]} />
+      <h1 className="text-2xl font-bold mt-4 mb-6">Оформление заказа</h1>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col lg:flex-row gap-6">
@@ -91,25 +91,25 @@ export default function CheckoutPage() {
           <div className="flex-1 min-w-0 flex flex-col gap-5">
             {/* Personal info */}
             <div className="rounded-xl bg-card border border-border p-5">
-              <h3 className="font-bold mb-4">Contact Information</h3>
+              <h3 className="font-bold mb-4">Контактные данные</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="firstName" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name *</FormLabel>
-                    <FormControl><Input placeholder="Rustam" {...field} /></FormControl>
+                    <FormLabel>Имя *</FormLabel>
+                    <FormControl><Input placeholder="Рустам" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="lastName" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Name *</FormLabel>
-                    <FormControl><Input placeholder="Karimov" {...field} /></FormControl>
+                    <FormLabel>Фамилия *</FormLabel>
+                    <FormControl><Input placeholder="Каримов" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone *</FormLabel>
+                    <FormLabel>Телефон *</FormLabel>
                     <FormControl><Input placeholder="+992 9XX XXX XXX" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
 
             {/* Delivery */}
             <div className="rounded-xl bg-card border border-border p-5">
-              <h3 className="font-bold mb-4">Delivery Method</h3>
+              <h3 className="font-bold mb-4">Способ доставки</h3>
               <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                 <FormItem>
                   <FormControl>
@@ -134,16 +134,16 @@ export default function CheckoutPage() {
                       <div className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/50">
                         <RadioGroupItem value="delivery" id="del1" />
                         <Label htmlFor="del1" className="cursor-pointer flex-1">
-                          <p className="font-medium">Free Delivery in Dushanbe</p>
-                          <p className="text-xs text-muted-foreground">1–2 business days</p>
+                          <p className="font-medium">Бесплатная доставка по Душанбе</p>
+                          <p className="text-xs text-muted-foreground">1–2 рабочих дня</p>
                         </Label>
                         <span className="text-xs font-medium text-green-600">FREE</span>
                       </div>
                       <div className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/50">
                         <RadioGroupItem value="pickup" id="del2" />
                         <Label htmlFor="del2" className="cursor-pointer flex-1">
-                          <p className="font-medium">Pickup from Store</p>
-                          <p className="text-xs text-muted-foreground">Ready within 2 hours</p>
+                          <p className="font-medium">Самовывоз из магазина</p>
+                          <p className="text-xs text-muted-foreground">Готово через 2 часа</p>
                         </Label>
                         <span className="text-xs font-medium text-green-600">FREE</span>
                       </div>
@@ -157,15 +157,15 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <FormField control={form.control} name="address" render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Delivery Address *</FormLabel>
-                      <FormControl><Input placeholder="Street, building, apartment" {...field} /></FormControl>
+                      <FormLabel>Адрес доставки *</FormLabel>
+                      <FormControl><Input placeholder="Улица, дом, квартира" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="district" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>District *</FormLabel>
-                      <FormControl><Input placeholder="Ismoil Somoni, Firdavsi..." {...field} /></FormControl>
+                      <FormLabel>Район *</FormLabel>
+                      <FormControl><Input placeholder="Исмоил Сомони, Фирдавси..." {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -175,15 +175,15 @@ export default function CheckoutPage() {
 
             {/* Payment */}
             <div className="rounded-xl bg-card border border-border p-5">
-              <h3 className="font-bold mb-4">Payment Method</h3>
+              <h3 className="font-bold mb-4">Способ оплаты</h3>
               <FormField control={form.control} name="paymentMethod" render={({ field }) => (
                 <FormItem>
                   <FormControl>
                     <RadioGroup value={field.value} onValueChange={field.onChange} className="flex flex-col gap-3">
                       {[
-                        { value: 'cash', label: 'Cash on Delivery', desc: 'Pay upon receipt' },
-                        { value: 'transfer', label: 'Bank Transfer', desc: 'Transfer to our account' },
-                        { value: 'online', label: 'Online Payment', desc: 'Card, mobile payments' },
+                        { value: 'cash', label: 'Наличные при получении', desc: 'Оплата при получении заказа' },
+                        { value: 'transfer', label: 'Банковский перевод', desc: 'Перевод на наш счёт' },
+                        { value: 'online', label: 'Онлайн-оплата', desc: 'Карта, мобильные платежи' },
                       ].map((opt) => (
                         <div key={opt.value} className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/50">
                           <RadioGroupItem value={opt.value} id={`pay-${opt.value}`} />
@@ -204,8 +204,8 @@ export default function CheckoutPage() {
             <div className="rounded-xl bg-card border border-border p-5">
               <FormField control={form.control} name="comment" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Comment to Order</FormLabel>
-                  <FormControl><Textarea placeholder="Any special requests or notes..." rows={3} {...field} /></FormControl>
+                  <FormLabel>Комментарий к заказу</FormLabel>
+                  <FormControl><Textarea placeholder="Особые пожелания или примечания..." rows={3} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -215,7 +215,7 @@ export default function CheckoutPage() {
           {/* Order summary */}
           <div className="w-full lg:w-72 shrink-0">
             <div className="rounded-xl bg-card border border-border p-5 card-shadow sticky top-24">
-              <h3 className="font-bold text-base mb-4">Order Summary</h3>
+              <h3 className="font-bold text-base mb-4">Сводка заказа</h3>
               <div className="flex flex-col gap-2 text-sm border-b border-border pb-4 mb-4">
                 {items.map(({ product, quantity }) => (
                   <div key={product.id} className="flex justify-between gap-2">
@@ -225,19 +225,19 @@ export default function CheckoutPage() {
                 ))}
               </div>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Delivery</span>
-                <span className="text-green-600 font-medium">Free</span>
+                <span className="text-muted-foreground">Доставка</span>
+                <span className="text-green-600 font-medium">Бесплатно</span>
               </div>
               <div className="flex justify-between font-bold text-lg mb-5">
-                <span>Total</span>
-                <span>{total().toLocaleString()} TJS</span>
+                <span>Итого</span>
+                <span>{total().toLocaleString()} сом.</span>
               </div>
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
-                Confirm Order
+                Подтвердить заказ
               </Button>
               {!isAuthenticated && (
                 <p className="text-xs text-muted-foreground text-center mt-3">
-                  <a href="/login" className="text-primary hover:underline">Sign in</a> to track your order
+                  <a href="/login" className="text-primary hover:underline">Войдите</a>, чтобы отслеживать заказ
                 </p>
               )}
             </div>

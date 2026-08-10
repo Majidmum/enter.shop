@@ -10,12 +10,12 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
-        <Breadcrumb items={[{ label: 'Cart' }]} />
+        <Breadcrumb items={[{ label: 'Корзина' }]} />
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <ShoppingCart className="h-16 w-16 text-muted" />
-          <h2 className="text-xl font-bold text-foreground">Your cart is empty</h2>
-          <p className="text-muted-foreground text-sm">Add products to get started</p>
-          <Link to="/catalog"><Button className="bg-primary hover:bg-primary/90 text-white mt-2">Go to Catalog</Button></Link>
+          <h2 className="text-xl font-bold text-foreground">Корзина пуста</h2>
+          <p className="text-muted-foreground text-sm">Добавьте товары, чтобы начать</p>
+          <Link to="/catalog"><Button className="bg-primary hover:bg-primary/90 text-white mt-2">Перейти в каталог</Button></Link>
         </div>
       </div>
     );
@@ -23,8 +23,8 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
-      <Breadcrumb items={[{ label: 'Cart' }]} />
-      <h1 className="text-2xl font-bold mt-4 mb-6">Cart ({itemCount()} items)</h1>
+      <Breadcrumb items={[{ label: 'Корзина' }]} />
+      <h1 className="text-2xl font-bold mt-4 mb-6">Корзина ({itemCount()} товаров)</h1>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Items */}
@@ -41,7 +41,7 @@ export default function CartPage() {
                   <p className="text-xs text-muted-foreground">{product.brandName}</p>
                   <h3 className="font-semibold text-sm line-clamp-2 hover:text-primary transition-colors">{product.name}</h3>
                 </Link>
-                <p className="text-base font-bold text-foreground mt-auto">{product.price.toLocaleString()} TJS</p>
+                <p className="text-base font-bold text-foreground mt-auto">{product.price.toLocaleString()} сом.</p>
               </div>
               <div className="flex flex-col items-end justify-between gap-2 shrink-0">
                 <button onClick={() => removeItem(product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
@@ -58,7 +58,7 @@ export default function CartPage() {
                     <Plus className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <p className="text-sm font-bold">{(product.price * quantity).toLocaleString()} TJS</p>
+                <p className="text-sm font-bold">{(product.price * quantity).toLocaleString()} сом.</p>
               </div>
             </div>
           ))}
@@ -67,7 +67,7 @@ export default function CartPage() {
         {/* Summary */}
         <div className="w-full lg:w-72 shrink-0">
           <div className="rounded-xl bg-card border border-border p-5 card-shadow sticky top-24">
-            <h3 className="font-bold text-base mb-4">Your Order</h3>
+            <h3 className="font-bold text-base mb-4">Ваш заказ</h3>
             <div className="flex flex-col gap-3 text-sm border-b border-border pb-4 mb-4">
               {items.map(({ product, quantity }) => (
                 <div key={product.id} className="flex justify-between gap-2">
@@ -77,20 +77,20 @@ export default function CartPage() {
               ))}
             </div>
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-muted-foreground">Delivery</span>
-              <span className="text-green-600 font-medium">Free</span>
+              <span className="text-muted-foreground">Доставка</span>
+              <span className="text-green-600 font-medium">Бесплатно</span>
             </div>
             <div className="flex justify-between font-bold text-base">
-              <span>Total</span>
-              <span>{total().toLocaleString()} TJS</span>
+              <span>Итого</span>
+              <span>{total().toLocaleString()} сом.</span>
             </div>
             <Link to="/checkout">
               <Button className="w-full mt-5 bg-primary hover:bg-primary/90 text-white font-semibold">
-                Checkout <ArrowRight className="h-4 w-4 ml-1" />
+                Оформить заказ <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
             <Link to="/catalog">
-              <Button variant="outline" className="w-full mt-2 text-sm">Continue Shopping</Button>
+              <Button variant="outline" className="w-full mt-2 text-sm">Продолжить покупки</Button>
             </Link>
           </div>
         </div>

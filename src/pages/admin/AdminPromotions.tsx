@@ -26,10 +26,10 @@ export default function AdminPromotions() {
   const openEdit = (p: Promotion) => { setEditing(p); setDraft({ ...p }); setOpen(true); };
 
   const handleSave = () => {
-    if (!draft.name || !draft.discount) { toast.error('Fill required fields'); return; }
+    if (!draft.name || !draft.discount) { toast.error('Заполните обязательные поля'); return; }
     if (editing) {
       setItems((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...draft } as Promotion : p));
-      toast.success('Promotion updated');
+      toast.success('Акция обновлена');
     } else {
       const newPromo: Promotion = {
         id: `promo_${Date.now()}`,
@@ -41,7 +41,7 @@ export default function AdminPromotions() {
         productIds: [],
       };
       setItems((prev) => [...prev, newPromo]);
-      toast.success('Promotion created');
+      toast.success('Акция создана');
     }
     setOpen(false);
   };
@@ -50,7 +50,7 @@ export default function AdminPromotions() {
     if (!deleteId) return;
     setItems((prev) => prev.filter((p) => p.id !== deleteId));
     setDeleteId(null);
-    toast.success('Promotion deleted');
+    toast.success('Акция удалена');
   };
 
   const isActive = (p: Promotion) => {
@@ -62,7 +62,7 @@ export default function AdminPromotions() {
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <Button onClick={openNew} className="bg-primary hover:bg-primary/90 text-white h-9">
-          <Plus className="h-4 w-4 mr-1.5" /> Add Promotion
+          <Plus className="h-4 w-4 mr-1.5" /> Добавить акцию
         </Button>
       </div>
 
@@ -71,13 +71,13 @@ export default function AdminPromotions() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Promotion</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Discount</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Start</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">End</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Live</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Акция</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Скидка</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Начало</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Конец</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Активна</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Статус</th>
+                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Действия</th>
               </tr>
             </thead>
             <tbody>
@@ -91,13 +91,13 @@ export default function AdminPromotions() {
                   <td className="px-4 py-3 text-muted-foreground">{p.endDate}</td>
                   <td className="px-4 py-3">
                     {isActive(p)
-                      ? <Badge className="bg-green-100 text-green-700">Live</Badge>
-                      : <Badge className="bg-gray-100 text-gray-600">Inactive</Badge>
+                      ? <Badge className="bg-green-100 text-green-700">Активна</Badge>
+                      : <Badge className="bg-gray-100 text-gray-600">Неактивна</Badge>
                     }
                   </td>
                   <td className="px-4 py-3">
                     <Badge className={p.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}>
-                      {p.status}
+                      {p.status === 'active' ? 'Включена' : 'Выключена'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -119,39 +119,39 @@ export default function AdminPromotions() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? 'Edit Promotion' : 'Add Promotion'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? 'Редактировать акцию' : 'Добавить акцию'}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3 py-2">
             <div className="col-span-2">
-              <Label>Promotion Name *</Label>
+              <Label>Название акции *</Label>
               <Input className="mt-1" value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
             </div>
             <div>
-              <Label>Discount (%) *</Label>
+              <Label>Скидка (%) *</Label>
               <Input className="mt-1" type="number" min={1} max={99} value={draft.discount || ''} onChange={(e) => setDraft({ ...draft, discount: Number(e.target.value) })} />
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>Статус</Label>
               <Select value={draft.status} onValueChange={(v) => setDraft({ ...draft, status: v as 'active' | 'inactive' })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Включена</SelectItem>
+                  <SelectItem value="inactive">Выключена</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Start Date</Label>
+              <Label>Дата начала</Label>
               <Input className="mt-1" type="date" value={draft.startDate || ''} onChange={(e) => setDraft({ ...draft, startDate: e.target.value })} />
             </div>
             <div>
-              <Label>End Date</Label>
+              <Label>Дата окончания</Label>
               <Input className="mt-1" type="date" value={draft.endDate || ''} onChange={(e) => setDraft({ ...draft, endDate: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
             <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> Save
+              <Check className="h-4 w-4 mr-1.5" /> Сохранить
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -160,12 +160,12 @@ export default function AdminPromotions() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Promotion?</AlertDialogTitle>
-            <AlertDialogDescription>This will remove the promotion permanently.</AlertDialogDescription>
+            <AlertDialogTitle>Удалить акцию?</AlertDialogTitle>
+            <AlertDialogDescription>Акция будет удалена без возможности восстановления.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
