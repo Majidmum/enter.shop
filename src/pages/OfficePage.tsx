@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { toast } from 'sonner';
+import { sendContactFormToTelegram } from '@/lib/telegram';
 
 const schema = z.object({
   company: z.string().min(2, 'Введите название компании'),
@@ -57,11 +58,31 @@ export default function OfficePage() {
     defaultValues: { company: '', name: '', phone: '', email: '', employees: '', budget: '', needs: '' },
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log('Office form:', data);
+const onSubmit = async (data: FormData) => {
+  console.log('Office form:', data);
+
+  const message = `
+🏢 Заявка: Офис под ключ
+Компания: ${data.company}
+Сотрудников: ${data.employees}
+Бюджет: ${data.budget}
+Потребности: ${data.needs}
+  `.trim();
+
+  const success = await sendContactFormToTelegram({
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    message,
+  });
+
+  if (success) {
     setSent(true);
     toast.success('Заявка отправлена! Мы свяжемся с вами в течение 1 часа.');
-  };
+  } else {
+    toast.error('Не удалось отправить заявку. Попробуйте позвонить нам напрямую.');
+  }
+};
 
   return (
     <div className="pb-16 md:pb-0">

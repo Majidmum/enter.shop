@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Search, Pencil, Trash2, X, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Pencil, Trash2, X, Check, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,14 +8,28 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { products as initialProducts, categories, brands } from '@/lib/mockData';
+import { products as initialProducts, categories as initialCategories, brands as initialBrands } from '@/lib/mockData';
 import type { Product } from '@/types';
 import { toast } from 'sonner';
 
 type ProductDraft = Partial<Product> & { name: string; price: number };
 
 export default function AdminProducts() {
-  const [items, setItems] = useState<Product[]>(initialProducts);
+  const [items, setItems] = useState<Product[]>(() => {
+    if (typeof window === 'undefined') return initialProducts;
+    const saved = localStorage.getItem('admin_products');
+    return saved ? JSON.parse(saved) : initialProducts;
+  });
+  const [categories, setCategories] = useState(() => {
+    if (typeof window === 'undefined') return initialCategories;
+    const saved = localStorage.getItem('admin_categories');
+    return saved ? JSON.parse(saved) : initialCategories;
+  });
+  const [brands, setBrands] = useState(() => {
+    if (typeof window === 'undefined') return initialBrands;
+    const saved = localStorage.getItem('admin_brands');
+    return saved ? JSON.parse(saved) : initialBrands;
+  });
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -23,6 +37,38 @@ export default function AdminProducts() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ProductDraft>({ name: '', price: 0, status: 'active' });
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    localStorage.setItem('admin_products', JSON.stringify(items));
+  }, [items]);
+
+  useEffect(() => {
+    setBrands(() => {
+      const saved = localStorage.getItem('admin_brands');
+      return saved ? JSON.parse(saved) : initialBrands;
+    });
+  }, []);
+
+  useEffect(() => {
+    setCategories(() => {
+      const saved = localStorage.getItem('admin_categories');
+      return saved ? JSON.parse(saved) : initialCategories;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'admin_brands' && e.newValue) {
+        setBrands(JSON.parse(e.newValue));
+      }
+      if (e.key === 'admin_categories' && e.newValue) {
+        setCategories(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const filtered = items.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase());
@@ -32,21 +78,32 @@ export default function AdminProducts() {
   });
 
   const openNew = () => {
+    const freshBrands = JSON.parse(localStorage.getItem('admin_brands') || JSON.stringify(initialBrands));
+    const freshCategories = JSON.parse(localStorage.getItem('admin_categories') || JSON.stringify(initialCategories));
+    setBrands(freshBrands);
+    setCategories(freshCategories);
     setEditing(null);
-    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: categories[0]?.id, brandId: brands[0]?.id });
+    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: freshCategories?.[0]?.id || '', brandId: freshBrands?.[0]?.id || '' });
+    setUploadedImages([]);
     setOpen(true);
   };
 
   const openEdit = (p: Product) => {
+    const freshBrands = JSON.parse(localStorage.getItem('admin_brands') || JSON.stringify(initialBrands));
+    const freshCategories = JSON.parse(localStorage.getItem('admin_categories') || JSON.stringify(initialCategories));
+    setBrands(freshBrands);
+    setCategories(freshCategories);
     setEditing(p);
     setDraft({ ...p });
+    setUploadedImages(p.images || []);
     setOpen(true);
   };
 
   const handleSave = () => {
     if (!draft.name || !draft.price) { toast.error('Заполните обязательные поля'); return; }
+    if (uploadedImages.length === 0) { toast.error('Добавьте хотя бы одно изображение'); return; }
     if (editing) {
-      setItems((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...draft } as Product : p));
+      setItems((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...draft, images: uploadedImages } as Product : p));
       toast.success('Товар обновлён');
     } else {
       const cat = categories.find((c) => c.id === draft.categoryId);
@@ -57,7 +114,7 @@ export default function AdminProducts() {
         slug: draft.name.toLowerCase().replace(/\s+/g, '-'),
         categoryName: cat?.name || '',
         brandName: brand?.name || '',
-        images: ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80'],
+        images: uploadedImages.length > 0 ? uploadedImages : ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80'],
         description: draft.description || '',
         specs: [],
         rating: 0, reviewCount: 0,
@@ -226,6 +283,82 @@ export default function AdminProducts() {
             <div className="md:col-span-2">
               <Label>Описание</Label>
               <Textarea className="mt-1" rows={3} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Изображения товара</Label>
+              <div className="mt-2 border-2 border-dashed border-border rounded-lg p-4 bg-muted/30">
+                {uploadedImages.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {uploadedImages.map((img, idx) => (
+                        <div key={idx} className="relative group">
+                          <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden">
+                            <img src={img} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setUploadedImages(uploadedImages.filter((_, i) => i !== idx))}
+                            className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <label className="block">
+                      <div className="cursor-pointer flex items-center justify-center gap-2 py-3 px-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                        <Upload className="h-4 w-4" />
+                        <span className="text-sm">Добавить ещё изображение</span>
+                      </div>
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          Array.from(e.target.files || []).forEach((file) => {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result && typeof event.target.result === 'string') {
+                                setUploadedImages(prev => [...prev, event.target.result]);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                        }}
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <label className="block">
+                    <div className="cursor-pointer text-center py-8">
+                      <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm font-medium mb-1">Перетащите изображения сюда</p>
+                      <p className="text-xs text-muted-foreground mb-3">или нажмите для выбора</p>
+                    </div>
+                    <input 
+                      type="file" 
+                      multiple 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        Array.from(e.target.files || []).forEach((file) => {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result && typeof event.target.result === 'string') {
+                              setUploadedImages(prev => [...prev, event.target.result]);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              {uploadedImages.length === 0 && (
+                <p className="text-xs text-destructive mt-1">* Требуется минимум одно изображение</p>
+              )}
             </div>
           </div>
           <DialogFooter>

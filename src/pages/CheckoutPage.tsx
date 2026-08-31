@@ -12,6 +12,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { useCartStore } from '@/store/cartStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useAuthStore } from '@/store/authStore';
+import { sendOrderToTelegram } from '@/lib/telegram';
 import { toast } from 'sonner';
 import type { CheckoutForm } from '@/types';
 
@@ -55,7 +56,9 @@ export default function CheckoutPage() {
     return null;
   }
 
-  const onSubmit = (data: CheckoutForm) => {
+  const onSubmit = async (data: CheckoutForm) => {
+    console.log('🛒 Form submitted:', data);
+    
     const order = addOrder({
       customerId: user?.id || 'guest',
       customerName: `${data.firstName} ${data.lastName}`,
@@ -75,6 +78,14 @@ export default function CheckoutPage() {
       district: data.district,
       comment: data.comment,
     });
+
+    console.log('✅ Order created:', order);
+    
+    // Отправить заказ в Telegram
+    console.log('📤 Sending order to Telegram...');
+    await sendOrderToTelegram(order);
+    console.log('✅ Telegram notification completed');
+
     clearCart();
     toast.success(`Заказ ${order.orderNumber} успешно оформлен!`);
     navigate('/account');

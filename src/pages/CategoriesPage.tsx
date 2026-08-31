@@ -1,8 +1,9 @@
 import CategoryCard from '@/components/shared/CategoryCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { categories } from '@/lib/mockData';
+import { getCategories } from '@/lib/getStorageData';
 
 export default function CategoriesPage() {
+  const categories = getCategories();
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
       <Breadcrumb items={[{ label: 'Категории' }]} />

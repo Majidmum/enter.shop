@@ -6,11 +6,13 @@ import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { Badge } from '@/components/ui/badge';
-import { products, promotions } from '@/lib/mockData';
+import { getProducts } from '@/lib/getStorageData';
+import { promotions } from '@/lib/mockData';
 
 const PAGE_SIZE = 12;
 
 export default function SalePage() {
+  const products = getProducts();
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('discount');
 

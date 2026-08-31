@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +13,19 @@ import type { Category } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminCategories() {
-  const [items, setItems] = useState<Category[]>(initialCats);
+  const [items, setItems] = useState<Category[]>(() => {
+    if (typeof window === 'undefined') return initialCats;
+    const saved = localStorage.getItem('admin_categories');
+    return saved ? JSON.parse(saved) : initialCats;
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Category>>({ name: '', slug: '' });
+
+  useEffect(() => {
+    localStorage.setItem('admin_categories', JSON.stringify(items));
+  }, [items]);
 
   const openNew = () => { setEditing(null); setDraft({ name: '', slug: '', productCount: 0 }); setOpen(true); };
   const openEdit = (c: Category) => { setEditing(c); setDraft({ ...c }); setOpen(true); };

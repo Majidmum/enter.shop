@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,19 @@ import type { Promotion } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminPromotions() {
-  const [items, setItems] = useState<Promotion[]>(initialPromos);
+  const [items, setItems] = useState<Promotion[]>(() => {
+    if (typeof window === 'undefined') return initialPromos;
+    const saved = localStorage.getItem('admin_promotions');
+    return saved ? JSON.parse(saved) : initialPromos;
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Promotion | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Promotion>>({});
+
+  useEffect(() => {
+    localStorage.setItem('admin_promotions', JSON.stringify(items));
+  }, [items]);
 
   const openNew = () => {
     setEditing(null);

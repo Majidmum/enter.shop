@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/shared/ProductCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { products } from '@/lib/mockData';
+import { getProducts } from '@/lib/getStorageData';
 import { reviews as allReviews } from '@/lib/mockData';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
+  const products = getProducts();
   const product = products.find((p) => p.slug === slug);
   const [activeImg, setActiveImg] = useState(0);
   const [quantity, setQuantity] = useState(1);

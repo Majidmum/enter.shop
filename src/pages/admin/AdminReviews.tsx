@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, CheckCircle, XCircle, Trash2, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, CheckCircle, XCircle, Trash2, Star, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -27,10 +27,19 @@ const STATUS_BADGE: Record<Review['status'], string> = {
 };
 
 export default function AdminReviews() {
-  const [items, setItems] = useState<Review[]>(seedReviews);
+  const [items, setItems] = useState<Review[]>(() => {
+    if (typeof window === 'undefined') return seedReviews;
+    const saved = localStorage.getItem('admin_reviews');
+    return saved ? JSON.parse(saved) : seedReviews;
+  });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('admin_reviews', JSON.stringify(items));
+  }, [items]);
 
   const filtered = items.filter((r) => {
     const matchSearch = r.authorName.toLowerCase().includes(search.toLowerCase())
@@ -41,22 +50,36 @@ export default function AdminReviews() {
   });
 
   const updateStatus = (id: string, status: Review['status']) => {
+    console.log('updateStatus called with id:', id, 'status:', status);
     setItems((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
     const labels: Record<Review['status'], string> = { approved: 'Отзыв одобрен', pending: 'Отзыв на модерации', rejected: 'Отзыв отклонён' };
     toast.success(labels[status]);
+    setSuccessMessage(labels[status]);
+    setTimeout(() => setSuccessMessage(''), 3000);
+    console.log('Toast called:', labels[status]);
   };
 
   const handleDelete = () => {
+    console.log('handleDelete called with deleteId:', deleteId);
     if (!deleteId) return;
     setItems((prev) => prev.filter((r) => r.id !== deleteId));
     setDeleteId(null);
     toast.success('Отзыв удалён');
+    setSuccessMessage('Отзыв успешно удалён');
+    setTimeout(() => setSuccessMessage(''), 3000);
+    console.log('Delete completed and toast called');
   };
 
   const pending = items.filter((r) => r.status === 'pending').length;
 
   return (
     <div className="flex flex-col gap-4">
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 font-medium flex items-center gap-2 animate-in">
+          <CheckCircle className="h-4 w-4" />
+          {successMessage}
+        </div>
+      )}
       {pending > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800 font-medium">
           {pending} отзыв{pending === 1 ? '' : pending < 5 ? 'а' : 'ов'} ожидает модерации

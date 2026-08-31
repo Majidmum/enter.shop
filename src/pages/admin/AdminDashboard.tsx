@@ -2,7 +2,8 @@ import { ShoppingBag, Users, Package, TrendingUp, ArrowUpRight, Clock } from 'lu
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { useOrdersStore } from '@/store/ordersStore';
-import { products, customers } from '@/lib/mockData';
+import { getProducts } from '@/lib/getStorageData';
+import { customers } from '@/lib/mockData';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
 
 const salesData = [
@@ -16,9 +17,9 @@ const salesData = [
   { month: 'Aug', revenue: 91000, orders: 61 },
 ];
 
-const topProducts = products.filter((p) => p.isFeatured).slice(0, 5);
-
 export default function AdminDashboard() {
+  const products = getProducts();
+  const topProducts = products.filter((p) => p.isFeatured).slice(0, 5);
   const orders = useOrdersStore((s) => s.orders);
   const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
   const newOrders = orders.filter((o) => o.status === 'new').length;

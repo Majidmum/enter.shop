@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Save, CheckCircle } from 'lucide-react';
+import { Save, CheckCircle, AlertCircle, Loader2, Mail, MessageCircle, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { useNotificationStore } from '@/store/notificationStore';
+import { testTelegramSettings } from '@/lib/telegram';
 
 interface Settings {
   storeName: string;
@@ -24,6 +26,20 @@ interface Settings {
   instagram: string;
   telegram: string;
   whatsapp: string;
+  telegramBotToken: string;
+  telegramChatId: string;
+  whatsappNumber: string;
+  notificationEmail: string;
+  ordersChannels: {
+    telegram: boolean;
+    whatsapp: boolean;
+    email: boolean;
+  };
+  contactsChannels: {
+    telegram: boolean;
+    whatsapp: boolean;
+    email: boolean;
+  };
 }
 
 const defaultSettings: Settings = {
@@ -43,6 +59,20 @@ const defaultSettings: Settings = {
   instagram: 'https://instagram.com/entertj',
   telegram: 'https://t.me/entertj',
   whatsapp: '+992555000070',
+  telegramBotToken: '',
+  telegramChatId: '',
+  whatsappNumber: '',
+  notificationEmail: '',
+  ordersChannels: {
+    telegram: false,
+    whatsapp: false,
+    email: false,
+  },
+  contactsChannels: {
+    telegram: false,
+    whatsapp: false,
+    email: false,
+  },
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -55,8 +85,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function AdminSettings() {
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const notificationSettings = useNotificationStore((s) => s.settings);
+  const updateNotificationSettings = useNotificationStore((s) => s.updateSettings);
+
+  const [settings, setSettings] = useState<Settings>({
+    ...defaultSettings,
+    ...notificationSettings,
+  });
   const [saved, setSaved] = useState(false);
+  const [testingTelegram, setTestingTelegram] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const set = (key: keyof Settings, value: Settings[keyof Settings]) => {
     setSaved(false);
@@ -65,7 +103,36 @@ export default function AdminSettings() {
 
   const handleSave = () => {
     setSaved(true);
+
+    // Сохранить все уведомления настройки в хранилище
+    updateNotificationSettings({
+      telegramBotToken: settings.telegramBotToken,
+      telegramChatId: settings.telegramChatId,
+      whatsappNumber: settings.whatsappNumber,
+      notificationEmail: settings.notificationEmail,
+      ordersChannels: settings.ordersChannels,
+      contactsChannels: settings.contactsChannels,
+    });
+
     toast.success('Настройки сохранены');
+  };
+
+  const handleTestTelegram = async () => {
+    if (!settings.telegramBotToken || !settings.telegramChatId) {
+      toast.error('Заполните токен бота и ID чата');
+      return;
+    }
+
+    setTestingTelegram(true);
+    const result = await testTelegramSettings(settings.telegramBotToken, settings.telegramChatId);
+    setTestResult(result);
+    setTestingTelegram(false);
+
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
   };
 
   return (
@@ -150,6 +217,88 @@ export default function AdminSettings() {
           <Input className="mt-1" type="email" value={settings.notifEmail}
             onChange={(e) => set('notifEmail', e.target.value)} />
           <p className="text-xs text-muted-foreground mt-1">Уведомления о новых заказах будут приходить на этот email</p>
+        </div>
+      </Section>
+
+      {/* Telegram Notifications */}
+      <Section title="Telegram-уведомления">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/40">
+            <div>
+              <p className="font-medium text-sm">Включить Telegram-уведомления</p>
+              <p className="text-xs text-muted-foreground">Отправлять заявки и заказы в Telegram</p>
+            </div>
+            <Switch
+              checked={settings.enableTelegramNotifications}
+              onCheckedChange={(v) => set('enableTelegramNotifications', v)}
+            />
+          </div>
+
+          {settings.enableTelegramNotifications && (
+            <>
+              <div>
+                <Label>Токен Telegram Bot</Label>
+                <Input
+                  className="mt-1 font-mono text-xs"
+                  type="password"
+                  placeholder="123456789:ABCDefGHIjklmnOPqrstuvWxyzABCDefGHI"
+                  value={settings.telegramBotToken}
+                  onChange={(e) => set('telegramBotToken', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  <a href="https://t.me/botfather" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    Получить токен от @BotFather
+                  </a>
+                </p>
+              </div>
+
+              <div>
+                <Label>Chat ID (ID чата Telegram)</Label>
+                <Input
+                  className="mt-1 font-mono"
+                  placeholder="-987654321"
+                  value={settings.telegramChatId}
+                  onChange={(e) => set('telegramChatId', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Отрицательное число (например: -987654321) для групп, или положительное для личных чатов
+                </p>
+              </div>
+
+              {testResult && (
+                <div className={`p-3 rounded-lg flex items-start gap-2 ${
+                  testResult.success
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-red-50 border border-red-200'
+                }`}>
+                  {testResult.success ? (
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  )}
+                  <p className={`text-sm ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                    {testResult.message}
+                  </p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleTestTelegram}
+                disabled={testingTelegram || !settings.telegramBotToken || !settings.telegramChatId}
+                variant="outline"
+                className="w-full"
+              >
+                {testingTelegram ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Проверка...
+                  </>
+                ) : (
+                  'Отправить тестовое сообщение'
+                )}
+              </Button>
+            </>
+          )}
         </div>
       </Section>
 

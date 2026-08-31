@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Check, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,19 @@ import type { Banner } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminBanners() {
-  const [items, setItems] = useState<Banner[]>([...initialBanners].sort((a, b) => a.order - b.order));
+  const [items, setItems] = useState<Banner[]>(() => {
+    if (typeof window === 'undefined') return [...initialBanners].sort((a, b) => a.order - b.order);
+    const saved = localStorage.getItem('admin_banners');
+    return saved ? JSON.parse(saved).sort((a, b) => a.order - b.order) : [...initialBanners].sort((a, b) => a.order - b.order);
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Banner | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Banner>>({});
+
+  useEffect(() => {
+    localStorage.setItem('admin_banners', JSON.stringify(items));
+  }, [items]);
 
   const openNew = () => {
     setEditing(null);

@@ -4,14 +4,18 @@ import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star,
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
 import CategoryCard from '@/components/shared/CategoryCard';
-import { products, categories, banners, reviews, brands } from '@/lib/mockData';
+import { getProducts, getCategories, getBanners, getBrands } from '@/lib/getStorageData';
+import { reviews } from '@/lib/mockData';
 
 export default function HomePage() {
+  const products = getProducts();
+  const categories = getCategories();
+  const banners = getBanners();
+  const brands = getBrands();
   const [bannerIdx, setBannerIdx] = useState(0);
   const activeBanners = banners.filter((b) => b.status === 'active');
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 8);
   const newProducts = products.filter((p) => p.isNew).slice(0, 8);
-  const saleProducts = products.filter((p) => p.discount).slice(0, 8);
   const approvedReviews = reviews.filter((r) => r.status === 'approved').slice(0, 4);
 
   useEffect(() => {

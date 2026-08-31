@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { products, categories, brands } from '@/lib/mockData';
+import { getProducts, getCategories, getBrands } from '@/lib/getStorageData';
 
 const PAGE_SIZE = 12;
 
@@ -19,6 +19,9 @@ type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'new';
 export default function CatalogPage() {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
+  const products = getProducts();
+  const categories = getCategories();
+  const brands = getBrands();
 
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortOption>('featured');

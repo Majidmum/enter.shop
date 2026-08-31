@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +13,19 @@ import type { Brand } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminBrands() {
-  const [items, setItems] = useState<Brand[]>(initialBrands);
+  const [items, setItems] = useState<Brand[]>(() => {
+    if (typeof window === 'undefined') return initialBrands;
+    const saved = localStorage.getItem('admin_brands');
+    return saved ? JSON.parse(saved) : initialBrands;
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Brand | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Brand>>({});
+
+  useEffect(() => {
+    localStorage.setItem('admin_brands', JSON.stringify(items));
+  }, [items]);
 
   const openNew = () => {
     setEditing(null);

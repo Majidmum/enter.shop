@@ -7,12 +7,15 @@ import { Slider } from '@/components/ui/slider';
 import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { products, categories, brands } from '@/lib/mockData';
+import { getProducts, getCategories, getBrands } from '@/lib/getStorageData';
 
 const PAGE_SIZE = 12;
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
+  const products = getProducts();
+  const categories = getCategories();
+  const brands = getBrands();
   const category = categories.find((c) => c.slug === slug);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('featured');

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import Breadcrumb from '@/components/shared/Breadcrumb';
+import { sendContactFormToTelegram } from '@/lib/telegram';
 import { toast } from 'sonner';
 
 const schema = z.object({
@@ -34,8 +35,14 @@ export default function ContactsPage() {
     defaultValues: { name: '', phone: '', email: '', message: '' },
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log('Contact form submitted:', data);
+  const onSubmit = async (data: FormData) => {
+    console.log('📝 Contact form submitted:', data);
+    
+    // Отправить заявку в Telegram
+    console.log('📤 Sending contact form to Telegram...');
+    await sendContactFormToTelegram(data);
+    console.log('✅ Telegram notification completed');
+    
     setSent(true);
     toast.success('Сообщение отправлено! Мы свяжемся с вами в ближайшее время.');
   };
