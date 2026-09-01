@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/shared/ProductCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { fetchProducts } from '@/lib/supabaseData';
-import { reviews as allReviews } from '@/lib/mockData';
+import { fetchProducts, fetchApprovedReviews, createReview } from '@/lib/supabaseData';
+import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { toast } from 'sonner';
-import type { Product } from '@/types';
+import type { Product, Review } from '@/types';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -19,12 +19,25 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [productReviews, setProductReviews] = useState<Review[]>([]);
+  const [reviewName, setReviewName] = useState('');
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHoverRating, setReviewHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     fetchProducts().then(setProducts).finally(() => setLoading(false));
   }, []);
 
   const product = products.find((p) => p.slug === slug);
+
+  useEffect(() => {
+    if (!product) return;
+    fetchApprovedReviews(product.id).then(setProductReviews);
+    if (user?.name) setReviewName(user.name);
+  }, [product?.id]);
 
   const addToCart = useCartStore((s) => s.addItem);
   const { toggle, isFavorite } = useFavoritesStore();
@@ -43,7 +56,6 @@ export default function ProductPage() {
   }
 
   const fav = isFavorite(product.id);
-  const productReviews = allReviews.filter((r) => r.productId === product.id && r.status === 'approved');
   const similar = products.filter((p) => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4);
 
   const handleAddToCart = () => {
@@ -54,6 +66,30 @@ export default function ProductPage() {
   const handleBuyNow = () => {
     addToCart(product, quantity);
     window.location.href = '/checkout';
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewName.trim()) { toast.error('Введите ваше имя'); return; }
+    if (reviewRating === 0) { toast.error('Поставьте оценку — нажмите на звёзды'); return; }
+    if (!reviewText.trim()) { toast.error('Напишите текст отзыва'); return; }
+
+    setSubmittingReview(true);
+    try {
+      await createReview({
+        productId: product.id,
+        productName: product.name,
+        authorName: reviewName.trim(),
+        rating: reviewRating,
+        text: reviewText.trim(),
+      });
+      toast.success('Спасибо! Отзыв отправлен на модерацию и появится после проверки.');
+      setReviewRating(0);
+      setReviewText('');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось отправить отзыв');
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   return (
@@ -224,8 +260,60 @@ export default function ProductPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">Отзывов пока нет.</p>
+                <p className="text-muted-foreground text-sm">Отзывов пока нет. Будьте первым!</p>
               )}
+            </div>
+
+            {/* Форма добавления отзыва */}
+            <div className="rounded-xl bg-card border border-border p-5 mt-4">
+              <h3 className="font-semibold mb-3">Оставить отзыв</h3>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваша оценка *</label>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const value = i + 1;
+                      const filled = value <= (reviewHoverRating || reviewRating);
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setReviewRating(value)}
+                          onMouseEnter={() => setReviewHoverRating(value)}
+                          onMouseLeave={() => setReviewHoverRating(0)}
+                          className="p-0.5"
+                          aria-label={`Оценка ${value} из 5`}
+                        >
+                          <Star className={`h-6 w-6 transition-colors ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваше имя *</label>
+                  <input
+                    value={reviewName}
+                    onChange={(e) => setReviewName(e.target.value)}
+                    placeholder="Например: Рустам К."
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Текст отзыва *</label>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    rows={3}
+                    placeholder="Расскажите о своём опыте использования товара..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
+                  />
+                </div>
+                <Button onClick={handleSubmitReview} disabled={submittingReview} className="self-start bg-primary hover:bg-primary/90 text-white">
+                  {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
+                </Button>
+                <p className="text-xs text-muted-foreground">Отзыв появится на сайте после проверки модератором.</p>
+              </div>
             </div>
           </TabsContent>
 

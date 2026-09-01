@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Tag, ShoppingBag, Users, Star, Megaphone, Image,
-  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight,
+  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight, Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -16,6 +16,7 @@ const navItems = [
   { href: '/admin/customers', label: 'Клиенты', icon: Users },
   { href: '/admin/brands',     label: 'Бренды',      icon: Bookmark },
   { href: '/admin/promotions', label: 'Акции',  icon: Megaphone },
+  { href: '/admin/office', label: 'Офис под ключ', icon: Building2 },
   { href: '/admin/banners',    label: 'Баннеры',     icon: Image },
   { href: '/admin/reviews',    label: 'Отзывы',     icon: Star },
   { href: '/admin/settings', label: 'Настройки', icon: Settings },

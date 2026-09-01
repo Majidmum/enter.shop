@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -215,6 +215,222 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
 
 export async function deleteProduct(id: string): Promise<void> {
   const { error } = await supabase.from('products').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ============================================================================
+// ОТЗЫВЫ
+// ============================================================================
+
+const REVIEW_SELECT = '*, products(name)';
+
+function rowToReview(row: any): Review {
+  return {
+    id: row.id,
+    productId: row.product_id,
+    productName: row.products?.name || '',
+    authorName: row.author_name,
+    rating: row.rating,
+    text: row.text || '',
+    date: row.created_at ? String(row.created_at).split('T')[0] : '',
+    status: row.status,
+  };
+}
+
+/** Все отзывы, включая ожидающие модерации — только для админки (требует роль admin). */
+export async function fetchReviews(): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select(REVIEW_SELECT)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(rowToReview);
+}
+
+/** Только одобренные отзывы — доступно всем посетителям сайта. */
+export async function fetchApprovedReviews(productId?: string): Promise<Review[]> {
+  let query = supabase
+    .from('reviews')
+    .select(REVIEW_SELECT)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false });
+  if (productId) query = query.eq('product_id', productId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(rowToReview);
+}
+
+/**
+ * Клиент оставляет отзыв. Новый отзыв уходит со статусом 'pending' —
+ * он появится на сайте только после того, как админ его одобрит в AdminReviews.
+ * ID генерируем на клиенте, чтобы не делать select() сразу после insert()
+ * (гостю по RLS не разрешено читать ещё не одобренные отзывы, даже свои).
+ */
+export async function createReview(input: {
+  productId: string;
+  productName?: string;
+  authorName: string;
+  rating: number;
+  text: string;
+}): Promise<Review> {
+  const id = crypto.randomUUID();
+  const { error } = await supabase.from('reviews').insert({
+    id,
+    product_id: input.productId,
+    author_name: input.authorName,
+    rating: input.rating,
+    text: input.text,
+    status: 'pending',
+  });
+  if (error) throw error;
+  return {
+    id,
+    productId: input.productId,
+    productName: input.productName || '',
+    authorName: input.authorName,
+    rating: input.rating,
+    text: input.text,
+    date: new Date().toISOString().split('T')[0],
+    status: 'pending',
+  };
+}
+
+/** Админ одобряет/отклоняет отзыв. */
+export async function updateReviewStatus(
+  id: string,
+  status: 'pending' | 'approved' | 'rejected'
+): Promise<Review> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .update({ status })
+    .eq('id', id)
+    .select(REVIEW_SELECT)
+    .single();
+  if (error) throw error;
+  return rowToReview(data);
+}
+
+/** Админ вручную меняет оценку (звёзды) отзыва. */
+export async function updateReviewRating(id: string, rating: number): Promise<Review> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .update({ rating })
+    .eq('id', id)
+    .select(REVIEW_SELECT)
+    .single();
+  if (error) throw error;
+  return rowToReview(data);
+}
+
+export async function deleteReview(id: string): Promise<void> {
+  const { error } = await supabase.from('reviews').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ============================================================================
+// ОФИС ПОД КЛЮЧ
+// ============================================================================
+
+export interface OfficePackage {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  priceLabel: string;
+  employeesLabel?: string;
+  features: string[];
+  image?: string;
+  isPopular: boolean;
+  status: 'active' | 'inactive';
+  sortOrder: number;
+}
+
+function rowToOfficePackage(row: any): OfficePackage {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug || undefined,
+    description: row.description || undefined,
+    priceLabel: row.price_label,
+    employeesLabel: row.employees_label || undefined,
+    features: row.features || [],
+    image: row.image || undefined,
+    isPopular: !!row.is_popular,
+    status: row.status,
+    sortOrder: row.sort_order ?? 0,
+  };
+}
+
+/** Публичный каталог — только активные пакеты, по порядку сортировки. */
+export async function fetchActiveOfficePackages(): Promise<OfficePackage[]> {
+  const { data, error } = await supabase
+    .from('office_packages')
+    .select('*')
+    .eq('status', 'active')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(rowToOfficePackage);
+}
+
+/** Для админки — вообще все пакеты, включая неактивные. */
+export async function fetchAllOfficePackages(): Promise<OfficePackage[]> {
+  const { data, error } = await supabase
+    .from('office_packages')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(rowToOfficePackage);
+}
+
+export interface OfficePackageInput {
+  name: string;
+  slug?: string;
+  description?: string;
+  priceLabel: string;
+  employeesLabel?: string;
+  features: string[];
+  image?: string;
+  isPopular?: boolean;
+  status?: 'active' | 'inactive';
+  sortOrder?: number;
+}
+
+function officePackageToDbPatch(input: Partial<OfficePackageInput>) {
+  const patch: Record<string, unknown> = {};
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.slug !== undefined) patch.slug = input.slug;
+  if (input.description !== undefined) patch.description = input.description;
+  if (input.priceLabel !== undefined) patch.price_label = input.priceLabel;
+  if (input.employeesLabel !== undefined) patch.employees_label = input.employeesLabel;
+  if (input.features !== undefined) patch.features = input.features;
+  if (input.image !== undefined) patch.image = input.image;
+  if (input.isPopular !== undefined) patch.is_popular = input.isPopular;
+  if (input.status !== undefined) patch.status = input.status;
+  if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  return patch;
+}
+
+export async function createOfficePackage(input: OfficePackageInput): Promise<OfficePackage> {
+  const payload = officePackageToDbPatch(input);
+  if (!payload.slug) payload.slug = slugify(input.name);
+  const { data, error } = await supabase.from('office_packages').insert(payload).select().single();
+  if (error) throw error;
+  return rowToOfficePackage(data);
+}
+
+export async function updateOfficePackage(id: string, patch: Partial<OfficePackageInput>): Promise<OfficePackage> {
+  const { data, error } = await supabase
+    .from('office_packages')
+    .update(officePackageToDbPatch(patch))
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return rowToOfficePackage(data);
+}
+
+export async function deleteOfficePackage(id: string): Promise<void> {
+  const { error } = await supabase.from('office_packages').delete().eq('id', id);
   if (error) throw error;
 }
 

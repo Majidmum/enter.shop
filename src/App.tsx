@@ -36,6 +36,7 @@ import AdminOrders from '@/pages/admin/AdminOrders';
 import AdminCustomers from '@/pages/admin/AdminCustomers';
 import AdminBrands from '@/pages/admin/AdminBrands';
 import AdminPromotions from '@/pages/admin/AdminPromotions';
+import AdminOfficePackages from '@/pages/admin/AdminOfficePackages';
 import AdminBanners from '@/pages/admin/AdminBanners';
 import AdminReviews from '@/pages/admin/AdminReviews';
 import AdminSettings from '@/pages/admin/AdminSettings';
@@ -85,6 +86,7 @@ const App: React.FC = () => {
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="brands" element={<AdminBrands />} />
           <Route path="promotions" element={<AdminPromotions />} />
+          <Route path="office" element={<AdminOfficePackages />} />
           <Route path="banners" element={<AdminBanners />} />
           <Route path="reviews" element={<AdminReviews />} />
           <Route path="settings" element={<AdminSettings />} />

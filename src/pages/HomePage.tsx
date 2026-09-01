@@ -5,26 +5,25 @@ import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
 import CategoryCard from '@/components/shared/CategoryCard';
 import { getBanners } from '@/lib/getStorageData';
-import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
-import { reviews } from '@/lib/mockData';
-import type { Product, Category, Brand } from '@/types';
+import { fetchProducts, fetchCategories, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
+import type { Product, Category, Brand, Review } from '@/types';
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
   const banners = getBanners();
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
-      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); });
+    Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchApprovedReviews()])
+      .then(([p, c, b, r]) => { setProducts(p); setCategories(c); setBrands(b); setApprovedReviews(r.slice(0, 4)); });
   }, []);
 
   const [bannerIdx, setBannerIdx] = useState(0);
   const activeBanners = banners.filter((b) => b.status === 'active');
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 8);
   const newProducts = products.filter((p) => p.isNew).slice(0, 8);
-  const approvedReviews = reviews.filter((r) => r.status === 'approved').slice(0, 4);
 
   useEffect(() => {
     const t = setInterval(() => setBannerIdx((i) => (i + 1) % activeBanners.length), 5000);

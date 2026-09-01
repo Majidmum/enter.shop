@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Building2, Monitor, Printer, Network, Users, CheckCircle, ArrowRight } from 'lucide-react';
+import { Building2, Monitor, Printer, Network, Users, CheckCircle, ArrowRight, Star } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { toast } from 'sonner';
 import { sendContactFormToTelegram } from '@/lib/telegram';
+import { fetchActiveOfficePackages, type OfficePackage } from '@/lib/supabaseData';
 
 const schema = z.object({
   company: z.string().min(2, 'Введите название компании'),
@@ -23,35 +24,16 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const packages = [
-  {
-    name: 'Стартер',
-    desc: 'Для 1–5 сотрудников',
-    price: 'от 15 000 сомони',
-    color: 'border-border',
-    includes: ['5 рабочих мест', 'Монитор + ПК/Ноутбук', 'Клавиатура и мышь', 'Настройка сети', 'Доставка и установка'],
-  },
-  {
-    name: 'Бизнес',
-    desc: 'Для 5–20 сотрудников',
-    price: 'от 60 000 сомони',
-    color: 'border-primary',
-    badge: 'Популярный',
-    includes: ['20 рабочих мест', 'Эргономичная мебель', 'Принтер и МФУ', 'Сетевое оборудование', 'Полная IT-настройка', 'Доставка и установка'],
-  },
-  {
-    name: 'Корпоративный',
-    desc: 'Для 20+ сотрудников',
-    price: 'Индивидуальная цена',
-    color: 'border-border',
-    includes: ['Неограниченные рабочие места', 'Премиум мебель', 'Серверная комната', 'Полная сеть', 'IT-поддержка', 'Индивидуальное решение'],
-  },
-];
-
 import { Armchair } from 'lucide-react';
 
 export default function OfficePage() {
   const [sent, setSent] = useState(false);
+  const [packages, setPackages] = useState<OfficePackage[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActiveOfficePackages().then(setPackages).finally(() => setPackagesLoading(false));
+  }, []);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -152,38 +134,63 @@ const onSubmit = async (data: FormData) => {
         </div>
       </section>
 
-      {/* Packages */}
+      {/* Packages — современный каталог */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-2xl font-bold text-center mb-10">Готовые пакеты</h2>
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {packages.map((pkg) => (
-            <div key={pkg.name} className={`relative bg-card border-2 rounded-2xl p-6 card-shadow flex flex-col ${pkg.color}`}>
-              {pkg.badge && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {pkg.badge}
-                </span>
-              )}
-              <h3 className="text-xl font-bold">{pkg.name}</h3>
-              <p className="text-sm text-muted-foreground mb-2">{pkg.desc}</p>
-              <p className="text-2xl font-black text-primary mb-4">{pkg.price}</p>
-              <ul className="flex flex-col gap-2 flex-1">
-                {pkg.includes.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                onClick={() => document.getElementById('office-form')?.scrollIntoView({ behavior: 'smooth' })}
-                className={`mt-5 w-full ${pkg.badge ? 'bg-primary text-white hover:bg-primary/90' : ''}`}
-                variant={pkg.badge ? 'default' : 'outline'}
+        <h2 className="text-2xl font-bold text-center mb-2">Готовые пакеты</h2>
+        <p className="text-muted-foreground text-center mb-10">Выберите подходящее решение или запросите индивидуальную конфигурацию</p>
+
+        {packagesLoading ? (
+          <div className="py-16 text-center text-muted-foreground">Загрузка...</div>
+        ) : packages.length === 0 ? (
+          <div className="py-16 text-center text-muted-foreground">Пакеты скоро появятся — свяжитесь с нами напрямую.</div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {packages.map((pkg) => (
+              <div
+                key={pkg.id}
+                className={`group relative flex flex-col rounded-2xl border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                  pkg.isPopular ? 'border-primary shadow-lg shadow-primary/10' : 'border-border card-shadow'
+                }`}
               >
-                Запросить цену
-              </Button>
-            </div>
-          ))}
-        </div>
+                {pkg.isPopular && (
+                  <div className="absolute top-0 inset-x-0 bg-primary text-white text-xs font-bold uppercase tracking-wider text-center py-1.5 flex items-center justify-center gap-1">
+                    <Star className="h-3 w-3 fill-white" /> Популярный выбор
+                  </div>
+                )}
+
+                <div className={`p-6 flex flex-col flex-1 ${pkg.isPopular ? 'pt-10' : ''}`}>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 mb-4 transition-transform duration-300 group-hover:scale-110">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+
+                  <h3 className="text-xl font-bold">{pkg.name}</h3>
+                  {pkg.employeesLabel && <p className="text-sm text-muted-foreground mt-0.5">{pkg.employeesLabel}</p>}
+                  <p className="text-2xl font-black text-primary mt-3 mb-1">{pkg.priceLabel}</p>
+                  {pkg.description && <p className="text-sm text-muted-foreground mb-3">{pkg.description}</p>}
+
+                  <div className="h-px bg-border my-4" />
+
+                  <ul className="flex flex-col gap-2.5 flex-1">
+                    {pkg.features.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button
+                    onClick={() => document.getElementById('office-form')?.scrollIntoView({ behavior: 'smooth' })}
+                    className={`mt-6 w-full font-semibold ${pkg.isPopular ? 'bg-primary text-white hover:bg-primary/90' : ''}`}
+                    variant={pkg.isPopular ? 'default' : 'outline'}
+                  >
+                    Запросить цену <ArrowRight className="h-4 w-4 ml-1.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Clients */}

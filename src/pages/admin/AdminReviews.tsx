@@ -1,24 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Search, CheckCircle, XCircle, Trash2, Star, AlertCircle } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Trash2, Star, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { fetchReviews, updateReviewStatus, deleteReview, updateReviewRating } from '@/lib/supabaseData';
 import type { Review } from '@/types';
 import { toast } from 'sonner';
-
-// Reviews mock (inline since not in mockData)
-const seedReviews: Review[] = [
-  { id: 'r1', productId: 'p1', productName: 'Ноутбук Acer Aspire A6270', authorName: 'Рустам К.', rating: 5, text: 'Отличный ноутбук! Отлично справляется с задачами, быстрая производительность.', date: '2026-07-10', status: 'approved' },
-  { id: 'r2', productId: 'p5', productName: 'HP Victus 15', authorName: 'Дилноза Р.', rating: 4, text: 'Хороший игровой ноутбук, все игры работают без проблем.', date: '2026-07-15', status: 'approved' },
-  { id: 'r3', productId: 'p12', productName: 'Принтер Epson EcoTank L3210', authorName: 'Фаррух И.', rating: 5, text: 'Невероятный принтер, чернила расходуются очень экономно.', date: '2026-07-20', status: 'pending' },
-  { id: 'r4', productId: 'p16', productName: 'Logitech MX Keys', authorName: 'Наргиза Б.', rating: 5, text: 'Лучшая клавиатура из всех. Подсветка просто фантастическая.', date: '2026-07-22', status: 'pending' },
-  { id: 'r5', productId: 'p13', productName: 'Эргономичное офисное кресло Pro', authorName: 'Алишер Н.', rating: 4, text: 'Удобное и качественное. Спина больше не болит.', date: '2026-07-25', status: 'approved' },
-  { id: 'r6', productId: 'p7', productName: 'ASUS Vivobook 15', authorName: 'Камола С.', rating: 3, text: 'Нормальный ноутбук, но немного греется под нагрузкой.', date: '2026-07-28', status: 'pending' },
-  { id: 'r7', productId: 'p17', productName: 'Logitech MX Master 3', authorName: 'Бобур Т.', rating: 5, text: 'Потрясающая мышь! Колесо прокрутки само по себе стоит своих денег.', date: '2026-07-30', status: 'approved' },
-  { id: 'r8', productId: 'p15', productName: 'Регулируемый офисный стол', authorName: 'Гулнора М.', rating: 4, text: 'Хороший стол, высота регулируется легко. Отлично смотрится в офисе.', date: '2026-08-01', status: 'rejected' },
-];
 
 const STATUS_BADGE: Record<Review['status'], string> = {
   approved: 'bg-green-100 text-green-700',
@@ -27,19 +16,20 @@ const STATUS_BADGE: Record<Review['status'], string> = {
 };
 
 export default function AdminReviews() {
-  const [items, setItems] = useState<Review[]>(() => {
-    if (typeof window === 'undefined') return seedReviews;
-    const saved = localStorage.getItem('admin_reviews');
-    return saved ? JSON.parse(saved) : seedReviews;
-  });
+  const [items, setItems] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [editingRatingId, setEditingRatingId] = useState<string | null>(null);
+  const [ratingDraft, setRatingDraft] = useState(0);
 
-  useEffect(() => {
-    localStorage.setItem('admin_reviews', JSON.stringify(items));
-  }, [items]);
+  const load = () => {
+    setLoading(true);
+    fetchReviews().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
 
   const filtered = items.filter((r) => {
     const matchSearch = r.authorName.toLowerCase().includes(search.toLowerCase())
@@ -49,38 +39,51 @@ export default function AdminReviews() {
     return matchSearch && matchStatus;
   });
 
-  const updateStatus = (id: string, status: Review['status']) => {
-    console.log('updateStatus called with id:', id, 'status:', status);
-    setItems((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
-    const labels: Record<Review['status'], string> = { approved: 'Отзыв одобрен', pending: 'Отзыв на модерации', rejected: 'Отзыв отклонён' };
-    toast.success(labels[status]);
-    setSuccessMessage(labels[status]);
-    setTimeout(() => setSuccessMessage(''), 3000);
-    console.log('Toast called:', labels[status]);
+  const updateStatus = async (id: string, status: Review['status']) => {
+    try {
+      const updated = await updateReviewStatus(id, status);
+      setItems((prev) => prev.map((r) => r.id === id ? updated : r));
+      const labels: Record<Review['status'], string> = { approved: 'Отзыв одобрен', pending: 'Отзыв на модерации', rejected: 'Отзыв отклонён' };
+      toast.success(labels[status]);
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить статус');
+    }
   };
-  
 
-  const handleDelete = () => {
-    console.log('handleDelete called with deleteId:', deleteId);
+  const handleDelete = async () => {
     if (!deleteId) return;
-    setItems((prev) => prev.filter((r) => r.id !== deleteId));
-    setDeleteId(null);
-    toast.success('Отзыв удалён');
-    setSuccessMessage('Отзыв успешно удалён');
-    setTimeout(() => setSuccessMessage(''), 3000);
-    console.log('Delete completed and toast called');
+    try {
+      await deleteReview(deleteId);
+      setItems((prev) => prev.filter((r) => r.id !== deleteId));
+      toast.success('Отзыв удалён');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить отзыв');
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const startEditRating = (r: Review) => {
+    setEditingRatingId(r.id);
+    setRatingDraft(r.rating);
+  };
+
+  const saveRating = async (id: string) => {
+    try {
+      const updated = await updateReviewRating(id, ratingDraft);
+      setItems((prev) => prev.map((r) => r.id === id ? updated : r));
+      toast.success('Оценка обновлена');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить оценку');
+    } finally {
+      setEditingRatingId(null);
+    }
   };
 
   const pending = items.filter((r) => r.status === 'pending').length;
 
   return (
     <div className="flex flex-col gap-4">
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 font-medium flex items-center gap-2 animate-in">
-          <CheckCircle className="h-4 w-4" />
-          {successMessage}
-        </div>
-      )}
       {pending > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800 font-medium">
           {pending} отзыв{pending === 1 ? '' : pending < 5 ? 'а' : 'ов'} ожидает модерации
@@ -114,11 +117,41 @@ export default function AdminReviews() {
                   <span className="text-xs text-primary font-medium">{r.productName}</span>
                   <span className="text-xs text-muted-foreground">{r.date}</span>
                 </div>
-                <div className="flex items-center gap-0.5 mb-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className={`h-3.5 w-3.5 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
-                  ))}
-                </div>
+
+                {/* Оценка звёздами — админ может кликнуть и поставить свою */}
+                {editingRatingId === r.id ? (
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: 5 }, (_, i) => {
+                        const value = i + 1;
+                        return (
+                          <button key={i} type="button" onClick={() => setRatingDraft(value)} className="p-0.5">
+                            <Star className={`h-4 w-4 transition-colors ${value <= ratingDraft ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => saveRating(r.id)}>
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground" onClick={() => setEditingRatingId(null)}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => startEditRating(r)}
+                    className="flex items-center gap-0.5 mb-2 group"
+                    title="Нажмите, чтобы изменить оценку"
+                  >
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`h-3.5 w-3.5 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
+                    ))}
+                    <Pencil className="h-3 w-3 ml-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                )}
+
                 <p className="text-sm text-muted-foreground leading-relaxed">{r.text}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -142,8 +175,11 @@ export default function AdminReviews() {
             </div>
           </div>
         ))}
-        {filtered.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm bg-card border border-border rounded-xl">Отзывы не найдены</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm bg-card border border-border rounded-xl">Загрузка...</div>
         )}
       </div>
 

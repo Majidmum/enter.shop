@@ -1,0 +1,1046 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index f896afd..2bb8d86 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -36,6 +36,7 @@ import AdminOrders from '@/pages/admin/AdminOrders';
+ import AdminCustomers from '@/pages/admin/AdminCustomers';
+ import AdminBrands from '@/pages/admin/AdminBrands';
+ import AdminPromotions from '@/pages/admin/AdminPromotions';
++import AdminOfficePackages from '@/pages/admin/AdminOfficePackages';
+ import AdminBanners from '@/pages/admin/AdminBanners';
+ import AdminReviews from '@/pages/admin/AdminReviews';
+ import AdminSettings from '@/pages/admin/AdminSettings';
+@@ -85,6 +86,7 @@ const App: React.FC = () => {
+           <Route path="customers" element={<AdminCustomers />} />
+           <Route path="brands" element={<AdminBrands />} />
+           <Route path="promotions" element={<AdminPromotions />} />
++          <Route path="office" element={<AdminOfficePackages />} />
+           <Route path="banners" element={<AdminBanners />} />
+           <Route path="reviews" element={<AdminReviews />} />
+           <Route path="settings" element={<AdminSettings />} />
+diff --git a/src/components/layouts/AdminLayout.tsx b/src/components/layouts/AdminLayout.tsx
+index 22adc40..5615013 100644
+--- a/src/components/layouts/AdminLayout.tsx
++++ b/src/components/layouts/AdminLayout.tsx
+@@ -2,7 +2,7 @@ import { useState } from 'react';
+ import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+ import {
+   LayoutDashboard, Package, Tag, ShoppingBag, Users, Star, Megaphone, Image,
+-  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight,
++  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight, Building2,
+ } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+@@ -16,6 +16,7 @@ const navItems = [
+   { href: '/admin/customers', label: 'Клиенты', icon: Users },
+   { href: '/admin/brands',     label: 'Бренды',      icon: Bookmark },
+   { href: '/admin/promotions', label: 'Акции',  icon: Megaphone },
++  { href: '/admin/office', label: 'Офис под ключ', icon: Building2 },
+   { href: '/admin/banners',    label: 'Баннеры',     icon: Image },
+   { href: '/admin/reviews',    label: 'Отзывы',     icon: Star },
+   { href: '/admin/settings', label: 'Настройки', icon: Settings },
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index d644a13..01ad13a 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -1,5 +1,5 @@
+ import { supabase } from '@/db/supabase';
+-import type { Product, Category, Brand, ProductSpec } from '@/types';
++import type { Product, Category, Brand, ProductSpec, Review } from '@/types';
+ 
+ // ============================================================================
+ // КАТЕГОРИИ
+@@ -218,6 +218,222 @@ export async function deleteProduct(id: string): Promise<void> {
+   if (error) throw error;
+ }
+ 
++// ============================================================================
++// ОТЗЫВЫ
++// ============================================================================
++
++const REVIEW_SELECT = '*, products(name)';
++
++function rowToReview(row: any): Review {
++  return {
++    id: row.id,
++    productId: row.product_id,
++    productName: row.products?.name || '',
++    authorName: row.author_name,
++    rating: row.rating,
++    text: row.text || '',
++    date: row.created_at ? String(row.created_at).split('T')[0] : '',
++    status: row.status,
++  };
++}
++
++/** Все отзывы, включая ожидающие модерации — только для админки (требует роль admin). */
++export async function fetchReviews(): Promise<Review[]> {
++  const { data, error } = await supabase
++    .from('reviews')
++    .select(REVIEW_SELECT)
++    .order('created_at', { ascending: false });
++  if (error) throw error;
++  return (data || []).map(rowToReview);
++}
++
++/** Только одобренные отзывы — доступно всем посетителям сайта. */
++export async function fetchApprovedReviews(productId?: string): Promise<Review[]> {
++  let query = supabase
++    .from('reviews')
++    .select(REVIEW_SELECT)
++    .eq('status', 'approved')
++    .order('created_at', { ascending: false });
++  if (productId) query = query.eq('product_id', productId);
++  const { data, error } = await query;
++  if (error) throw error;
++  return (data || []).map(rowToReview);
++}
++
++/**
++ * Клиент оставляет отзыв. Новый отзыв уходит со статусом 'pending' —
++ * он появится на сайте только после того, как админ его одобрит в AdminReviews.
++ * ID генерируем на клиенте, чтобы не делать select() сразу после insert()
++ * (гостю по RLS не разрешено читать ещё не одобренные отзывы, даже свои).
++ */
++export async function createReview(input: {
++  productId: string;
++  productName?: string;
++  authorName: string;
++  rating: number;
++  text: string;
++}): Promise<Review> {
++  const id = crypto.randomUUID();
++  const { error } = await supabase.from('reviews').insert({
++    id,
++    product_id: input.productId,
++    author_name: input.authorName,
++    rating: input.rating,
++    text: input.text,
++    status: 'pending',
++  });
++  if (error) throw error;
++  return {
++    id,
++    productId: input.productId,
++    productName: input.productName || '',
++    authorName: input.authorName,
++    rating: input.rating,
++    text: input.text,
++    date: new Date().toISOString().split('T')[0],
++    status: 'pending',
++  };
++}
++
++/** Админ одобряет/отклоняет отзыв. */
++export async function updateReviewStatus(
++  id: string,
++  status: 'pending' | 'approved' | 'rejected'
++): Promise<Review> {
++  const { data, error } = await supabase
++    .from('reviews')
++    .update({ status })
++    .eq('id', id)
++    .select(REVIEW_SELECT)
++    .single();
++  if (error) throw error;
++  return rowToReview(data);
++}
++
++/** Админ вручную меняет оценку (звёзды) отзыва. */
++export async function updateReviewRating(id: string, rating: number): Promise<Review> {
++  const { data, error } = await supabase
++    .from('reviews')
++    .update({ rating })
++    .eq('id', id)
++    .select(REVIEW_SELECT)
++    .single();
++  if (error) throw error;
++  return rowToReview(data);
++}
++
++export async function deleteReview(id: string): Promise<void> {
++  const { error } = await supabase.from('reviews').delete().eq('id', id);
++  if (error) throw error;
++}
++
++// ============================================================================
++// ОФИС ПОД КЛЮЧ
++// ============================================================================
++
++export interface OfficePackage {
++  id: string;
++  name: string;
++  slug?: string;
++  description?: string;
++  priceLabel: string;
++  employeesLabel?: string;
++  features: string[];
++  image?: string;
++  isPopular: boolean;
++  status: 'active' | 'inactive';
++  sortOrder: number;
++}
++
++function rowToOfficePackage(row: any): OfficePackage {
++  return {
++    id: row.id,
++    name: row.name,
++    slug: row.slug || undefined,
++    description: row.description || undefined,
++    priceLabel: row.price_label,
++    employeesLabel: row.employees_label || undefined,
++    features: row.features || [],
++    image: row.image || undefined,
++    isPopular: !!row.is_popular,
++    status: row.status,
++    sortOrder: row.sort_order ?? 0,
++  };
++}
++
++/** Публичный каталог — только активные пакеты, по порядку сортировки. */
++export async function fetchActiveOfficePackages(): Promise<OfficePackage[]> {
++  const { data, error } = await supabase
++    .from('office_packages')
++    .select('*')
++    .eq('status', 'active')
++    .order('sort_order', { ascending: true });
++  if (error) throw error;
++  return (data || []).map(rowToOfficePackage);
++}
++
++/** Для админки — вообще все пакеты, включая неактивные. */
++export async function fetchAllOfficePackages(): Promise<OfficePackage[]> {
++  const { data, error } = await supabase
++    .from('office_packages')
++    .select('*')
++    .order('sort_order', { ascending: true });
++  if (error) throw error;
++  return (data || []).map(rowToOfficePackage);
++}
++
++export interface OfficePackageInput {
++  name: string;
++  slug?: string;
++  description?: string;
++  priceLabel: string;
++  employeesLabel?: string;
++  features: string[];
++  image?: string;
++  isPopular?: boolean;
++  status?: 'active' | 'inactive';
++  sortOrder?: number;
++}
++
++function officePackageToDbPatch(input: Partial<OfficePackageInput>) {
++  const patch: Record<string, unknown> = {};
++  if (input.name !== undefined) patch.name = input.name;
++  if (input.slug !== undefined) patch.slug = input.slug;
++  if (input.description !== undefined) patch.description = input.description;
++  if (input.priceLabel !== undefined) patch.price_label = input.priceLabel;
++  if (input.employeesLabel !== undefined) patch.employees_label = input.employeesLabel;
++  if (input.features !== undefined) patch.features = input.features;
++  if (input.image !== undefined) patch.image = input.image;
++  if (input.isPopular !== undefined) patch.is_popular = input.isPopular;
++  if (input.status !== undefined) patch.status = input.status;
++  if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
++  return patch;
++}
++
++export async function createOfficePackage(input: OfficePackageInput): Promise<OfficePackage> {
++  const payload = officePackageToDbPatch(input);
++  if (!payload.slug) payload.slug = slugify(input.name);
++  const { data, error } = await supabase.from('office_packages').insert(payload).select().single();
++  if (error) throw error;
++  return rowToOfficePackage(data);
++}
++
++export async function updateOfficePackage(id: string, patch: Partial<OfficePackageInput>): Promise<OfficePackage> {
++  const { data, error } = await supabase
++    .from('office_packages')
++    .update(officePackageToDbPatch(patch))
++    .eq('id', id)
++    .select()
++    .single();
++  if (error) throw error;
++  return rowToOfficePackage(data);
++}
++
++export async function deleteOfficePackage(id: string): Promise<void> {
++  const { error } = await supabase.from('office_packages').delete().eq('id', id);
++  if (error) throw error;
++}
++
+ // ============================================================================
+ // УТИЛИТЫ
+ // ============================================================================
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 07d6e20..05df75e 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -5,26 +5,25 @@ import { Button } from '@/components/ui/button';
+ import ProductCard from '@/components/shared/ProductCard';
+ import CategoryCard from '@/components/shared/CategoryCard';
+ import { getBanners } from '@/lib/getStorageData';
+-import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+-import { reviews } from '@/lib/mockData';
+-import type { Product, Category, Brand } from '@/types';
++import { fetchProducts, fetchCategories, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
++import type { Product, Category, Brand, Review } from '@/types';
+ 
+ export default function HomePage() {
+   const [products, setProducts] = useState<Product[]>([]);
+   const [categories, setCategories] = useState<Category[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
++  const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
+   const banners = getBanners();
+ 
+   useEffect(() => {
+-    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
+-      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); });
++    Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchApprovedReviews()])
++      .then(([p, c, b, r]) => { setProducts(p); setCategories(c); setBrands(b); setApprovedReviews(r.slice(0, 4)); });
+   }, []);
+ 
+   const [bannerIdx, setBannerIdx] = useState(0);
+   const activeBanners = banners.filter((b) => b.status === 'active');
+   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 8);
+   const newProducts = products.filter((p) => p.isNew).slice(0, 8);
+-  const approvedReviews = reviews.filter((r) => r.status === 'approved').slice(0, 4);
+ 
+   useEffect(() => {
+     const t = setInterval(() => setBannerIdx((i) => (i + 1) % activeBanners.length), 5000);
+diff --git a/src/pages/OfficePage.tsx b/src/pages/OfficePage.tsx
+index b417987..6f12c93 100644
+--- a/src/pages/OfficePage.tsx
++++ b/src/pages/OfficePage.tsx
+@@ -1,8 +1,8 @@
+-import { useState } from 'react';
++import { useState, useEffect } from 'react';
+ import { useForm } from 'react-hook-form';
+ import { zodResolver } from '@hookform/resolvers/zod';
+ import { z } from 'zod';
+-import { Building2, Monitor, Printer, Network, Users, CheckCircle, ArrowRight } from 'lucide-react';
++import { Building2, Monitor, Printer, Network, Users, CheckCircle, ArrowRight, Star } from 'lucide-react';
+ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+ import { Input } from '@/components/ui/input';
+ import { Textarea } from '@/components/ui/textarea';
+@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+ import { toast } from 'sonner';
+ import { sendContactFormToTelegram } from '@/lib/telegram';
++import { fetchActiveOfficePackages, type OfficePackage } from '@/lib/supabaseData';
+ 
+ const schema = z.object({
+   company: z.string().min(2, 'Введите название компании'),
+@@ -23,35 +24,16 @@ const schema = z.object({
+ 
+ type FormData = z.infer<typeof schema>;
+ 
+-const packages = [
+-  {
+-    name: 'Стартер',
+-    desc: 'Для 1–5 сотрудников',
+-    price: 'от 15 000 сомони',
+-    color: 'border-border',
+-    includes: ['5 рабочих мест', 'Монитор + ПК/Ноутбук', 'Клавиатура и мышь', 'Настройка сети', 'Доставка и установка'],
+-  },
+-  {
+-    name: 'Бизнес',
+-    desc: 'Для 5–20 сотрудников',
+-    price: 'от 60 000 сомони',
+-    color: 'border-primary',
+-    badge: 'Популярный',
+-    includes: ['20 рабочих мест', 'Эргономичная мебель', 'Принтер и МФУ', 'Сетевое оборудование', 'Полная IT-настройка', 'Доставка и установка'],
+-  },
+-  {
+-    name: 'Корпоративный',
+-    desc: 'Для 20+ сотрудников',
+-    price: 'Индивидуальная цена',
+-    color: 'border-border',
+-    includes: ['Неограниченные рабочие места', 'Премиум мебель', 'Серверная комната', 'Полная сеть', 'IT-поддержка', 'Индивидуальное решение'],
+-  },
+-];
+-
+ import { Armchair } from 'lucide-react';
+ 
+ export default function OfficePage() {
+   const [sent, setSent] = useState(false);
++  const [packages, setPackages] = useState<OfficePackage[]>([]);
++  const [packagesLoading, setPackagesLoading] = useState(true);
++
++  useEffect(() => {
++    fetchActiveOfficePackages().then(setPackages).finally(() => setPackagesLoading(false));
++  }, []);
+ 
+   const form = useForm<FormData>({
+     resolver: zodResolver(schema),
+@@ -152,38 +134,63 @@ const onSubmit = async (data: FormData) => {
+         </div>
+       </section>
+ 
+-      {/* Packages */}
++      {/* Packages — современный каталог */}
+       <section className="container mx-auto px-4 py-12">
+-        <h2 className="text-2xl font-bold text-center mb-10">Готовые пакеты</h2>
+-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+-          {packages.map((pkg) => (
+-            <div key={pkg.name} className={`relative bg-card border-2 rounded-2xl p-6 card-shadow flex flex-col ${pkg.color}`}>
+-              {pkg.badge && (
+-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+-                  {pkg.badge}
+-                </span>
+-              )}
+-              <h3 className="text-xl font-bold">{pkg.name}</h3>
+-              <p className="text-sm text-muted-foreground mb-2">{pkg.desc}</p>
+-              <p className="text-2xl font-black text-primary mb-4">{pkg.price}</p>
+-              <ul className="flex flex-col gap-2 flex-1">
+-                {pkg.includes.map((item) => (
+-                  <li key={item} className="flex items-center gap-2 text-sm">
+-                    <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+-                    {item}
+-                  </li>
+-                ))}
+-              </ul>
+-              <Button
+-                onClick={() => document.getElementById('office-form')?.scrollIntoView({ behavior: 'smooth' })}
+-                className={`mt-5 w-full ${pkg.badge ? 'bg-primary text-white hover:bg-primary/90' : ''}`}
+-                variant={pkg.badge ? 'default' : 'outline'}
++        <h2 className="text-2xl font-bold text-center mb-2">Готовые пакеты</h2>
++        <p className="text-muted-foreground text-center mb-10">Выберите подходящее решение или запросите индивидуальную конфигурацию</p>
++
++        {packagesLoading ? (
++          <div className="py-16 text-center text-muted-foreground">Загрузка...</div>
++        ) : packages.length === 0 ? (
++          <div className="py-16 text-center text-muted-foreground">Пакеты скоро появятся — свяжитесь с нами напрямую.</div>
++        ) : (
++          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
++            {packages.map((pkg) => (
++              <div
++                key={pkg.id}
++                className={`group relative flex flex-col rounded-2xl border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
++                  pkg.isPopular ? 'border-primary shadow-lg shadow-primary/10' : 'border-border card-shadow'
++                }`}
+               >
+-                Запросить цену
+-              </Button>
+-            </div>
+-          ))}
+-        </div>
++                {pkg.isPopular && (
++                  <div className="absolute top-0 inset-x-0 bg-primary text-white text-xs font-bold uppercase tracking-wider text-center py-1.5 flex items-center justify-center gap-1">
++                    <Star className="h-3 w-3 fill-white" /> Популярный выбор
++                  </div>
++                )}
++
++                <div className={`p-6 flex flex-col flex-1 ${pkg.isPopular ? 'pt-10' : ''}`}>
++                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 mb-4 transition-transform duration-300 group-hover:scale-110">
++                    <Building2 className="h-5 w-5 text-primary" />
++                  </div>
++
++                  <h3 className="text-xl font-bold">{pkg.name}</h3>
++                  {pkg.employeesLabel && <p className="text-sm text-muted-foreground mt-0.5">{pkg.employeesLabel}</p>}
++                  <p className="text-2xl font-black text-primary mt-3 mb-1">{pkg.priceLabel}</p>
++                  {pkg.description && <p className="text-sm text-muted-foreground mb-3">{pkg.description}</p>}
++
++                  <div className="h-px bg-border my-4" />
++
++                  <ul className="flex flex-col gap-2.5 flex-1">
++                    {pkg.features.map((item) => (
++                      <li key={item} className="flex items-start gap-2 text-sm">
++                        <CheckCircle className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
++                        <span>{item}</span>
++                      </li>
++                    ))}
++                  </ul>
++
++                  <Button
++                    onClick={() => document.getElementById('office-form')?.scrollIntoView({ behavior: 'smooth' })}
++                    className={`mt-6 w-full font-semibold ${pkg.isPopular ? 'bg-primary text-white hover:bg-primary/90' : ''}`}
++                    variant={pkg.isPopular ? 'default' : 'outline'}
++                  >
++                    Запросить цену <ArrowRight className="h-4 w-4 ml-1.5" />
++                  </Button>
++                </div>
++              </div>
++            ))}
++          </div>
++        )}
+       </section>
+ 
+       {/* Clients */}
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index fd205b4..3f1aed4 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
+ import { Badge } from '@/components/ui/badge';
+ import ProductCard from '@/components/shared/ProductCard';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+-import { fetchProducts } from '@/lib/supabaseData';
+-import { reviews as allReviews } from '@/lib/mockData';
++import { fetchProducts, fetchApprovedReviews, createReview } from '@/lib/supabaseData';
++import { useAuthStore } from '@/store/authStore';
+ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
+ import { toast } from 'sonner';
+-import type { Product } from '@/types';
++import type { Product, Review } from '@/types';
+ 
+ export default function ProductPage() {
+   const { slug } = useParams<{ slug: string }>();
+@@ -19,6 +19,13 @@ export default function ProductPage() {
+   const [loading, setLoading] = useState(true);
+   const [activeImg, setActiveImg] = useState(0);
+   const [quantity, setQuantity] = useState(1);
++  const [productReviews, setProductReviews] = useState<Review[]>([]);
++  const [reviewName, setReviewName] = useState('');
++  const [reviewRating, setReviewRating] = useState(0);
++  const [reviewHoverRating, setReviewHoverRating] = useState(0);
++  const [reviewText, setReviewText] = useState('');
++  const [submittingReview, setSubmittingReview] = useState(false);
++  const user = useAuthStore((s) => s.user);
+ 
+   useEffect(() => {
+     fetchProducts().then(setProducts).finally(() => setLoading(false));
+@@ -26,6 +33,12 @@ export default function ProductPage() {
+ 
+   const product = products.find((p) => p.slug === slug);
+ 
++  useEffect(() => {
++    if (!product) return;
++    fetchApprovedReviews(product.id).then(setProductReviews);
++    if (user?.name) setReviewName(user.name);
++  }, [product?.id]);
++
+   const addToCart = useCartStore((s) => s.addItem);
+   const { toggle, isFavorite } = useFavoritesStore();
+ 
+@@ -43,7 +56,6 @@ export default function ProductPage() {
+   }
+ 
+   const fav = isFavorite(product.id);
+-  const productReviews = allReviews.filter((r) => r.productId === product.id && r.status === 'approved');
+   const similar = products.filter((p) => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4);
+ 
+   const handleAddToCart = () => {
+@@ -56,6 +68,30 @@ export default function ProductPage() {
+     window.location.href = '/checkout';
+   };
+ 
++  const handleSubmitReview = async () => {
++    if (!reviewName.trim()) { toast.error('Введите ваше имя'); return; }
++    if (reviewRating === 0) { toast.error('Поставьте оценку — нажмите на звёзды'); return; }
++    if (!reviewText.trim()) { toast.error('Напишите текст отзыва'); return; }
++
++    setSubmittingReview(true);
++    try {
++      await createReview({
++        productId: product.id,
++        productName: product.name,
++        authorName: reviewName.trim(),
++        rating: reviewRating,
++        text: reviewText.trim(),
++      });
++      toast.success('Спасибо! Отзыв отправлен на модерацию и появится после проверки.');
++      setReviewRating(0);
++      setReviewText('');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось отправить отзыв');
++    } finally {
++      setSubmittingReview(false);
++    }
++  };
++
+   return (
+     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+       <Breadcrumb items={[
+@@ -224,9 +260,61 @@ export default function ProductPage() {
+                   ))}
+                 </div>
+               ) : (
+-                <p className="text-muted-foreground text-sm">Отзывов пока нет.</p>
++                <p className="text-muted-foreground text-sm">Отзывов пока нет. Будьте первым!</p>
+               )}
+             </div>
++
++            {/* Форма добавления отзыва */}
++            <div className="rounded-xl bg-card border border-border p-5 mt-4">
++              <h3 className="font-semibold mb-3">Оставить отзыв</h3>
++              <div className="flex flex-col gap-3">
++                <div>
++                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваша оценка *</label>
++                  <div className="flex items-center gap-1">
++                    {Array.from({ length: 5 }, (_, i) => {
++                      const value = i + 1;
++                      const filled = value <= (reviewHoverRating || reviewRating);
++                      return (
++                        <button
++                          key={i}
++                          type="button"
++                          onClick={() => setReviewRating(value)}
++                          onMouseEnter={() => setReviewHoverRating(value)}
++                          onMouseLeave={() => setReviewHoverRating(0)}
++                          className="p-0.5"
++                          aria-label={`Оценка ${value} из 5`}
++                        >
++                          <Star className={`h-6 w-6 transition-colors ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
++                        </button>
++                      );
++                    })}
++                  </div>
++                </div>
++                <div>
++                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваше имя *</label>
++                  <input
++                    value={reviewName}
++                    onChange={(e) => setReviewName(e.target.value)}
++                    placeholder="Например: Рустам К."
++                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm"
++                  />
++                </div>
++                <div>
++                  <label className="text-sm text-muted-foreground mb-1.5 block">Текст отзыва *</label>
++                  <textarea
++                    value={reviewText}
++                    onChange={(e) => setReviewText(e.target.value)}
++                    rows={3}
++                    placeholder="Расскажите о своём опыте использования товара..."
++                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
++                  />
++                </div>
++                <Button onClick={handleSubmitReview} disabled={submittingReview} className="self-start bg-primary hover:bg-primary/90 text-white">
++                  {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
++                </Button>
++                <p className="text-xs text-muted-foreground">Отзыв появится на сайте после проверки модератором.</p>
++              </div>
++            </div>
+           </TabsContent>
+ 
+           <TabsContent value="delivery" className="mt-4">
+diff --git a/src/pages/admin/AdminOfficePackages.tsx b/src/pages/admin/AdminOfficePackages.tsx
+new file mode 100644
+index 0000000..2ce4d0c
+--- /dev/null
++++ b/src/pages/admin/AdminOfficePackages.tsx
+@@ -0,0 +1,223 @@
++import { useState, useEffect } from 'react';
++import { Plus, Pencil, Trash2, Check, Star } from 'lucide-react';
++import { Button } from '@/components/ui/button';
++import { Input } from '@/components/ui/input';
++import { Badge } from '@/components/ui/badge';
++import { Label } from '@/components/ui/label';
++import { Textarea } from '@/components/ui/textarea';
++import { Switch } from '@/components/ui/switch';
++import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
++import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
++import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import {
++  fetchAllOfficePackages, createOfficePackage, updateOfficePackage, deleteOfficePackage,
++  type OfficePackage,
++} from '@/lib/supabaseData';
++import { toast } from 'sonner';
++
++type Draft = Partial<OfficePackage> & { featuresText?: string };
++
++export default function AdminOfficePackages() {
++  const [items, setItems] = useState<OfficePackage[]>([]);
++  const [loading, setLoading] = useState(true);
++  const [saving, setSaving] = useState(false);
++  const [open, setOpen] = useState(false);
++  const [editing, setEditing] = useState<OfficePackage | null>(null);
++  const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [draft, setDraft] = useState<Draft>({});
++
++  const load = () => {
++    setLoading(true);
++    fetchAllOfficePackages().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
++  };
++
++  useEffect(load, []);
++
++  const openNew = () => {
++    setEditing(null);
++    setDraft({ name: '', priceLabel: '', employeesLabel: '', featuresText: '', isPopular: false, status: 'active', sortOrder: items.length + 1 });
++    setOpen(true);
++  };
++
++  const openEdit = (p: OfficePackage) => {
++    setEditing(p);
++    setDraft({ ...p, featuresText: p.features.join('\n') });
++    setOpen(true);
++  };
++
++  const handleSave = async () => {
++    if (!draft.name || !draft.priceLabel) { toast.error('Заполните название и цену'); return; }
++    const features = (draft.featuresText || '').split('\n').map((s) => s.trim()).filter(Boolean);
++
++    setSaving(true);
++    try {
++      if (editing) {
++        const updated = await updateOfficePackage(editing.id, {
++          name: draft.name,
++          priceLabel: draft.priceLabel,
++          employeesLabel: draft.employeesLabel,
++          description: draft.description,
++          features,
++          isPopular: !!draft.isPopular,
++          status: draft.status as 'active' | 'inactive',
++          sortOrder: draft.sortOrder,
++        });
++        setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p).sort((a, b) => a.sortOrder - b.sortOrder));
++        toast.success('Пакет обновлён');
++      } else {
++        const created = await createOfficePackage({
++          name: draft.name,
++          priceLabel: draft.priceLabel,
++          employeesLabel: draft.employeesLabel,
++          description: draft.description,
++          features,
++          isPopular: !!draft.isPopular,
++          status: (draft.status as 'active' | 'inactive') || 'active',
++          sortOrder: draft.sortOrder ?? items.length + 1,
++        });
++        setItems((prev) => [...prev, created].sort((a, b) => a.sortOrder - b.sortOrder));
++        toast.success('Пакет добавлен');
++      }
++      setOpen(false);
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось сохранить пакет');
++    } finally {
++      setSaving(false);
++    }
++  };
++
++  const handleDelete = async () => {
++    if (!deleteId) return;
++    try {
++      await deleteOfficePackage(deleteId);
++      setItems((prev) => prev.filter((p) => p.id !== deleteId));
++      toast.success('Пакет удалён');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить пакет');
++    } finally {
++      setDeleteId(null);
++    }
++  };
++
++  return (
++    <div className="flex flex-col gap-4">
++      <div className="flex items-center justify-between">
++        <p className="text-sm text-muted-foreground">Пакеты, которые видят посетители на странице «Офис под ключ»</p>
++        <Button onClick={openNew} className="bg-primary hover:bg-primary/90 text-white h-9">
++          <Plus className="h-4 w-4 mr-1.5" /> Добавить пакет
++        </Button>
++      </div>
++
++      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
++        {items.map((p) => (
++          <div key={p.id} className="bg-card border border-border rounded-xl p-4 card-shadow flex flex-col gap-2">
++            <div className="flex items-start justify-between gap-2">
++              <div>
++                <div className="flex items-center gap-2">
++                  <h3 className="font-bold">{p.name}</h3>
++                  {p.isPopular && <Badge className="bg-primary/10 text-primary text-xs"><Star className="h-3 w-3 mr-1 fill-primary" />Популярный</Badge>}
++                </div>
++                <p className="text-xs text-muted-foreground">{p.employeesLabel}</p>
++              </div>
++              <Badge className={p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
++                {p.status === 'active' ? 'Активен' : 'Скрыт'}
++              </Badge>
++            </div>
++            <p className="text-lg font-black text-primary">{p.priceLabel}</p>
++            <ul className="text-xs text-muted-foreground flex flex-col gap-1 flex-1">
++              {p.features.slice(0, 4).map((f, i) => <li key={i}>• {f}</li>)}
++              {p.features.length > 4 && <li>+ ещё {p.features.length - 4}</li>}
++            </ul>
++            <div className="flex items-center gap-1 mt-2">
++              <Button variant="outline" size="sm" className="flex-1 h-8" onClick={() => openEdit(p)}>
++                <Pencil className="h-3.5 w-3.5 mr-1" /> Изменить
++              </Button>
++              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(p.id)}>
++                <Trash2 className="h-3.5 w-3.5" />
++              </Button>
++            </div>
++          </div>
++        ))}
++        {!loading && items.length === 0 && (
++          <div className="col-span-full py-12 text-center text-muted-foreground text-sm bg-card border border-border rounded-xl">Пакетов пока нет</div>
++        )}
++        {loading && (
++          <div className="col-span-full py-12 text-center text-muted-foreground text-sm bg-card border border-border rounded-xl">Загрузка...</div>
++        )}
++      </div>
++
++      <Dialog open={open} onOpenChange={setOpen}>
++        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
++          <DialogHeader><DialogTitle>{editing ? 'Редактировать пакет' : 'Добавить пакет'}</DialogTitle></DialogHeader>
++          <div className="flex flex-col gap-3 py-2">
++            <div>
++              <Label>Название *</Label>
++              <Input className="mt-1" value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Например: Бизнес" />
++            </div>
++            <div className="grid grid-cols-2 gap-3">
++              <div>
++                <Label>Цена *</Label>
++                <Input className="mt-1" value={draft.priceLabel || ''} onChange={(e) => setDraft({ ...draft, priceLabel: e.target.value })} placeholder="от 60 000 сомони" />
++              </div>
++              <div>
++                <Label>Для скольки сотрудников</Label>
++                <Input className="mt-1" value={draft.employeesLabel || ''} onChange={(e) => setDraft({ ...draft, employeesLabel: e.target.value })} placeholder="Для 5–20 сотрудников" />
++              </div>
++            </div>
++            <div>
++              <Label>Что входит (каждый пункт с новой строки)</Label>
++              <Textarea className="mt-1" rows={5} value={draft.featuresText || ''} onChange={(e) => setDraft({ ...draft, featuresText: e.target.value })}
++                placeholder={'20 рабочих мест\nЭргономичная мебель\nПринтер и МФУ'} />
++            </div>
++            <div>
++              <Label>Краткое описание (необязательно)</Label>
++              <Textarea className="mt-1" rows={2} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
++            </div>
++            <div className="flex items-center justify-between rounded-lg border border-border p-3">
++              <div>
++                <Label>Отметить «Популярный»</Label>
++                <p className="text-xs text-muted-foreground">Выделяется на странице и показывается первым по умолчанию</p>
++              </div>
++              <Switch checked={!!draft.isPopular} onCheckedChange={(v) => setDraft({ ...draft, isPopular: v })} />
++            </div>
++            <div className="grid grid-cols-2 gap-3">
++              <div>
++                <Label>Статус</Label>
++                <Select value={draft.status} onValueChange={(v) => setDraft({ ...draft, status: v as 'active' | 'inactive' })}>
++                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
++                  <SelectContent>
++                    <SelectItem value="active">Активен (виден на сайте)</SelectItem>
++                    <SelectItem value="inactive">Скрыт</SelectItem>
++                  </SelectContent>
++                </Select>
++              </div>
++              <div>
++                <Label>Порядок показа</Label>
++                <Input className="mt-1" type="number" value={draft.sortOrder ?? ''} onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) })} />
++              </div>
++            </div>
++          </div>
++          <DialogFooter>
++            <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
++            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
++              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++
++      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить пакет?</AlertDialogTitle>
++            <AlertDialogDescription>Это действие нельзя отменить.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
++    </div>
++  );
++}
+diff --git a/src/pages/admin/AdminReviews.tsx b/src/pages/admin/AdminReviews.tsx
+index d1c6971..ac3dd79 100644
+--- a/src/pages/admin/AdminReviews.tsx
++++ b/src/pages/admin/AdminReviews.tsx
+@@ -1,25 +1,14 @@
+ import { useState, useEffect } from 'react';
+-import { Search, CheckCircle, XCircle, Trash2, Star, AlertCircle } from 'lucide-react';
++import { Search, CheckCircle, XCircle, Trash2, Star, Pencil, Check, X } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Badge } from '@/components/ui/badge';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
++import { fetchReviews, updateReviewStatus, deleteReview, updateReviewRating } from '@/lib/supabaseData';
+ import type { Review } from '@/types';
+ import { toast } from 'sonner';
+ 
+-// Reviews mock (inline since not in mockData)
+-const seedReviews: Review[] = [
+-  { id: 'r1', productId: 'p1', productName: 'Ноутбук Acer Aspire A6270', authorName: 'Рустам К.', rating: 5, text: 'Отличный ноутбук! Отлично справляется с задачами, быстрая производительность.', date: '2026-07-10', status: 'approved' },
+-  { id: 'r2', productId: 'p5', productName: 'HP Victus 15', authorName: 'Дилноза Р.', rating: 4, text: 'Хороший игровой ноутбук, все игры работают без проблем.', date: '2026-07-15', status: 'approved' },
+-  { id: 'r3', productId: 'p12', productName: 'Принтер Epson EcoTank L3210', authorName: 'Фаррух И.', rating: 5, text: 'Невероятный принтер, чернила расходуются очень экономно.', date: '2026-07-20', status: 'pending' },
+-  { id: 'r4', productId: 'p16', productName: 'Logitech MX Keys', authorName: 'Наргиза Б.', rating: 5, text: 'Лучшая клавиатура из всех. Подсветка просто фантастическая.', date: '2026-07-22', status: 'pending' },
+-  { id: 'r5', productId: 'p13', productName: 'Эргономичное офисное кресло Pro', authorName: 'Алишер Н.', rating: 4, text: 'Удобное и качественное. Спина больше не болит.', date: '2026-07-25', status: 'approved' },
+-  { id: 'r6', productId: 'p7', productName: 'ASUS Vivobook 15', authorName: 'Камола С.', rating: 3, text: 'Нормальный ноутбук, но немного греется под нагрузкой.', date: '2026-07-28', status: 'pending' },
+-  { id: 'r7', productId: 'p17', productName: 'Logitech MX Master 3', authorName: 'Бобур Т.', rating: 5, text: 'Потрясающая мышь! Колесо прокрутки само по себе стоит своих денег.', date: '2026-07-30', status: 'approved' },
+-  { id: 'r8', productId: 'p15', productName: 'Регулируемый офисный стол', authorName: 'Гулнора М.', rating: 4, text: 'Хороший стол, высота регулируется легко. Отлично смотрится в офисе.', date: '2026-08-01', status: 'rejected' },
+-];
+-
+ const STATUS_BADGE: Record<Review['status'], string> = {
+   approved: 'bg-green-100 text-green-700',
+   pending: 'bg-yellow-100 text-yellow-700',
+@@ -27,19 +16,20 @@ const STATUS_BADGE: Record<Review['status'], string> = {
+ };
+ 
+ export default function AdminReviews() {
+-  const [items, setItems] = useState<Review[]>(() => {
+-    if (typeof window === 'undefined') return seedReviews;
+-    const saved = localStorage.getItem('admin_reviews');
+-    return saved ? JSON.parse(saved) : seedReviews;
+-  });
++  const [items, setItems] = useState<Review[]>([]);
++  const [loading, setLoading] = useState(true);
+   const [search, setSearch] = useState('');
+   const [statusFilter, setStatusFilter] = useState('all');
+   const [deleteId, setDeleteId] = useState<string | null>(null);
+-  const [successMessage, setSuccessMessage] = useState('');
++  const [editingRatingId, setEditingRatingId] = useState<string | null>(null);
++  const [ratingDraft, setRatingDraft] = useState(0);
++
++  const load = () => {
++    setLoading(true);
++    fetchReviews().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
++  };
+ 
+-  useEffect(() => {
+-    localStorage.setItem('admin_reviews', JSON.stringify(items));
+-  }, [items]);
++  useEffect(load, []);
+ 
+   const filtered = items.filter((r) => {
+     const matchSearch = r.authorName.toLowerCase().includes(search.toLowerCase())
+@@ -49,38 +39,51 @@ export default function AdminReviews() {
+     return matchSearch && matchStatus;
+   });
+ 
+-  const updateStatus = (id: string, status: Review['status']) => {
+-    console.log('updateStatus called with id:', id, 'status:', status);
+-    setItems((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
+-    const labels: Record<Review['status'], string> = { approved: 'Отзыв одобрен', pending: 'Отзыв на модерации', rejected: 'Отзыв отклонён' };
+-    toast.success(labels[status]);
+-    setSuccessMessage(labels[status]);
+-    setTimeout(() => setSuccessMessage(''), 3000);
+-    console.log('Toast called:', labels[status]);
++  const updateStatus = async (id: string, status: Review['status']) => {
++    try {
++      const updated = await updateReviewStatus(id, status);
++      setItems((prev) => prev.map((r) => r.id === id ? updated : r));
++      const labels: Record<Review['status'], string> = { approved: 'Отзыв одобрен', pending: 'Отзыв на модерации', rejected: 'Отзыв отклонён' };
++      toast.success(labels[status]);
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить статус');
++    }
+   };
+-  
+ 
+-  const handleDelete = () => {
+-    console.log('handleDelete called with deleteId:', deleteId);
++  const handleDelete = async () => {
+     if (!deleteId) return;
+-    setItems((prev) => prev.filter((r) => r.id !== deleteId));
+-    setDeleteId(null);
+-    toast.success('Отзыв удалён');
+-    setSuccessMessage('Отзыв успешно удалён');
+-    setTimeout(() => setSuccessMessage(''), 3000);
+-    console.log('Delete completed and toast called');
++    try {
++      await deleteReview(deleteId);
++      setItems((prev) => prev.filter((r) => r.id !== deleteId));
++      toast.success('Отзыв удалён');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить отзыв');
++    } finally {
++      setDeleteId(null);
++    }
++  };
++
++  const startEditRating = (r: Review) => {
++    setEditingRatingId(r.id);
++    setRatingDraft(r.rating);
++  };
++
++  const saveRating = async (id: string) => {
++    try {
++      const updated = await updateReviewRating(id, ratingDraft);
++      setItems((prev) => prev.map((r) => r.id === id ? updated : r));
++      toast.success('Оценка обновлена');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить оценку');
++    } finally {
++      setEditingRatingId(null);
++    }
+   };
+ 
+   const pending = items.filter((r) => r.status === 'pending').length;
+ 
+   return (
+     <div className="flex flex-col gap-4">
+-      {successMessage && (
+-        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 font-medium flex items-center gap-2 animate-in">
+-          <CheckCircle className="h-4 w-4" />
+-          {successMessage}
+-        </div>
+-      )}
+       {pending > 0 && (
+         <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800 font-medium">
+           {pending} отзыв{pending === 1 ? '' : pending < 5 ? 'а' : 'ов'} ожидает модерации
+@@ -114,11 +117,41 @@ export default function AdminReviews() {
+                   <span className="text-xs text-primary font-medium">{r.productName}</span>
+                   <span className="text-xs text-muted-foreground">{r.date}</span>
+                 </div>
+-                <div className="flex items-center gap-0.5 mb-2">
+-                  {Array.from({ length: 5 }).map((_, i) => (
+-                    <Star key={i} className={`h-3.5 w-3.5 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
+-                  ))}
+-                </div>
++
++                {/* Оценка звёздами — админ может кликнуть и поставить свою */}
++                {editingRatingId === r.id ? (
++                  <div className="flex items-center gap-2 mb-2">
++                    <div className="flex items-center gap-0.5">
++                      {Array.from({ length: 5 }, (_, i) => {
++                        const value = i + 1;
++                        return (
++                          <button key={i} type="button" onClick={() => setRatingDraft(value)} className="p-0.5">
++                            <Star className={`h-4 w-4 transition-colors ${value <= ratingDraft ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
++                          </button>
++                        );
++                      })}
++                    </div>
++                    <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => saveRating(r.id)}>
++                      <Check className="h-3.5 w-3.5" />
++                    </Button>
++                    <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground" onClick={() => setEditingRatingId(null)}>
++                      <X className="h-3.5 w-3.5" />
++                    </Button>
++                  </div>
++                ) : (
++                  <button
++                    type="button"
++                    onClick={() => startEditRating(r)}
++                    className="flex items-center gap-0.5 mb-2 group"
++                    title="Нажмите, чтобы изменить оценку"
++                  >
++                    {Array.from({ length: 5 }).map((_, i) => (
++                      <Star key={i} className={`h-3.5 w-3.5 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
++                    ))}
++                    <Pencil className="h-3 w-3 ml-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
++                  </button>
++                )}
++
+                 <p className="text-sm text-muted-foreground leading-relaxed">{r.text}</p>
+               </div>
+               <div className="flex items-center gap-2 shrink-0 flex-wrap">
+@@ -142,9 +175,12 @@ export default function AdminReviews() {
+             </div>
+           </div>
+         ))}
+-        {filtered.length === 0 && (
++        {!loading && filtered.length === 0 && (
+           <div className="py-12 text-center text-muted-foreground text-sm bg-card border border-border rounded-xl">Отзывы не найдены</div>
+         )}
++        {loading && (
++          <div className="py-12 text-center text-muted-foreground text-sm bg-card border border-border rounded-xl">Загрузка...</div>
++        )}
+       </div>
+ 
+       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
