@@ -87,9 +87,9 @@ export default function Header() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           
-            <img src="/enter-logo-white-bg.png" alt="Logo" className="h-5 w-5" />
+            <img src="/enter-logo-white-bg.png" alt="Logo" className="h-10 w-28" />
           
-          <span className="text-lg font-bold hidden sm:block">ENTER<span className="text-primary">.TJ</span></span>
+          
         </Link>
 
         {/* Catalog dropdown desktop */}
