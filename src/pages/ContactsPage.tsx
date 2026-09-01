@@ -36,15 +36,14 @@ export default function ContactsPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    console.log('📝 Contact form submitted:', data);
-    
-    // Отправить заявку в Telegram
-    console.log('📤 Sending contact form to Telegram...');
-    await sendContactFormToTelegram(data);
-    console.log('✅ Telegram notification completed');
-    
-    setSent(true);
-    toast.success('Сообщение отправлено! Мы свяжемся с вами в ближайшее время.');
+    const success = await sendContactFormToTelegram(data);
+
+    if (success) {
+      setSent(true);
+      toast.success('Сообщение отправлено! Мы свяжемся с вами в ближайшее время.');
+    } else {
+      toast.error('Не удалось отправить сообщение. Попробуйте позвонить нам напрямую.');
+    }
   };
 
   return (

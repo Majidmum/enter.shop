@@ -435,6 +435,35 @@ export async function deleteOfficePackage(id: string): Promise<void> {
 }
 
 // ============================================================================
+// НАСТРОЙКИ САЙТА (общие для всех посетителей, хранятся в Supabase)
+// ============================================================================
+
+/**
+ * Получить настройки сайта (одна строка-объект в public.settings, data jsonb).
+ * Читать может кто угодно (нужно для sendContactFormToTelegram и т.п.,
+ * которые вызываются из браузера обычного посетителя, не только админа).
+ */
+export async function fetchSiteSettings(): Promise<Record<string, any>> {
+  const { data, error } = await supabase.from('settings').select('data').eq('id', 1).maybeSingle();
+  if (error) throw error;
+  return (data?.data as Record<string, any>) || {};
+}
+
+/** Админ обновляет настройки — сливает patch с уже сохранёнными данными. */
+export async function updateSiteSettings(patch: Record<string, any>): Promise<Record<string, any>> {
+  const current = await fetchSiteSettings();
+  const merged = { ...current, ...patch };
+  const { data, error } = await supabase
+    .from('settings')
+    .update({ data: merged })
+    .eq('id', 1)
+    .select('data')
+    .single();
+  if (error) throw error;
+  return (data?.data as Record<string, any>) || merged;
+}
+
+// ============================================================================
 // УТИЛИТЫ
 // ============================================================================
 

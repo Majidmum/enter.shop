@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, CheckCircle, AlertCircle, Loader2, Mail, MessageCircle, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { useNotificationStore } from '@/store/notificationStore';
 import { testTelegramSettings } from '@/lib/telegram';
+import { fetchSiteSettings, updateSiteSettings } from '@/lib/supabaseData';
 
 interface Settings {
   storeName: string;
@@ -26,6 +26,7 @@ interface Settings {
   instagram: string;
   telegram: string;
   whatsapp: string;
+  enableTelegramNotifications: boolean;
   telegramBotToken: string;
   telegramChatId: string;
   whatsappNumber: string;
@@ -59,6 +60,7 @@ const defaultSettings: Settings = {
   instagram: 'https://instagram.com/entertj',
   telegram: 'https://t.me/entertj',
   whatsapp: '+992555000070',
+  enableTelegramNotifications: false,
   telegramBotToken: '',
   telegramChatId: '',
   whatsappNumber: '',
@@ -85,36 +87,38 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function AdminSettings() {
-  const notificationSettings = useNotificationStore((s) => s.settings);
-  const updateNotificationSettings = useNotificationStore((s) => s.updateSettings);
-
-  const [settings, setSettings] = useState<Settings>({
-    ...defaultSettings,
-    ...notificationSettings,
-  });
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [testingTelegram, setTestingTelegram] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    fetchSiteSettings()
+      .then((remote) => setSettings({ ...defaultSettings, ...remote }))
+      .catch((e) => toast.error(e.message || 'Не удалось загрузить настройки'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const set = (key: keyof Settings, value: Settings[keyof Settings]) => {
     setSaved(false);
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = () => {
-    setSaved(true);
-
-    // Сохранить все уведомления настройки в хранилище
-    updateNotificationSettings({
-      telegramBotToken: settings.telegramBotToken,
-      telegramChatId: settings.telegramChatId,
-      whatsappNumber: settings.whatsappNumber,
-      notificationEmail: settings.notificationEmail,
-      ordersChannels: settings.ordersChannels,
-      contactsChannels: settings.contactsChannels,
-    });
-
-    toast.success('Настройки сохранены');
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Сохраняем всё в общую таблицу settings в Supabase — так изменения
+      // применяются сразу у всех посетителей сайта, без пересборки и деплоя.
+      await updateSiteSettings({ ...settings });
+      setSaved(true);
+      toast.success('Настройки сохранены');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось сохранить настройки');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleTestTelegram = async () => {
@@ -134,6 +138,10 @@ export default function AdminSettings() {
       toast.error(result.message);
     }
   };
+
+  if (loading) {
+    return <div className="py-16 text-center text-muted-foreground">Загрузка настроек...</div>;
+  }
 
   return (
     <div className="flex flex-col gap-5 max-w-3xl">
@@ -326,8 +334,8 @@ export default function AdminSettings() {
             <CheckCircle className="h-4 w-4" /> Изменения сохранены
           </span>
         )}
-        <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white ml-auto">
-          <Save className="h-4 w-4 mr-1.5" /> Сохранить настройки
+        <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white ml-auto">
+          <Save className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить настройки'}
         </Button>
       </div>
     </div>

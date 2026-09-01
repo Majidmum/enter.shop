@@ -57,8 +57,6 @@ export default function CheckoutPage() {
   }
 
   const onSubmit = async (data: CheckoutForm) => {
-    console.log('🛒 Form submitted:', data);
-    
     const order = addOrder({
       customerId: user?.id || 'guest',
       customerName: `${data.firstName} ${data.lastName}`,
@@ -79,15 +77,16 @@ export default function CheckoutPage() {
       comment: data.comment,
     });
 
-    console.log('✅ Order created:', order);
-    
-    // Отправить заказ в Telegram
-    console.log('📤 Sending order to Telegram...');
-    await sendOrderToTelegram(order);
-    console.log('✅ Telegram notification completed');
+    // Заказ уже создан — сообщаем клиенту об успехе в любом случае.
+    // Отправка в Telegram — это только уведомление менеджеру, а не часть
+    // самого заказа, поэтому её сбой не должен выглядеть как "заказ не оформлен".
+    const notified = await sendOrderToTelegram(order);
 
     clearCart();
     toast.success(`Заказ ${order.orderNumber} успешно оформлен!`);
+    if (!notified) {
+      toast.error('Не удалось уведомить менеджера автоматически — на всякий случай позвоните нам, чтобы подтвердить заказ.');
+    }
     navigate('/account');
   };
 

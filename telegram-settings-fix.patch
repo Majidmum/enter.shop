@@ -1,0 +1,283 @@
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index 01ad13a..9561913 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -434,6 +434,35 @@ export async function deleteOfficePackage(id: string): Promise<void> {
+   if (error) throw error;
+ }
+ 
++// ============================================================================
++// НАСТРОЙКИ САЙТА (общие для всех посетителей, хранятся в Supabase)
++// ============================================================================
++
++/**
++ * Получить настройки сайта (одна строка-объект в public.settings, data jsonb).
++ * Читать может кто угодно (нужно для sendContactFormToTelegram и т.п.,
++ * которые вызываются из браузера обычного посетителя, не только админа).
++ */
++export async function fetchSiteSettings(): Promise<Record<string, any>> {
++  const { data, error } = await supabase.from('settings').select('data').eq('id', 1).maybeSingle();
++  if (error) throw error;
++  return (data?.data as Record<string, any>) || {};
++}
++
++/** Админ обновляет настройки — сливает patch с уже сохранёнными данными. */
++export async function updateSiteSettings(patch: Record<string, any>): Promise<Record<string, any>> {
++  const current = await fetchSiteSettings();
++  const merged = { ...current, ...patch };
++  const { data, error } = await supabase
++    .from('settings')
++    .update({ data: merged })
++    .eq('id', 1)
++    .select('data')
++    .single();
++  if (error) throw error;
++  return (data?.data as Record<string, any>) || merged;
++}
++
+ // ============================================================================
+ // УТИЛИТЫ
+ // ============================================================================
+diff --git a/src/lib/telegram.ts b/src/lib/telegram.ts
+index f844e16..946835b 100644
+--- a/src/lib/telegram.ts
++++ b/src/lib/telegram.ts
+@@ -1,5 +1,5 @@
+ import type { Order } from '@/types';
+-import { useNotificationStore } from '@/store/notificationStore';
++import { fetchSiteSettings } from '@/lib/supabaseData';
+ 
+ interface ContactFormData {
+   name: string;
+@@ -8,14 +8,35 @@ interface ContactFormData {
+   message: string;
+ }
+ 
++/**
++ * Получить токен бота и chat_id для отправки в Telegram.
++ * Источник истины — таблица settings в Supabase (настраивается в админке,
++ * применяется сразу у всех посетителей сайта, без пересборки/редеплоя).
++ * .env используется только как запасной вариант на случай, если в Supabase
++ * ещё ничего не настроено.
++ */
++async function getTelegramCredentials(): Promise<{ botToken: string; chatId: string }> {
++  try {
++    const siteSettings = await fetchSiteSettings();
++    const botToken = siteSettings.telegramBotToken || import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
++    const chatId = siteSettings.telegramChatId || import.meta.env.VITE_TELEGRAM_CHAT_ID || '';
++    return { botToken, chatId };
++  } catch (e) {
++    // Если Supabase недоступен — не роняем отправку, пробуем запасной вариант из .env
++    console.error('❌ Не удалось получить настройки сайта из Supabase:', e);
++    return {
++      botToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '',
++      chatId: import.meta.env.VITE_TELEGRAM_CHAT_ID || '',
++    };
++  }
++}
++
+ /**
+  * Отправить заявку с контактной формы в Telegram
+  */
+ export async function sendContactFormToTelegram(data: ContactFormData): Promise<boolean> {
+   try {
+-    const settings = useNotificationStore.getState().getSettings();
+-    const botToken = settings.telegramBotToken || import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+-    const chatId = settings.telegramChatId || import.meta.env.VITE_TELEGRAM_CHAT_ID;
++    const { botToken, chatId } = await getTelegramCredentials();
+ 
+     if (!botToken || !chatId) {
+       console.warn('⚠️ Telegram credentials not configured. Skipping notification.');
+@@ -64,9 +85,7 @@ ${data.email ? `📧 Email: ${data.email}` : ''}
+  */
+ export async function sendOrderToTelegram(order: Order): Promise<boolean> {
+   try {
+-    const settings = useNotificationStore.getState().getSettings();
+-    const botToken = settings.telegramBotToken || import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+-    const chatId = settings.telegramChatId || import.meta.env.VITE_TELEGRAM_CHAT_ID;
++    const { botToken, chatId } = await getTelegramCredentials();
+ 
+     if (!botToken || !chatId) {
+       console.warn('⚠️ Telegram credentials not configured. Skipping notification.');
+diff --git a/src/pages/CheckoutPage.tsx b/src/pages/CheckoutPage.tsx
+index 120c9b6..ca13497 100644
+--- a/src/pages/CheckoutPage.tsx
++++ b/src/pages/CheckoutPage.tsx
+@@ -57,8 +57,6 @@ export default function CheckoutPage() {
+   }
+ 
+   const onSubmit = async (data: CheckoutForm) => {
+-    console.log('🛒 Form submitted:', data);
+-    
+     const order = addOrder({
+       customerId: user?.id || 'guest',
+       customerName: `${data.firstName} ${data.lastName}`,
+@@ -79,15 +77,16 @@ export default function CheckoutPage() {
+       comment: data.comment,
+     });
+ 
+-    console.log('✅ Order created:', order);
+-    
+-    // Отправить заказ в Telegram
+-    console.log('📤 Sending order to Telegram...');
+-    await sendOrderToTelegram(order);
+-    console.log('✅ Telegram notification completed');
++    // Заказ уже создан — сообщаем клиенту об успехе в любом случае.
++    // Отправка в Telegram — это только уведомление менеджеру, а не часть
++    // самого заказа, поэтому её сбой не должен выглядеть как "заказ не оформлен".
++    const notified = await sendOrderToTelegram(order);
+ 
+     clearCart();
+     toast.success(`Заказ ${order.orderNumber} успешно оформлен!`);
++    if (!notified) {
++      toast.error('Не удалось уведомить менеджера автоматически — на всякий случай позвоните нам, чтобы подтвердить заказ.');
++    }
+     navigate('/account');
+   };
+ 
+diff --git a/src/pages/ContactsPage.tsx b/src/pages/ContactsPage.tsx
+index cdf3ecf..679a6c2 100644
+--- a/src/pages/ContactsPage.tsx
++++ b/src/pages/ContactsPage.tsx
+@@ -36,15 +36,14 @@ export default function ContactsPage() {
+   });
+ 
+   const onSubmit = async (data: FormData) => {
+-    console.log('📝 Contact form submitted:', data);
+-    
+-    // Отправить заявку в Telegram
+-    console.log('📤 Sending contact form to Telegram...');
+-    await sendContactFormToTelegram(data);
+-    console.log('✅ Telegram notification completed');
+-    
+-    setSent(true);
+-    toast.success('Сообщение отправлено! Мы свяжемся с вами в ближайшее время.');
++    const success = await sendContactFormToTelegram(data);
++
++    if (success) {
++      setSent(true);
++      toast.success('Сообщение отправлено! Мы свяжемся с вами в ближайшее время.');
++    } else {
++      toast.error('Не удалось отправить сообщение. Попробуйте позвонить нам напрямую.');
++    }
+   };
+ 
+   return (
+diff --git a/src/pages/admin/AdminSettings.tsx b/src/pages/admin/AdminSettings.tsx
+index a9a0c64..b9ee2b9 100644
+--- a/src/pages/admin/AdminSettings.tsx
++++ b/src/pages/admin/AdminSettings.tsx
+@@ -1,4 +1,4 @@
+-import { useState } from 'react';
++import { useState, useEffect } from 'react';
+ import { Save, CheckCircle, AlertCircle, Loader2, Mail, MessageCircle, Phone } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
+ import { Textarea } from '@/components/ui/textarea';
+ import { Switch } from '@/components/ui/switch';
+ import { toast } from 'sonner';
+-import { useNotificationStore } from '@/store/notificationStore';
+ import { testTelegramSettings } from '@/lib/telegram';
++import { fetchSiteSettings, updateSiteSettings } from '@/lib/supabaseData';
+ 
+ interface Settings {
+   storeName: string;
+@@ -26,6 +26,7 @@ interface Settings {
+   instagram: string;
+   telegram: string;
+   whatsapp: string;
++  enableTelegramNotifications: boolean;
+   telegramBotToken: string;
+   telegramChatId: string;
+   whatsappNumber: string;
+@@ -59,6 +60,7 @@ const defaultSettings: Settings = {
+   instagram: 'https://instagram.com/entertj',
+   telegram: 'https://t.me/entertj',
+   whatsapp: '+992555000070',
++  enableTelegramNotifications: false,
+   telegramBotToken: '',
+   telegramChatId: '',
+   whatsappNumber: '',
+@@ -85,36 +87,38 @@ function Section({ title, children }: { title: string; children: React.ReactNode
+ }
+ 
+ export default function AdminSettings() {
+-  const notificationSettings = useNotificationStore((s) => s.settings);
+-  const updateNotificationSettings = useNotificationStore((s) => s.updateSettings);
+-
+-  const [settings, setSettings] = useState<Settings>({
+-    ...defaultSettings,
+-    ...notificationSettings,
+-  });
++  const [settings, setSettings] = useState<Settings>(defaultSettings);
++  const [loading, setLoading] = useState(true);
++  const [saving, setSaving] = useState(false);
+   const [saved, setSaved] = useState(false);
+   const [testingTelegram, setTestingTelegram] = useState(false);
+   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+ 
++  useEffect(() => {
++    fetchSiteSettings()
++      .then((remote) => setSettings({ ...defaultSettings, ...remote }))
++      .catch((e) => toast.error(e.message || 'Не удалось загрузить настройки'))
++      .finally(() => setLoading(false));
++  }, []);
++
+   const set = (key: keyof Settings, value: Settings[keyof Settings]) => {
+     setSaved(false);
+     setSettings((prev) => ({ ...prev, [key]: value }));
+   };
+ 
+-  const handleSave = () => {
+-    setSaved(true);
+-
+-    // Сохранить все уведомления настройки в хранилище
+-    updateNotificationSettings({
+-      telegramBotToken: settings.telegramBotToken,
+-      telegramChatId: settings.telegramChatId,
+-      whatsappNumber: settings.whatsappNumber,
+-      notificationEmail: settings.notificationEmail,
+-      ordersChannels: settings.ordersChannels,
+-      contactsChannels: settings.contactsChannels,
+-    });
+-
+-    toast.success('Настройки сохранены');
++  const handleSave = async () => {
++    setSaving(true);
++    try {
++      // Сохраняем всё в общую таблицу settings в Supabase — так изменения
++      // применяются сразу у всех посетителей сайта, без пересборки и деплоя.
++      await updateSiteSettings({ ...settings });
++      setSaved(true);
++      toast.success('Настройки сохранены');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось сохранить настройки');
++    } finally {
++      setSaving(false);
++    }
+   };
+ 
+   const handleTestTelegram = async () => {
+@@ -135,6 +139,10 @@ export default function AdminSettings() {
+     }
+   };
+ 
++  if (loading) {
++    return <div className="py-16 text-center text-muted-foreground">Загрузка настроек...</div>;
++  }
++
+   return (
+     <div className="flex flex-col gap-5 max-w-3xl">
+       {/* General */}
+@@ -326,8 +334,8 @@ export default function AdminSettings() {
+             <CheckCircle className="h-4 w-4" /> Изменения сохранены
+           </span>
+         )}
+-        <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white ml-auto">
+-          <Save className="h-4 w-4 mr-1.5" /> Сохранить настройки
++        <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white ml-auto">
++          <Save className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить настройки'}
+         </Button>
+       </div>
+     </div>

@@ -1,5 +1,5 @@
 import type { Order } from '@/types';
-import { useNotificationStore } from '@/store/notificationStore';
+import { fetchSiteSettings } from '@/lib/supabaseData';
 
 interface ContactFormData {
   name: string;
@@ -9,13 +9,34 @@ interface ContactFormData {
 }
 
 /**
+ * Получить токен бота и chat_id для отправки в Telegram.
+ * Источник истины — таблица settings в Supabase (настраивается в админке,
+ * применяется сразу у всех посетителей сайта, без пересборки/редеплоя).
+ * .env используется только как запасной вариант на случай, если в Supabase
+ * ещё ничего не настроено.
+ */
+async function getTelegramCredentials(): Promise<{ botToken: string; chatId: string }> {
+  try {
+    const siteSettings = await fetchSiteSettings();
+    const botToken = siteSettings.telegramBotToken || import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
+    const chatId = siteSettings.telegramChatId || import.meta.env.VITE_TELEGRAM_CHAT_ID || '';
+    return { botToken, chatId };
+  } catch (e) {
+    // Если Supabase недоступен — не роняем отправку, пробуем запасной вариант из .env
+    console.error('❌ Не удалось получить настройки сайта из Supabase:', e);
+    return {
+      botToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '',
+      chatId: import.meta.env.VITE_TELEGRAM_CHAT_ID || '',
+    };
+  }
+}
+
+/**
  * Отправить заявку с контактной формы в Telegram
  */
 export async function sendContactFormToTelegram(data: ContactFormData): Promise<boolean> {
   try {
-    const settings = useNotificationStore.getState().getSettings();
-    const botToken = settings.telegramBotToken || import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = settings.telegramChatId || import.meta.env.VITE_TELEGRAM_CHAT_ID;
+    const { botToken, chatId } = await getTelegramCredentials();
 
     if (!botToken || !chatId) {
       console.warn('⚠️ Telegram credentials not configured. Skipping notification.');
@@ -64,9 +85,7 @@ ${data.email ? `📧 Email: ${data.email}` : ''}
  */
 export async function sendOrderToTelegram(order: Order): Promise<boolean> {
   try {
-    const settings = useNotificationStore.getState().getSettings();
-    const botToken = settings.telegramBotToken || import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = settings.telegramChatId || import.meta.env.VITE_TELEGRAM_CHAT_ID;
+    const { botToken, chatId } = await getTelegramCredentials();
 
     if (!botToken || !chatId) {
       console.warn('⚠️ Telegram credentials not configured. Skipping notification.');
