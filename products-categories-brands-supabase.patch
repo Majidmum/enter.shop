@@ -1,0 +1,1096 @@
+diff --git a/src/lib/getStorageData.ts b/src/lib/getStorageData.ts
+index 2b31ec2..6ab66f5 100644
+--- a/src/lib/getStorageData.ts
++++ b/src/lib/getStorageData.ts
+@@ -1,35 +1,9 @@
+-import { products as mockProducts, categories as mockCategories, brands as mockBrands, banners as mockBanners } from './mockData';
+-import type { Product, Category, Brand, Banner } from '@/types';
++import { banners as mockBanners } from './mockData';
++import type { Banner } from '@/types';
+ 
+ /**
+- * Получить товары из localStorage или вернуть данные по умолчанию
+- */
+-export function getProducts(): Product[] {
+-  if (typeof window === 'undefined') return mockProducts;
+-  const saved = localStorage.getItem('admin_products');
+-  return saved ? JSON.parse(saved) : mockProducts;
+-}
+-
+-/**
+- * Получить категории из localStorage или вернуть данные по умолчанию
+- */
+-export function getCategories(): Category[] {
+-  if (typeof window === 'undefined') return mockCategories;
+-  const saved = localStorage.getItem('admin_categories');
+-  return saved ? JSON.parse(saved) : mockCategories;
+-}
+-
+-/**
+- * Получить бренды из localStorage или вернуть данные по умолчанию
+- */
+-export function getBrands(): Brand[] {
+-  if (typeof window === 'undefined') return mockBrands;
+-  const saved = localStorage.getItem('admin_brands');
+-  return saved ? JSON.parse(saved) : mockBrands;
+-}
+-
+-/**
+- * Получить баннеры из localStorage или вернуть данные по умолчанию
++ * Получить баннеры из localStorage или вернуть данные по умолчанию.
++ * (Товары/категории/бренды теперь берутся из Supabase — см. src/lib/supabaseData.ts)
+  */
+ export function getBanners(): Banner[] {
+   if (typeof window === 'undefined') return mockBanners;
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+new file mode 100644
+index 0000000..d644a13
+--- /dev/null
++++ b/src/lib/supabaseData.ts
+@@ -0,0 +1,232 @@
++import { supabase } from '@/db/supabase';
++import type { Product, Category, Brand, ProductSpec } from '@/types';
++
++// ============================================================================
++// КАТЕГОРИИ
++// ============================================================================
++
++function rowToCategory(row: any): Category {
++  return {
++    id: row.id,
++    name: row.name,
++    slug: row.slug,
++    image: row.image || '',
++    productCount: row.product_count ?? 0,
++    parentId: row.parent_id ?? undefined,
++  };
++}
++
++export async function fetchCategories(): Promise<Category[]> {
++  const { data, error } = await supabase.from('categories').select('*').order('name');
++  if (error) throw error;
++  return (data || []).map(rowToCategory);
++}
++
++export async function createCategory(input: {
++  name: string;
++  slug?: string;
++  image?: string;
++}): Promise<Category> {
++  const slug = input.slug || slugify(input.name);
++  const { data, error } = await supabase
++    .from('categories')
++    .insert({
++      name: input.name,
++      slug,
++      image: input.image || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80',
++    })
++    .select()
++    .single();
++  if (error) throw error;
++  return rowToCategory(data);
++}
++
++export async function updateCategory(
++  id: string,
++  patch: Partial<{ name: string; slug: string; image: string }>
++): Promise<Category> {
++  const { data, error } = await supabase.from('categories').update(patch).eq('id', id).select().single();
++  if (error) throw error;
++  return rowToCategory(data);
++}
++
++export async function deleteCategory(id: string): Promise<void> {
++  const { error } = await supabase.from('categories').delete().eq('id', id);
++  if (error) throw error;
++}
++
++// ============================================================================
++// БРЕНДЫ
++// ============================================================================
++
++function rowToBrand(row: any): Brand {
++  return {
++    id: row.id,
++    name: row.name,
++    logo: row.logo || '',
++    description: row.description || '',
++    status: row.status,
++    productCount: row.product_count ?? 0,
++  };
++}
++
++export async function fetchBrands(): Promise<Brand[]> {
++  const { data, error } = await supabase.from('brands').select('*').order('name');
++  if (error) throw error;
++  return (data || []).map(rowToBrand);
++}
++
++export async function createBrand(input: {
++  name: string;
++  description?: string;
++  status?: 'active' | 'inactive';
++  logo?: string;
++}): Promise<Brand> {
++  const { data, error } = await supabase
++    .from('brands')
++    .insert({
++      name: input.name,
++      description: input.description || '',
++      status: input.status || 'active',
++      logo: input.logo || '',
++    })
++    .select()
++    .single();
++  if (error) throw error;
++  return rowToBrand(data);
++}
++
++export async function updateBrand(
++  id: string,
++  patch: Partial<{ name: string; description: string; status: 'active' | 'inactive'; logo: string }>
++): Promise<Brand> {
++  const { data, error } = await supabase.from('brands').update(patch).eq('id', id).select().single();
++  if (error) throw error;
++  return rowToBrand(data);
++}
++
++export async function deleteBrand(id: string): Promise<void> {
++  const { error } = await supabase.from('brands').delete().eq('id', id);
++  if (error) throw error;
++}
++
++// ============================================================================
++// ТОВАРЫ
++// ============================================================================
++
++function rowToProduct(row: any): Product {
++  return {
++    id: row.id,
++    name: row.name,
++    slug: row.slug,
++    sku: row.sku,
++    categoryId: row.category_id || '',
++    categoryName: row.categories?.name || '',
++    brandId: row.brand_id || '',
++    brandName: row.brands?.name || '',
++    price: Number(row.price),
++    oldPrice: row.old_price != null ? Number(row.old_price) : undefined,
++    discount: row.discount != null ? Number(row.discount) : undefined,
++    images: row.images || [],
++    description: row.description || '',
++    specs: (row.specs || []) as ProductSpec[],
++    rating: Number(row.rating) || 0,
++    reviewCount: row.review_count || 0,
++    stock: row.stock || 0,
++    status: row.status,
++    isNew: row.is_new || undefined,
++    isFeatured: row.is_featured || undefined,
++  };
++}
++
++const PRODUCT_SELECT = '*, categories(name), brands(name)';
++
++export async function fetchProducts(): Promise<Product[]> {
++  const { data, error } = await supabase
++    .from('products')
++    .select(PRODUCT_SELECT)
++    .order('created_at', { ascending: false });
++  if (error) throw error;
++  return (data || []).map(rowToProduct);
++}
++
++export interface ProductInput {
++  name: string;
++  slug?: string;
++  sku?: string;
++  categoryId?: string;
++  brandId?: string;
++  price: number;
++  oldPrice?: number;
++  discount?: number;
++  images: string[];
++  description?: string;
++  specs?: ProductSpec[];
++  stock?: number;
++  status?: 'active' | 'inactive';
++  isNew?: boolean;
++  isFeatured?: boolean;
++}
++
++function toDbPatch(input: Partial<ProductInput>) {
++  const patch: Record<string, unknown> = {};
++  if (input.name !== undefined) patch.name = input.name;
++  if (input.slug !== undefined) patch.slug = input.slug;
++  if (input.sku !== undefined) patch.sku = input.sku;
++  if (input.categoryId !== undefined) patch.category_id = input.categoryId || null;
++  if (input.brandId !== undefined) patch.brand_id = input.brandId || null;
++  if (input.price !== undefined) patch.price = input.price;
++  if (input.oldPrice !== undefined) patch.old_price = input.oldPrice ?? null;
++  if (input.discount !== undefined) patch.discount = input.discount ?? null;
++  if (input.images !== undefined) patch.images = input.images;
++  if (input.description !== undefined) patch.description = input.description;
++  if (input.specs !== undefined) patch.specs = input.specs;
++  if (input.stock !== undefined) patch.stock = input.stock;
++  if (input.status !== undefined) patch.status = input.status;
++  if (input.isNew !== undefined) patch.is_new = input.isNew;
++  if (input.isFeatured !== undefined) patch.is_featured = input.isFeatured;
++  return patch;
++}
++
++export async function createProduct(input: ProductInput): Promise<Product> {
++  const payload = toDbPatch(input);
++  if (!payload.slug) payload.slug = slugify(input.name);
++  if (!payload.sku) payload.sku = `SKU-${Date.now()}`;
++
++  const { data, error } = await supabase
++    .from('products')
++    .insert(payload)
++    .select(PRODUCT_SELECT)
++    .single();
++  if (error) throw error;
++  return rowToProduct(data);
++}
++
++export async function updateProduct(id: string, patch: Partial<ProductInput>): Promise<Product> {
++  const { data, error } = await supabase
++    .from('products')
++    .update(toDbPatch(patch))
++    .eq('id', id)
++    .select(PRODUCT_SELECT)
++    .single();
++  if (error) throw error;
++  return rowToProduct(data);
++}
++
++export async function deleteProduct(id: string): Promise<void> {
++  const { error } = await supabase.from('products').delete().eq('id', id);
++  if (error) throw error;
++}
++
++// ============================================================================
++// УТИЛИТЫ
++// ============================================================================
++
++function slugify(text: string): string {
++  return text
++    .toLowerCase()
++    .trim()
++    .replace(/[^\w\u0400-\u04FF\s-]/g, '')
++    .replace(/\s+/g, '-')
++    .replace(/-+/g, '-');
++}
+diff --git a/src/pages/CatalogPage.tsx b/src/pages/CatalogPage.tsx
+index 9f43206..c49ea3a 100644
+--- a/src/pages/CatalogPage.tsx
++++ b/src/pages/CatalogPage.tsx
+@@ -1,4 +1,4 @@
+-import { useState, useMemo } from 'react';
++import { useState, useMemo, useEffect } from 'react';
+ import { useSearchParams } from 'react-router-dom';
+ import { SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+@@ -10,7 +10,8 @@ import { Slider } from '@/components/ui/slider';
+ import ProductCard from '@/components/shared/ProductCard';
+ import Pagination from '@/components/shared/Pagination';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+-import { getProducts, getCategories, getBrands } from '@/lib/getStorageData';
++import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
++import type { Product, Category, Brand } from '@/types';
+ 
+ const PAGE_SIZE = 12;
+ 
+@@ -19,9 +20,16 @@ type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'new';
+ export default function CatalogPage() {
+   const [searchParams] = useSearchParams();
+   const searchQuery = searchParams.get('search') || '';
+-  const products = getProducts();
+-  const categories = getCategories();
+-  const brands = getBrands();
++  const [products, setProducts] = useState<Product[]>([]);
++  const [categories, setCategories] = useState<Category[]>([]);
++  const [brands, setBrands] = useState<Brand[]>([]);
++  const [loading, setLoading] = useState(true);
++
++  useEffect(() => {
++    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
++      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); })
++      .finally(() => setLoading(false));
++  }, []);
+ 
+   const [page, setPage] = useState(1);
+   const [sort, setSort] = useState<SortOption>('featured');
+@@ -195,7 +203,9 @@ export default function CatalogPage() {
+           </div>
+ 
+           {/* Grid */}
+-          {paginated.length > 0 ? (
++          {loading ? (
++            <div className="flex items-center justify-center py-20 text-muted-foreground">Загрузка...</div>
++          ) : paginated.length > 0 ? (
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+               {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
+             </div>
+diff --git a/src/pages/CategoriesPage.tsx b/src/pages/CategoriesPage.tsx
+index 66a6c14..b39e554 100644
+--- a/src/pages/CategoriesPage.tsx
++++ b/src/pages/CategoriesPage.tsx
+@@ -1,18 +1,30 @@
++import { useState, useEffect } from 'react';
+ import CategoryCard from '@/components/shared/CategoryCard';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+-import { getCategories } from '@/lib/getStorageData';
++import { fetchCategories } from '@/lib/supabaseData';
++import type { Category } from '@/types';
+ 
+ export default function CategoriesPage() {
+-  const categories = getCategories();
++  const [categories, setCategories] = useState<Category[]>([]);
++  const [loading, setLoading] = useState(true);
++
++  useEffect(() => {
++    fetchCategories().then(setCategories).finally(() => setLoading(false));
++  }, []);
++
+   return (
+     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+       <Breadcrumb items={[{ label: 'Категории' }]} />
+       <h1 className="text-2xl font-bold mt-4 mb-6">Все категории</h1>
+-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+-        {categories.map((cat) => (
+-          <CategoryCard key={cat.id} category={cat} />
+-        ))}
+-      </div>
++      {loading ? (
++        <div className="py-16 text-center text-muted-foreground">Загрузка...</div>
++      ) : (
++        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
++          {categories.map((cat) => (
++            <CategoryCard key={cat.id} category={cat} />
++          ))}
++        </div>
++      )}
+     </div>
+   );
+ }
+diff --git a/src/pages/CategoryPage.tsx b/src/pages/CategoryPage.tsx
+index 4a7aff0..6b895ac 100644
+--- a/src/pages/CategoryPage.tsx
++++ b/src/pages/CategoryPage.tsx
+@@ -1,4 +1,4 @@
+-import { useState, useMemo } from 'react';
++import { useState, useMemo, useEffect } from 'react';
+ import { useParams, Link } from 'react-router-dom';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { Checkbox } from '@/components/ui/checkbox';
+@@ -7,15 +7,24 @@ import { Slider } from '@/components/ui/slider';
+ import ProductCard from '@/components/shared/ProductCard';
+ import Pagination from '@/components/shared/Pagination';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+-import { getProducts, getCategories, getBrands } from '@/lib/getStorageData';
++import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
++import type { Product, Category, Brand } from '@/types';
+ 
+ const PAGE_SIZE = 12;
+ 
+ export default function CategoryPage() {
+   const { slug } = useParams<{ slug: string }>();
+-  const products = getProducts();
+-  const categories = getCategories();
+-  const brands = getBrands();
++  const [products, setProducts] = useState<Product[]>([]);
++  const [categories, setCategories] = useState<Category[]>([]);
++  const [brands, setBrands] = useState<Brand[]>([]);
++  const [loading, setLoading] = useState(true);
++
++  useEffect(() => {
++    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
++      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); })
++      .finally(() => setLoading(false));
++  }, []);
++
+   const category = categories.find((c) => c.slug === slug);
+   const [page, setPage] = useState(1);
+   const [sort, setSort] = useState('featured');
+@@ -38,6 +47,10 @@ export default function CategoryPage() {
+   const totalPages = Math.ceil(categoryProducts.length / PAGE_SIZE);
+   const paginated = categoryProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+ 
++  if (loading) {
++    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
++  }
++
+   if (!category) {
+     return (
+       <div className="container mx-auto px-4 py-20 text-center">
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 9a218a2..07d6e20 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -4,14 +4,22 @@ import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star,
+ import { Button } from '@/components/ui/button';
+ import ProductCard from '@/components/shared/ProductCard';
+ import CategoryCard from '@/components/shared/CategoryCard';
+-import { getProducts, getCategories, getBanners, getBrands } from '@/lib/getStorageData';
++import { getBanners } from '@/lib/getStorageData';
++import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+ import { reviews } from '@/lib/mockData';
++import type { Product, Category, Brand } from '@/types';
+ 
+ export default function HomePage() {
+-  const products = getProducts();
+-  const categories = getCategories();
++  const [products, setProducts] = useState<Product[]>([]);
++  const [categories, setCategories] = useState<Category[]>([]);
++  const [brands, setBrands] = useState<Brand[]>([]);
+   const banners = getBanners();
+-  const brands = getBrands();
++
++  useEffect(() => {
++    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
++      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); });
++  }, []);
++
+   const [bannerIdx, setBannerIdx] = useState(0);
+   const activeBanners = banners.filter((b) => b.status === 'active');
+   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 8);
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index b77533a..fd205b4 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -1,4 +1,4 @@
+-import { useState } from 'react';
++import { useState, useEffect } from 'react';
+ import { useParams, Link } from 'react-router-dom';
+ import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw } from 'lucide-react';
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+@@ -6,22 +6,33 @@ import { Button } from '@/components/ui/button';
+ import { Badge } from '@/components/ui/badge';
+ import ProductCard from '@/components/shared/ProductCard';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+-import { getProducts } from '@/lib/getStorageData';
++import { fetchProducts } from '@/lib/supabaseData';
+ import { reviews as allReviews } from '@/lib/mockData';
+ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
+ import { toast } from 'sonner';
++import type { Product } from '@/types';
+ 
+ export default function ProductPage() {
+   const { slug } = useParams<{ slug: string }>();
+-  const products = getProducts();
+-  const product = products.find((p) => p.slug === slug);
++  const [products, setProducts] = useState<Product[]>([]);
++  const [loading, setLoading] = useState(true);
+   const [activeImg, setActiveImg] = useState(0);
+   const [quantity, setQuantity] = useState(1);
+ 
++  useEffect(() => {
++    fetchProducts().then(setProducts).finally(() => setLoading(false));
++  }, []);
++
++  const product = products.find((p) => p.slug === slug);
++
+   const addToCart = useCartStore((s) => s.addItem);
+   const { toggle, isFavorite } = useFavoritesStore();
+ 
++  if (loading) {
++    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
++  }
++
+   if (!product) {
+     return (
+       <div className="container mx-auto px-4 py-20 text-center">
+diff --git a/src/pages/SalePage.tsx b/src/pages/SalePage.tsx
+index 35e253d..669c253 100644
+--- a/src/pages/SalePage.tsx
++++ b/src/pages/SalePage.tsx
+@@ -1,4 +1,4 @@
+-import { useState } from 'react';
++import { useState, useEffect } from 'react';
+ import { Link } from 'react-router-dom';
+ import { Tag, ArrowRight } from 'lucide-react';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+@@ -6,16 +6,21 @@ import ProductCard from '@/components/shared/ProductCard';
+ import Pagination from '@/components/shared/Pagination';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+ import { Badge } from '@/components/ui/badge';
+-import { getProducts } from '@/lib/getStorageData';
++import { fetchProducts } from '@/lib/supabaseData';
+ import { promotions } from '@/lib/mockData';
++import type { Product } from '@/types';
+ 
+ const PAGE_SIZE = 12;
+ 
+ export default function SalePage() {
+-  const products = getProducts();
++  const [products, setProducts] = useState<Product[]>([]);
+   const [page, setPage] = useState(1);
+   const [sort, setSort] = useState('discount');
+ 
++  useEffect(() => {
++    fetchProducts().then(setProducts);
++  }, []);
++
+   const saleProducts = products.filter((p) => !!p.discount).sort((a, b) => {
+     if (sort === 'discount') return (b.discount || 0) - (a.discount || 0);
+     if (sort === 'price-asc') return a.price - b.price;
+diff --git a/src/pages/admin/AdminBrands.tsx b/src/pages/admin/AdminBrands.tsx
+index 0538137..3210d41 100644
+--- a/src/pages/admin/AdminBrands.tsx
++++ b/src/pages/admin/AdminBrands.tsx
+@@ -8,57 +8,69 @@ import { Textarea } from '@/components/ui/textarea';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+-import { brands as initialBrands } from '@/lib/mockData';
++import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/supabaseData';
+ import type { Brand } from '@/types';
+ import { toast } from 'sonner';
+ 
+ export default function AdminBrands() {
+-  const [items, setItems] = useState<Brand[]>(() => {
+-    if (typeof window === 'undefined') return initialBrands;
+-    const saved = localStorage.getItem('admin_brands');
+-    return saved ? JSON.parse(saved) : initialBrands;
+-  });
++  const [items, setItems] = useState<Brand[]>([]);
++  const [loading, setLoading] = useState(true);
+   const [open, setOpen] = useState(false);
++  const [saving, setSaving] = useState(false);
+   const [editing, setEditing] = useState<Brand | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
+   const [draft, setDraft] = useState<Partial<Brand>>({});
+ 
+-  useEffect(() => {
+-    localStorage.setItem('admin_brands', JSON.stringify(items));
+-  }, [items]);
++  const load = () => {
++    setLoading(true);
++    fetchBrands().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
++  };
++
++  useEffect(load, []);
+ 
+   const openNew = () => {
+     setEditing(null);
+-    setDraft({ name: '', description: '', status: 'active', productCount: 0 });
++    setDraft({ name: '', description: '', status: 'active' });
+     setOpen(true);
+   };
+   const openEdit = (b: Brand) => { setEditing(b); setDraft({ ...b }); setOpen(true); };
+ 
+-  const handleSave = () => {
++  const handleSave = async () => {
+     if (!draft.name) { toast.error('Введите название бренда'); return; }
+-    if (editing) {
+-      setItems((prev) => prev.map((b) => b.id === editing.id ? { ...b, ...draft } as Brand : b));
+-      toast.success('Бренд обновлён');
+-    } else {
+-      const newBrand: Brand = {
+-        id: `b_${Date.now()}`,
+-        name: draft.name || '',
+-        logo: '',
+-        description: draft.description || '',
+-        status: (draft.status as 'active' | 'inactive') || 'active',
+-        productCount: 0,
+-      };
+-      setItems((prev) => [...prev, newBrand]);
+-      toast.success('Бренд добавлен');
++    setSaving(true);
++    try {
++      if (editing) {
++        const updated = await updateBrand(editing.id, {
++          name: draft.name, description: draft.description, status: draft.status as 'active' | 'inactive',
++        });
++        setItems((prev) => prev.map((b) => b.id === editing.id ? updated : b));
++        toast.success('Бренд обновлён');
++      } else {
++        const created = await createBrand({
++          name: draft.name, description: draft.description, status: draft.status as 'active' | 'inactive',
++        });
++        setItems((prev) => [...prev, created]);
++        toast.success('Бренд добавлен');
++      }
++      setOpen(false);
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось сохранить бренд');
++    } finally {
++      setSaving(false);
+     }
+-    setOpen(false);
+   };
+ 
+-  const handleDelete = () => {
++  const handleDelete = async () => {
+     if (!deleteId) return;
+-    setItems((prev) => prev.filter((b) => b.id !== deleteId));
+-    setDeleteId(null);
+-    toast.success('Бренд удалён');
++    try {
++      await deleteBrand(deleteId);
++      setItems((prev) => prev.filter((b) => b.id !== deleteId));
++      toast.success('Бренд удалён');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить бренд');
++    } finally {
++      setDeleteId(null);
++    }
+   };
+ 
+   return (
+@@ -122,6 +134,12 @@ export default function AdminBrands() {
+             </tbody>
+           </table>
+         </div>
++        {!loading && items.length === 0 && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Брендов пока нет</div>
++        )}
++        {loading && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
++        )}
+       </div>
+ 
+       <Dialog open={open} onOpenChange={setOpen}>
+@@ -149,8 +167,8 @@ export default function AdminBrands() {
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
+-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
+-              <Check className="h-4 w-4 mr-1.5" /> Сохранить
++            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
++              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+diff --git a/src/pages/admin/AdminCategories.tsx b/src/pages/admin/AdminCategories.tsx
+index 0764f1c..281129d 100644
+--- a/src/pages/admin/AdminCategories.tsx
++++ b/src/pages/admin/AdminCategories.tsx
+@@ -4,56 +4,63 @@ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Badge } from '@/components/ui/badge';
+ import { Label } from '@/components/ui/label';
+-import { Textarea } from '@/components/ui/textarea';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+-import { categories as initialCats } from '@/lib/mockData';
++import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/supabaseData';
+ import type { Category } from '@/types';
+ import { toast } from 'sonner';
+ 
+ export default function AdminCategories() {
+-  const [items, setItems] = useState<Category[]>(() => {
+-    if (typeof window === 'undefined') return initialCats;
+-    const saved = localStorage.getItem('admin_categories');
+-    return saved ? JSON.parse(saved) : initialCats;
+-  });
++  const [items, setItems] = useState<Category[]>([]);
++  const [loading, setLoading] = useState(true);
+   const [open, setOpen] = useState(false);
++  const [saving, setSaving] = useState(false);
+   const [editing, setEditing] = useState<Category | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
+   const [draft, setDraft] = useState<Partial<Category>>({ name: '', slug: '' });
+ 
+-  useEffect(() => {
+-    localStorage.setItem('admin_categories', JSON.stringify(items));
+-  }, [items]);
++  const load = () => {
++    setLoading(true);
++    fetchCategories().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
++  };
++
++  useEffect(load, []);
+ 
+-  const openNew = () => { setEditing(null); setDraft({ name: '', slug: '', productCount: 0 }); setOpen(true); };
++  const openNew = () => { setEditing(null); setDraft({ name: '', slug: '' }); setOpen(true); };
+   const openEdit = (c: Category) => { setEditing(c); setDraft({ ...c }); setOpen(true); };
+ 
+-  const handleSave = () => {
++  const handleSave = async () => {
+     if (!draft.name) { toast.error('Введите название категории'); return; }
+-    if (editing) {
+-      setItems((prev) => prev.map((c) => c.id === editing.id ? { ...c, ...draft } as Category : c));
+-      toast.success('Категория обновлена');
+-    } else {
+-      const newCat: Category = {
+-        id: `c_${Date.now()}`,
+-        name: draft.name || '',
+-        slug: draft.name?.toLowerCase().replace(/\s+/g, '-') || '',
+-        image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80',
+-        productCount: 0,
+-      };
+-      setItems((prev) => [...prev, newCat]);
+-      toast.success('Категория добавлена');
++    setSaving(true);
++    try {
++      if (editing) {
++        const updated = await updateCategory(editing.id, { name: draft.name, slug: draft.slug, image: draft.image });
++        setItems((prev) => prev.map((c) => c.id === editing.id ? updated : c));
++        toast.success('Категория обновлена');
++      } else {
++        const created = await createCategory({ name: draft.name, slug: draft.slug });
++        setItems((prev) => [...prev, created]);
++        toast.success('Категория добавлена');
++      }
++      setOpen(false);
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось сохранить категорию');
++    } finally {
++      setSaving(false);
+     }
+-    setOpen(false);
+   };
+ 
+-  const handleDelete = () => {
++  const handleDelete = async () => {
+     if (!deleteId) return;
+-    setItems((prev) => prev.filter((c) => c.id !== deleteId));
+-    setDeleteId(null);
+-    toast.success('Категория удалена');
++    try {
++      await deleteCategory(deleteId);
++      setItems((prev) => prev.filter((c) => c.id !== deleteId));
++      toast.success('Категория удалена');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить категорию');
++    } finally {
++      setDeleteId(null);
++    }
+   };
+ 
+   return (
+@@ -105,6 +112,12 @@ export default function AdminCategories() {
+             </tbody>
+           </table>
+         </div>
++        {!loading && items.length === 0 && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Категорий пока нет</div>
++        )}
++        {loading && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
++        )}
+       </div>
+ 
+       <Dialog open={open} onOpenChange={setOpen}>
+@@ -122,8 +135,8 @@ export default function AdminCategories() {
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
+-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
+-              <Check className="h-4 w-4 mr-1.5" /> Сохранить
++            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
++              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+diff --git a/src/pages/admin/AdminDashboard.tsx b/src/pages/admin/AdminDashboard.tsx
+index 0c63fe2..9cfd594 100644
+--- a/src/pages/admin/AdminDashboard.tsx
++++ b/src/pages/admin/AdminDashboard.tsx
+@@ -1,10 +1,12 @@
++import { useState, useEffect } from 'react';
+ import { ShoppingBag, Users, Package, TrendingUp, ArrowUpRight, Clock } from 'lucide-react';
+ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+ import { Badge } from '@/components/ui/badge';
+ import { useOrdersStore } from '@/store/ordersStore';
+-import { getProducts } from '@/lib/getStorageData';
++import { fetchProducts } from '@/lib/supabaseData';
+ import { customers } from '@/lib/mockData';
+ import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
++import type { Product } from '@/types';
+ 
+ const salesData = [
+   { month: 'Jan', revenue: 42000, orders: 28 },
+@@ -18,7 +20,8 @@ const salesData = [
+ ];
+ 
+ export default function AdminDashboard() {
+-  const products = getProducts();
++  const [products, setProducts] = useState<Product[]>([]);
++  useEffect(() => { fetchProducts().then(setProducts); }, []);
+   const topProducts = products.filter((p) => p.isFeatured).slice(0, 5);
+   const orders = useOrdersStore((s) => s.orders);
+   const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
+diff --git a/src/pages/admin/AdminProducts.tsx b/src/pages/admin/AdminProducts.tsx
+index 8a7ffa6..6f7d4e0 100644
+--- a/src/pages/admin/AdminProducts.tsx
++++ b/src/pages/admin/AdminProducts.tsx
+@@ -8,28 +8,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+ import { Label } from '@/components/ui/label';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { Textarea } from '@/components/ui/textarea';
+-import { products as initialProducts, categories as initialCategories, brands as initialBrands } from '@/lib/mockData';
+-import type { Product } from '@/types';
++import {
++  fetchProducts, createProduct, updateProduct, deleteProduct,
++  fetchCategories, fetchBrands,
++} from '@/lib/supabaseData';
++import type { Product, Category, Brand } from '@/types';
+ import { toast } from 'sonner';
+ 
+ type ProductDraft = Partial<Product> & { name: string; price: number };
+ 
+ export default function AdminProducts() {
+-  const [items, setItems] = useState<Product[]>(() => {
+-    if (typeof window === 'undefined') return initialProducts;
+-    const saved = localStorage.getItem('admin_products');
+-    return saved ? JSON.parse(saved) : initialProducts;
+-  });
+-  const [categories, setCategories] = useState(() => {
+-    if (typeof window === 'undefined') return initialCategories;
+-    const saved = localStorage.getItem('admin_categories');
+-    return saved ? JSON.parse(saved) : initialCategories;
+-  });
+-  const [brands, setBrands] = useState(() => {
+-    if (typeof window === 'undefined') return initialBrands;
+-    const saved = localStorage.getItem('admin_brands');
+-    return saved ? JSON.parse(saved) : initialBrands;
+-  });
++  const [items, setItems] = useState<Product[]>([]);
++  const [categories, setCategories] = useState<Category[]>([]);
++  const [brands, setBrands] = useState<Brand[]>([]);
++  const [loading, setLoading] = useState(true);
++  const [saving, setSaving] = useState(false);
+   const [search, setSearch] = useState('');
+   const [catFilter, setCatFilter] = useState('all');
+   const [statusFilter, setStatusFilter] = useState('all');
+@@ -39,36 +32,15 @@ export default function AdminProducts() {
+   const [draft, setDraft] = useState<ProductDraft>({ name: '', price: 0, status: 'active' });
+   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+ 
+-  useEffect(() => {
+-    localStorage.setItem('admin_products', JSON.stringify(items));
+-  }, [items]);
+-
+-  useEffect(() => {
+-    setBrands(() => {
+-      const saved = localStorage.getItem('admin_brands');
+-      return saved ? JSON.parse(saved) : initialBrands;
+-    });
+-  }, []);
+-
+-  useEffect(() => {
+-    setCategories(() => {
+-      const saved = localStorage.getItem('admin_categories');
+-      return saved ? JSON.parse(saved) : initialCategories;
+-    });
+-  }, []);
++  const load = () => {
++    setLoading(true);
++    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
++      .then(([p, c, b]) => { setItems(p); setCategories(c); setBrands(b); })
++      .catch((e) => toast.error(e.message))
++      .finally(() => setLoading(false));
++  };
+ 
+-  useEffect(() => {
+-    const handleStorageChange = (e: StorageEvent) => {
+-      if (e.key === 'admin_brands' && e.newValue) {
+-        setBrands(JSON.parse(e.newValue));
+-      }
+-      if (e.key === 'admin_categories' && e.newValue) {
+-        setCategories(JSON.parse(e.newValue));
+-      }
+-    };
+-    window.addEventListener('storage', handleStorageChange);
+-    return () => window.removeEventListener('storage', handleStorageChange);
+-  }, []);
++  useEffect(load, []);
+ 
+   const filtered = items.filter((p) => {
+     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase());
+@@ -78,65 +50,73 @@ export default function AdminProducts() {
+   });
+ 
+   const openNew = () => {
+-    const freshBrands = JSON.parse(localStorage.getItem('admin_brands') || JSON.stringify(initialBrands));
+-    const freshCategories = JSON.parse(localStorage.getItem('admin_categories') || JSON.stringify(initialCategories));
+-    setBrands(freshBrands);
+-    setCategories(freshCategories);
+     setEditing(null);
+-    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: freshCategories?.[0]?.id || '', brandId: freshBrands?.[0]?.id || '' });
++    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: categories[0]?.id || '', brandId: brands[0]?.id || '' });
+     setUploadedImages([]);
+     setOpen(true);
+   };
+ 
+   const openEdit = (p: Product) => {
+-    const freshBrands = JSON.parse(localStorage.getItem('admin_brands') || JSON.stringify(initialBrands));
+-    const freshCategories = JSON.parse(localStorage.getItem('admin_categories') || JSON.stringify(initialCategories));
+-    setBrands(freshBrands);
+-    setCategories(freshCategories);
+     setEditing(p);
+     setDraft({ ...p });
+     setUploadedImages(p.images || []);
+     setOpen(true);
+   };
+ 
+-  const handleSave = () => {
++  const handleSave = async () => {
+     if (!draft.name || !draft.price) { toast.error('Заполните обязательные поля'); return; }
+     if (uploadedImages.length === 0) { toast.error('Добавьте хотя бы одно изображение'); return; }
+-    if (editing) {
+-      setItems((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...draft, images: uploadedImages } as Product : p));
+-      toast.success('Товар обновлён');
+-    } else {
+-      const cat = categories.find((c) => c.id === draft.categoryId);
+-      const brand = brands.find((b) => b.id === draft.brandId);
+-      const newProduct: Product = {
+-        id: `p_${Date.now()}`,
+-        sku: `SKU-${Date.now()}`,
+-        slug: draft.name.toLowerCase().replace(/\s+/g, '-'),
+-        categoryName: cat?.name || '',
+-        brandName: brand?.name || '',
+-        images: uploadedImages.length > 0 ? uploadedImages : ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80'],
+-        description: draft.description || '',
+-        specs: [],
+-        rating: 0, reviewCount: 0,
+-        ...draft,
+-        name: draft.name,
+-        price: draft.price,
+-        status: (draft.status as 'active' | 'inactive') || 'active',
+-        stock: draft.stock || 0,
+-        categoryId: draft.categoryId || categories[0]?.id || '',
+-        brandId: draft.brandId || brands[0]?.id || '',
+-      };
+-      setItems((prev) => [newProduct, ...prev]);
+-      toast.success('Товар добавлен');
++
++    setSaving(true);
++    try {
++      if (editing) {
++        const updated = await updateProduct(editing.id, {
++          name: draft.name,
++          price: draft.price,
++          oldPrice: draft.oldPrice,
++          categoryId: draft.categoryId,
++          brandId: draft.brandId,
++          stock: draft.stock,
++          status: draft.status as 'active' | 'inactive',
++          description: draft.description,
++          images: uploadedImages,
++        });
++        setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p));
++        toast.success('Товар обновлён');
++      } else {
++        const created = await createProduct({
++          name: draft.name,
++          price: draft.price,
++          oldPrice: draft.oldPrice,
++          categoryId: draft.categoryId || categories[0]?.id,
++          brandId: draft.brandId || brands[0]?.id,
++          stock: draft.stock || 0,
++          status: (draft.status as 'active' | 'inactive') || 'active',
++          description: draft.description || '',
++          images: uploadedImages,
++        });
++        setItems((prev) => [created, ...prev]);
++        toast.success('Товар добавлен');
++      }
++      setOpen(false);
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось сохранить товар');
++    } finally {
++      setSaving(false);
+     }
+-    setOpen(false);
+   };
+ 
+-  const handleDelete = () => {
++  const handleDelete = async () => {
+     if (!deleteId) return;
+-    setItems((prev) => prev.filter((p) => p.id !== deleteId));
+-    setDeleteId(null);
+-    toast.success('Товар удалён');
++    try {
++      await deleteProduct(deleteId);
++      setItems((prev) => prev.filter((p) => p.id !== deleteId));
++      toast.success('Товар удалён');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить товар');
++    } finally {
++      setDeleteId(null);
++    }
+   };
+ 
+   return (
+@@ -224,9 +204,12 @@ export default function AdminProducts() {
+             </tbody>
+           </table>
+         </div>
+-        {filtered.length === 0 && (
++        {!loading && filtered.length === 0 && (
+           <div className="py-12 text-center text-muted-foreground text-sm">Товары не найдены</div>
+         )}
++        {loading && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
++        )}
+       </div>
+ 
+       {/* Edit/Add dialog */}
+@@ -310,17 +293,18 @@ export default function AdminProducts() {
+                         <Upload className="h-4 w-4" />
+                         <span className="text-sm">Добавить ещё изображение</span>
+                       </div>
+-                      <input 
+-                        type="file" 
+-                        multiple 
+-                        accept="image/*" 
+-                        className="hidden" 
++                      <input
++                        type="file"
++                        multiple
++                        accept="image/*"
++                        className="hidden"
+                         onChange={(e) => {
+                           Array.from(e.target.files || []).forEach((file) => {
+                             const reader = new FileReader();
+                             reader.onload = (event) => {
+-                              if (event.target?.result && typeof event.target.result === 'string') {
+-                                setUploadedImages(prev => [...prev, event.target.result]);
++                              const result = event.target?.result;
++                              if (typeof result === 'string') {
++                                setUploadedImages(prev => [...prev, result]);
+                               }
+                             };
+                             reader.readAsDataURL(file);
+@@ -336,17 +320,18 @@ export default function AdminProducts() {
+                       <p className="text-sm font-medium mb-1">Перетащите изображения сюда</p>
+                       <p className="text-xs text-muted-foreground mb-3">или нажмите для выбора</p>
+                     </div>
+-                    <input 
+-                      type="file" 
+-                      multiple 
+-                      accept="image/*" 
+-                      className="hidden" 
++                    <input
++                      type="file"
++                      multiple
++                      accept="image/*"
++                      className="hidden"
+                       onChange={(e) => {
+                         Array.from(e.target.files || []).forEach((file) => {
+                           const reader = new FileReader();
+                           reader.onload = (event) => {
+-                            if (event.target?.result && typeof event.target.result === 'string') {
+-                              setUploadedImages(prev => [...prev, event.target.result]);
++                            const result = event.target?.result;
++                            if (typeof result === 'string') {
++                              setUploadedImages(prev => [...prev, result]);
+                             }
+                           };
+                           reader.readAsDataURL(file);
+@@ -363,8 +348,8 @@ export default function AdminProducts() {
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
+-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
+-              <Check className="h-4 w-4 mr-1.5" /> {editing ? 'Сохранить' : 'Добавить товар'}
++            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
++              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : editing ? 'Сохранить' : 'Добавить товар'}
+             </Button>
+           </DialogFooter>
+         </DialogContent>

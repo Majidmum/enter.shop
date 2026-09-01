@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react';
 import { ShoppingBag, Users, Package, TrendingUp, ArrowUpRight, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { useOrdersStore } from '@/store/ordersStore';
-import { getProducts } from '@/lib/getStorageData';
+import { fetchProducts } from '@/lib/supabaseData';
 import { customers } from '@/lib/mockData';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
+import type { Product } from '@/types';
 
 const salesData = [
   { month: 'Jan', revenue: 42000, orders: 28 },
@@ -18,7 +20,8 @@ const salesData = [
 ];
 
 export default function AdminDashboard() {
-  const products = getProducts();
+  const [products, setProducts] = useState<Product[]>([]);
+  useEffect(() => { fetchProducts().then(setProducts); }, []);
   const topProducts = products.filter((p) => p.isFeatured).slice(0, 5);
   const orders = useOrdersStore((s) => s.orders);
   const totalRevenue = orders.reduce((s, o) => s + o.total, 0);

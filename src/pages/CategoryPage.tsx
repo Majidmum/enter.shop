@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,15 +7,24 @@ import { Slider } from '@/components/ui/slider';
 import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { getProducts, getCategories, getBrands } from '@/lib/getStorageData';
+import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+import type { Product, Category, Brand } from '@/types';
 
 const PAGE_SIZE = 12;
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
-  const products = getProducts();
-  const categories = getCategories();
-  const brands = getBrands();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
+      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); })
+      .finally(() => setLoading(false));
+  }, []);
+
   const category = categories.find((c) => c.slug === slug);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('featured');
@@ -37,6 +46,10 @@ export default function CategoryPage() {
 
   const totalPages = Math.ceil(categoryProducts.length / PAGE_SIZE);
   const paginated = categoryProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  if (loading) {
+    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
+  }
 
   if (!category) {
     return (

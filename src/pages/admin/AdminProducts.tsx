@@ -8,28 +8,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { products as initialProducts, categories as initialCategories, brands as initialBrands } from '@/lib/mockData';
-import type { Product } from '@/types';
+import {
+  fetchProducts, createProduct, updateProduct, deleteProduct,
+  fetchCategories, fetchBrands,
+} from '@/lib/supabaseData';
+import type { Product, Category, Brand } from '@/types';
 import { toast } from 'sonner';
 
 type ProductDraft = Partial<Product> & { name: string; price: number };
 
 export default function AdminProducts() {
-  const [items, setItems] = useState<Product[]>(() => {
-    if (typeof window === 'undefined') return initialProducts;
-    const saved = localStorage.getItem('admin_products');
-    return saved ? JSON.parse(saved) : initialProducts;
-  });
-  const [categories, setCategories] = useState(() => {
-    if (typeof window === 'undefined') return initialCategories;
-    const saved = localStorage.getItem('admin_categories');
-    return saved ? JSON.parse(saved) : initialCategories;
-  });
-  const [brands, setBrands] = useState(() => {
-    if (typeof window === 'undefined') return initialBrands;
-    const saved = localStorage.getItem('admin_brands');
-    return saved ? JSON.parse(saved) : initialBrands;
-  });
+  const [items, setItems] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -39,36 +32,15 @@ export default function AdminProducts() {
   const [draft, setDraft] = useState<ProductDraft>({ name: '', price: 0, status: 'active' });
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
-  useEffect(() => {
-    localStorage.setItem('admin_products', JSON.stringify(items));
-  }, [items]);
+  const load = () => {
+    setLoading(true);
+    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
+      .then(([p, c, b]) => { setItems(p); setCategories(c); setBrands(b); })
+      .catch((e) => toast.error(e.message))
+      .finally(() => setLoading(false));
+  };
 
-  useEffect(() => {
-    setBrands(() => {
-      const saved = localStorage.getItem('admin_brands');
-      return saved ? JSON.parse(saved) : initialBrands;
-    });
-  }, []);
-
-  useEffect(() => {
-    setCategories(() => {
-      const saved = localStorage.getItem('admin_categories');
-      return saved ? JSON.parse(saved) : initialCategories;
-    });
-  }, []);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'admin_brands' && e.newValue) {
-        setBrands(JSON.parse(e.newValue));
-      }
-      if (e.key === 'admin_categories' && e.newValue) {
-        setCategories(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  useEffect(load, []);
 
   const filtered = items.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase());
@@ -78,65 +50,73 @@ export default function AdminProducts() {
   });
 
   const openNew = () => {
-    const freshBrands = JSON.parse(localStorage.getItem('admin_brands') || JSON.stringify(initialBrands));
-    const freshCategories = JSON.parse(localStorage.getItem('admin_categories') || JSON.stringify(initialCategories));
-    setBrands(freshBrands);
-    setCategories(freshCategories);
     setEditing(null);
-    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: freshCategories?.[0]?.id || '', brandId: freshBrands?.[0]?.id || '' });
+    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: categories[0]?.id || '', brandId: brands[0]?.id || '' });
     setUploadedImages([]);
     setOpen(true);
   };
 
   const openEdit = (p: Product) => {
-    const freshBrands = JSON.parse(localStorage.getItem('admin_brands') || JSON.stringify(initialBrands));
-    const freshCategories = JSON.parse(localStorage.getItem('admin_categories') || JSON.stringify(initialCategories));
-    setBrands(freshBrands);
-    setCategories(freshCategories);
     setEditing(p);
     setDraft({ ...p });
     setUploadedImages(p.images || []);
     setOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!draft.name || !draft.price) { toast.error('Заполните обязательные поля'); return; }
     if (uploadedImages.length === 0) { toast.error('Добавьте хотя бы одно изображение'); return; }
-    if (editing) {
-      setItems((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...draft, images: uploadedImages } as Product : p));
-      toast.success('Товар обновлён');
-    } else {
-      const cat = categories.find((c) => c.id === draft.categoryId);
-      const brand = brands.find((b) => b.id === draft.brandId);
-      const newProduct: Product = {
-        id: `p_${Date.now()}`,
-        sku: `SKU-${Date.now()}`,
-        slug: draft.name.toLowerCase().replace(/\s+/g, '-'),
-        categoryName: cat?.name || '',
-        brandName: brand?.name || '',
-        images: uploadedImages.length > 0 ? uploadedImages : ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80'],
-        description: draft.description || '',
-        specs: [],
-        rating: 0, reviewCount: 0,
-        ...draft,
-        name: draft.name,
-        price: draft.price,
-        status: (draft.status as 'active' | 'inactive') || 'active',
-        stock: draft.stock || 0,
-        categoryId: draft.categoryId || categories[0]?.id || '',
-        brandId: draft.brandId || brands[0]?.id || '',
-      };
-      setItems((prev) => [newProduct, ...prev]);
-      toast.success('Товар добавлен');
+
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await updateProduct(editing.id, {
+          name: draft.name,
+          price: draft.price,
+          oldPrice: draft.oldPrice,
+          categoryId: draft.categoryId,
+          brandId: draft.brandId,
+          stock: draft.stock,
+          status: draft.status as 'active' | 'inactive',
+          description: draft.description,
+          images: uploadedImages,
+        });
+        setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p));
+        toast.success('Товар обновлён');
+      } else {
+        const created = await createProduct({
+          name: draft.name,
+          price: draft.price,
+          oldPrice: draft.oldPrice,
+          categoryId: draft.categoryId || categories[0]?.id,
+          brandId: draft.brandId || brands[0]?.id,
+          stock: draft.stock || 0,
+          status: (draft.status as 'active' | 'inactive') || 'active',
+          description: draft.description || '',
+          images: uploadedImages,
+        });
+        setItems((prev) => [created, ...prev]);
+        toast.success('Товар добавлен');
+      }
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось сохранить товар');
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
-    setItems((prev) => prev.filter((p) => p.id !== deleteId));
-    setDeleteId(null);
-    toast.success('Товар удалён');
+    try {
+      await deleteProduct(deleteId);
+      setItems((prev) => prev.filter((p) => p.id !== deleteId));
+      toast.success('Товар удалён');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить товар');
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -224,8 +204,11 @@ export default function AdminProducts() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Товары не найдены</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
 
@@ -310,17 +293,18 @@ export default function AdminProducts() {
                         <Upload className="h-4 w-4" />
                         <span className="text-sm">Добавить ещё изображение</span>
                       </div>
-                      <input 
-                        type="file" 
-                        multiple 
-                        accept="image/*" 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
                         onChange={(e) => {
                           Array.from(e.target.files || []).forEach((file) => {
                             const reader = new FileReader();
                             reader.onload = (event) => {
-                              if (event.target?.result && typeof event.target.result === 'string') {
-                                setUploadedImages(prev => [...prev, event.target.result]);
+                              const result = event.target?.result;
+                              if (typeof result === 'string') {
+                                setUploadedImages(prev => [...prev, result]);
                               }
                             };
                             reader.readAsDataURL(file);
@@ -336,17 +320,18 @@ export default function AdminProducts() {
                       <p className="text-sm font-medium mb-1">Перетащите изображения сюда</p>
                       <p className="text-xs text-muted-foreground mb-3">или нажмите для выбора</p>
                     </div>
-                    <input 
-                      type="file" 
-                      multiple 
-                      accept="image/*" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
                       onChange={(e) => {
                         Array.from(e.target.files || []).forEach((file) => {
                           const reader = new FileReader();
                           reader.onload = (event) => {
-                            if (event.target?.result && typeof event.target.result === 'string') {
-                              setUploadedImages(prev => [...prev, event.target.result]);
+                            const result = event.target?.result;
+                            if (typeof result === 'string') {
+                              setUploadedImages(prev => [...prev, result]);
                             }
                           };
                           reader.readAsDataURL(file);
@@ -363,8 +348,8 @@ export default function AdminProducts() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> {editing ? 'Сохранить' : 'Добавить товар'}
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
+              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : editing ? 'Сохранить' : 'Добавить товар'}
             </Button>
           </DialogFooter>
         </DialogContent>

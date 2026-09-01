@@ -86,9 +86,9 @@ export default function Header() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Laptop className="h-4 w-4 text-white" />
-          </div>
+          
+            <img src="/enter-logo-white-bg.png" alt="Logo" className="h-5 w-5" />
+          
           <span className="text-lg font-bold hidden sm:block">ENTER<span className="text-primary">.TJ</span></span>
         </Link>
 

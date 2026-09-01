@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import { Slider } from '@/components/ui/slider';
 import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { getProducts, getCategories, getBrands } from '@/lib/getStorageData';
+import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+import type { Product, Category, Brand } from '@/types';
 
 const PAGE_SIZE = 12;
 
@@ -19,9 +20,16 @@ type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'new';
 export default function CatalogPage() {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
-  const products = getProducts();
-  const categories = getCategories();
-  const brands = getBrands();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
+      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); })
+      .finally(() => setLoading(false));
+  }, []);
 
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortOption>('featured');
@@ -195,7 +203,9 @@ export default function CatalogPage() {
           </div>
 
           {/* Grid */}
-          {paginated.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-20 text-muted-foreground">Загрузка...</div>
+          ) : paginated.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>

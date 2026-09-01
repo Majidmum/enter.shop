@@ -8,57 +8,69 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { brands as initialBrands } from '@/lib/mockData';
+import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/supabaseData';
 import type { Brand } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminBrands() {
-  const [items, setItems] = useState<Brand[]>(() => {
-    if (typeof window === 'undefined') return initialBrands;
-    const saved = localStorage.getItem('admin_brands');
-    return saved ? JSON.parse(saved) : initialBrands;
-  });
+  const [items, setItems] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Brand | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Brand>>({});
 
-  useEffect(() => {
-    localStorage.setItem('admin_brands', JSON.stringify(items));
-  }, [items]);
+  const load = () => {
+    setLoading(true);
+    fetchBrands().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
 
   const openNew = () => {
     setEditing(null);
-    setDraft({ name: '', description: '', status: 'active', productCount: 0 });
+    setDraft({ name: '', description: '', status: 'active' });
     setOpen(true);
   };
   const openEdit = (b: Brand) => { setEditing(b); setDraft({ ...b }); setOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!draft.name) { toast.error('Введите название бренда'); return; }
-    if (editing) {
-      setItems((prev) => prev.map((b) => b.id === editing.id ? { ...b, ...draft } as Brand : b));
-      toast.success('Бренд обновлён');
-    } else {
-      const newBrand: Brand = {
-        id: `b_${Date.now()}`,
-        name: draft.name || '',
-        logo: '',
-        description: draft.description || '',
-        status: (draft.status as 'active' | 'inactive') || 'active',
-        productCount: 0,
-      };
-      setItems((prev) => [...prev, newBrand]);
-      toast.success('Бренд добавлен');
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await updateBrand(editing.id, {
+          name: draft.name, description: draft.description, status: draft.status as 'active' | 'inactive',
+        });
+        setItems((prev) => prev.map((b) => b.id === editing.id ? updated : b));
+        toast.success('Бренд обновлён');
+      } else {
+        const created = await createBrand({
+          name: draft.name, description: draft.description, status: draft.status as 'active' | 'inactive',
+        });
+        setItems((prev) => [...prev, created]);
+        toast.success('Бренд добавлен');
+      }
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось сохранить бренд');
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
-    setItems((prev) => prev.filter((b) => b.id !== deleteId));
-    setDeleteId(null);
-    toast.success('Бренд удалён');
+    try {
+      await deleteBrand(deleteId);
+      setItems((prev) => prev.filter((b) => b.id !== deleteId));
+      toast.success('Бренд удалён');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить бренд');
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -122,6 +134,12 @@ export default function AdminBrands() {
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Брендов пока нет</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -149,8 +167,8 @@ export default function AdminBrands() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> Сохранить
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
+              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -4,14 +4,22 @@ import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star,
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
 import CategoryCard from '@/components/shared/CategoryCard';
-import { getProducts, getCategories, getBanners, getBrands } from '@/lib/getStorageData';
+import { getBanners } from '@/lib/getStorageData';
+import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
 import { reviews } from '@/lib/mockData';
+import type { Product, Category, Brand } from '@/types';
 
 export default function HomePage() {
-  const products = getProducts();
-  const categories = getCategories();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const banners = getBanners();
-  const brands = getBrands();
+
+  useEffect(() => {
+    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
+      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); });
+  }, []);
+
   const [bannerIdx, setBannerIdx] = useState(0);
   const activeBanners = banners.filter((b) => b.status === 'active');
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 8);

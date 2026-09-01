@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,21 +6,32 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/shared/ProductCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { getProducts } from '@/lib/getStorageData';
+import { fetchProducts } from '@/lib/supabaseData';
 import { reviews as allReviews } from '@/lib/mockData';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { toast } from 'sonner';
+import type { Product } from '@/types';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
-  const products = getProducts();
-  const product = products.find((p) => p.slug === slug);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
+  useEffect(() => {
+    fetchProducts().then(setProducts).finally(() => setLoading(false));
+  }, []);
+
+  const product = products.find((p) => p.slug === slug);
+
   const addToCart = useCartStore((s) => s.addItem);
   const { toggle, isFavorite } = useFavoritesStore();
+
+  if (loading) {
+    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
+  }
 
   if (!product) {
     return (

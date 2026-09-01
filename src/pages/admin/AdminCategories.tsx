@@ -4,56 +4,63 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { categories as initialCats } from '@/lib/mockData';
+import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/supabaseData';
 import type { Category } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminCategories() {
-  const [items, setItems] = useState<Category[]>(() => {
-    if (typeof window === 'undefined') return initialCats;
-    const saved = localStorage.getItem('admin_categories');
-    return saved ? JSON.parse(saved) : initialCats;
-  });
+  const [items, setItems] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Category>>({ name: '', slug: '' });
 
-  useEffect(() => {
-    localStorage.setItem('admin_categories', JSON.stringify(items));
-  }, [items]);
-
-  const openNew = () => { setEditing(null); setDraft({ name: '', slug: '', productCount: 0 }); setOpen(true); };
-  const openEdit = (c: Category) => { setEditing(c); setDraft({ ...c }); setOpen(true); };
-
-  const handleSave = () => {
-    if (!draft.name) { toast.error('Введите название категории'); return; }
-    if (editing) {
-      setItems((prev) => prev.map((c) => c.id === editing.id ? { ...c, ...draft } as Category : c));
-      toast.success('Категория обновлена');
-    } else {
-      const newCat: Category = {
-        id: `c_${Date.now()}`,
-        name: draft.name || '',
-        slug: draft.name?.toLowerCase().replace(/\s+/g, '-') || '',
-        image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80',
-        productCount: 0,
-      };
-      setItems((prev) => [...prev, newCat]);
-      toast.success('Категория добавлена');
-    }
-    setOpen(false);
+  const load = () => {
+    setLoading(true);
+    fetchCategories().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
   };
 
-  const handleDelete = () => {
+  useEffect(load, []);
+
+  const openNew = () => { setEditing(null); setDraft({ name: '', slug: '' }); setOpen(true); };
+  const openEdit = (c: Category) => { setEditing(c); setDraft({ ...c }); setOpen(true); };
+
+  const handleSave = async () => {
+    if (!draft.name) { toast.error('Введите название категории'); return; }
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await updateCategory(editing.id, { name: draft.name, slug: draft.slug, image: draft.image });
+        setItems((prev) => prev.map((c) => c.id === editing.id ? updated : c));
+        toast.success('Категория обновлена');
+      } else {
+        const created = await createCategory({ name: draft.name, slug: draft.slug });
+        setItems((prev) => [...prev, created]);
+        toast.success('Категория добавлена');
+      }
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось сохранить категорию');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
     if (!deleteId) return;
-    setItems((prev) => prev.filter((c) => c.id !== deleteId));
-    setDeleteId(null);
-    toast.success('Категория удалена');
+    try {
+      await deleteCategory(deleteId);
+      setItems((prev) => prev.filter((c) => c.id !== deleteId));
+      toast.success('Категория удалена');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить категорию');
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -105,6 +112,12 @@ export default function AdminCategories() {
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Категорий пока нет</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -122,8 +135,8 @@ export default function AdminCategories() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> Сохранить
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
+              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Tag, ArrowRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,15 +6,20 @@ import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { Badge } from '@/components/ui/badge';
-import { getProducts } from '@/lib/getStorageData';
+import { fetchProducts } from '@/lib/supabaseData';
 import { promotions } from '@/lib/mockData';
+import type { Product } from '@/types';
 
 const PAGE_SIZE = 12;
 
 export default function SalePage() {
-  const products = getProducts();
+  const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('discount');
+
+  useEffect(() => {
+    fetchProducts().then(setProducts);
+  }, []);
 
   const saleProducts = products.filter((p) => !!p.discount).sort((a, b) => {
     if (sort === 'discount') return (b.discount || 0) - (a.discount || 0);
