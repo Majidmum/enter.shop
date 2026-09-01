@@ -26,7 +26,7 @@ export default function Header() {
 
   const cartCount = useCartStore((s) => s.itemCount());
   const favCount = useFavoritesStore((s) => s.items.length);
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +163,7 @@ export default function Header() {
           </Link>
 
           {/* User */}
-          <Link to={isAuthenticated ? '/account' : '/login'}>
+          <Link to={!isAuthenticated ? '/login' : user?.role === 'admin' ? '/admin' : '/account'}>
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <User className="h-5 w-5" />
             </Button>

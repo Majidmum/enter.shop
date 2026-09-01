@@ -1,0 +1,52 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index 75df3d3..2d6ccc2 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -26,7 +26,7 @@ export default function Header() {
+ 
+   const cartCount = useCartStore((s) => s.itemCount());
+   const favCount = useFavoritesStore((s) => s.items.length);
+-  const { isAuthenticated } = useAuthStore();
++  const { isAuthenticated, user } = useAuthStore();
+ 
+   const handleSearch = (e: React.FormEvent) => {
+     e.preventDefault();
+@@ -163,7 +163,7 @@ export default function Header() {
+           </Link>
+ 
+           {/* User */}
+-          <Link to={isAuthenticated ? '/account' : '/login'}>
++          <Link to={!isAuthenticated ? '/login' : user?.role === 'admin' ? '/admin' : '/account'}>
+             <Button variant="ghost" size="icon" className="h-9 w-9">
+               <User className="h-5 w-5" />
+             </Button>
+diff --git a/src/components/shared/MobileBottomNav.tsx b/src/components/shared/MobileBottomNav.tsx
+index c0e7479..f63e3dc 100644
+--- a/src/components/shared/MobileBottomNav.tsx
++++ b/src/components/shared/MobileBottomNav.tsx
+@@ -2,19 +2,23 @@ import { Link, useLocation } from 'react-router-dom';
+ import { Home, Grid3X3, Heart, ShoppingCart, User } from 'lucide-react';
+ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
++import { useAuthStore } from '@/store/authStore';
+ 
+-const navItems = [
++const baseNavItems = [
+   { icon: Home, label: 'Главная', href: '/' },
+   { icon: Grid3X3, label: 'Каталог', href: '/catalog' },
+   { icon: Heart, label: 'Избранное', href: '/favorites' },
+   { icon: ShoppingCart, label: 'Корзина', href: '/cart' },
+-  { icon: User, label: 'Профиль', href: '/account' },
+ ];
+ 
+ export default function MobileBottomNav() {
+   const { pathname } = useLocation();
+   const cartCount = useCartStore((s) => s.itemCount());
+   const favCount = useFavoritesStore((s) => s.items.length);
++  const user = useAuthStore((s) => s.user);
++
++  const profileHref = user?.role === 'admin' ? '/admin' : '/account';
++  const navItems = [...baseNavItems, { icon: User, label: 'Профиль', href: profileHref }];
+ 
+   return (
+     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border">
