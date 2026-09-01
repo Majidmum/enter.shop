@@ -36,10 +36,14 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
-    await register(data.name, data.email, data.phone, data.password);
+    const ok = await register(data.name, data.email, data.phone, data.password);
     setLoading(false);
-    toast.success('Аккаунт создан! Добро пожаловать!');
-    navigate('/account');
+    if (ok) {
+      toast.success('Аккаунт создан! Добро пожаловать!');
+      navigate('/account');
+    } else {
+      toast.error('Не удалось зарегистрироваться. Возможно, такой email уже используется.');
+    }
   };
 
   return (

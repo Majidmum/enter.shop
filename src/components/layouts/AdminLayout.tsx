@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Tag, ShoppingBag, Users, Star, Megaphone, Image,
   Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight,
@@ -82,8 +82,28 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
+  const { user, isAuthenticated, loading } = useAuthStore();
 
   const currentPage = navItems.find((i) => i.exact ? pathname === i.href : pathname.startsWith(i.href))?.label || 'Admin';
+
+  // Пока идёт проверка сессии Supabase — не решаем ничего, просто ждём.
+  if (loading) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-background text-sm text-muted-foreground">
+        Загрузка...
+      </div>
+    );
+  }
+
+  // Не вошёл в систему → на страницу входа.
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Вошёл, но не администратор → в личный кабинет, панель не для него.
+  if (user?.role !== 'admin') {
+    return <Navigate to="/account" replace />;
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background">

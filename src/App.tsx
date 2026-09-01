@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import IntersectObserver from '@/components/common/IntersectObserver';
+import { useAuthStore } from '@/store/authStore';
 
 import ClientLayout from '@/components/layouts/ClientLayout';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import AuthLayout from '@/components/layouts/AuthLayout';
 
 // Client pages
 import HomePage from '@/pages/HomePage';
@@ -39,6 +41,12 @@ import AdminReviews from '@/pages/admin/AdminReviews';
 import AdminSettings from '@/pages/admin/AdminSettings';
 
 const App: React.FC = () => {
+  const restoreSession = useAuthStore((s) => s.restoreSession);
+
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
   return (
     <Router>
       <IntersectObserver />
@@ -54,14 +62,18 @@ const App: React.FC = () => {
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="favorites" element={<FavoritesPage />} />
           <Route path="account" element={<AccountPage />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
-          <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="delivery" element={<DeliveryPage />} />
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="sale" element={<SalePage />} />
           <Route path="office" element={<OfficePage />} />
+        </Route>
+
+        {/* ── Auth routes (no Header/Footer) ── */}
+        <Route element={<AuthLayout />}>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
         {/* ── Admin routes ── */}
