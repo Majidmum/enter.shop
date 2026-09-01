@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { sendContactFormToTelegram } from '@/lib/telegram';
 import { toast } from 'sonner';
+import PageMeta from '@/components/common/PageMeta';
 
 const schema = z.object({
   name: z.string().min(2, 'Введите ваше имя'),
@@ -48,6 +49,10 @@ export default function ContactsPage() {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Контакты — ENTER.TJ"
+        description="Свяжитесь с ENTER.TJ: адрес, телефон, email и часы работы магазина компьютерной техники и офисной мебели в Душанбе."
+      />
       <div className="bg-secondary text-white py-12">
         <div className="container mx-auto px-4">
           <Breadcrumb items={[{ label: 'Контакты' }]} />

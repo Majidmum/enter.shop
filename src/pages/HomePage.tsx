@@ -6,6 +6,7 @@ import ProductCard from '@/components/shared/ProductCard';
 import CategoryCard from '@/components/shared/CategoryCard';
 import { getBanners } from '@/lib/getStorageData';
 import { fetchProducts, fetchCategories, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
+import PageMeta from '@/components/common/PageMeta';
 import type { Product, Category, Brand, Review } from '@/types';
 
 export default function HomePage() {
@@ -42,6 +43,10 @@ export default function HomePage() {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="ENTER.TJ — Компьютерная техника и офисная мебель в Душанбе"
+        description="Ноутбуки, ПК, мониторы, принтеры и офисная мебель с доставкой по Душанбе и Таджикистану. Официальная гарантия, широкий выбор брендов."
+      />
       {/* Hero Banner */}
       <section className="relative w-full overflow-hidden bg-secondary">
         <div className="relative min-h-[320px] md:min-h-[480px]">

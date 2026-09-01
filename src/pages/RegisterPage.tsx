@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Laptop, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
+import PageMeta from '@/components/common/PageMeta';
 
 const schema = z.object({
   name: z.string().min(2, 'Введите полное имя'),
@@ -48,6 +49,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex">
+      <PageMeta title="Регистрация — ENTER.TJ" description="Создайте аккаунт в ENTER.TJ." noIndex />
       <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-secondary">
         <div className="text-center px-8">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary mx-auto mb-4">

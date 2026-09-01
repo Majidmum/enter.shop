@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { toast } from 'sonner';
+import PageMeta from '@/components/common/PageMeta';
 import type { Product, Review } from '@/types';
 
 export default function ProductPage() {
@@ -94,6 +95,11 @@ export default function ProductPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <PageMeta
+        title={`${product.name} — купить в Душанбе за ${product.price.toLocaleString()} сом. | ENTER.TJ`}
+        description={(product.description || `${product.name} от ${product.brandName}. Купить с доставкой по Душанбе и Таджикистану, официальная гарантия.`).slice(0, 160)}
+        ogImage={product.images[0]}
+      />
       <Breadcrumb items={[
         { label: 'Каталог', href: '/catalog' },
         { label: product.categoryName, href: `/category/${product.slug.split('-')[0]}` },

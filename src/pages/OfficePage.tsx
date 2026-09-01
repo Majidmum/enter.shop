@@ -11,6 +11,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { toast } from 'sonner';
 import { sendContactFormToTelegram } from '@/lib/telegram';
 import { fetchActiveOfficePackages, type OfficePackage } from '@/lib/supabaseData';
+import PageMeta from '@/components/common/PageMeta';
 
 const schema = z.object({
   company: z.string().min(2, 'Введите название компании'),
@@ -68,6 +69,10 @@ const onSubmit = async (data: FormData) => {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Офис под ключ — оснащение офисов техникой и мебелью | ENTER.TJ"
+        description="Комплексное оснащение офисов в Душанбе: компьютеры, мебель, принтеры и сетевое оборудование. Готовые пакеты и индивидуальные решения для бизнеса."
+      />
       {/* Hero */}
       <div className="bg-secondary text-white py-16">
         <div className="container mx-auto px-4">

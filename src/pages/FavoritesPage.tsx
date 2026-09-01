@@ -5,6 +5,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
+import PageMeta from '@/components/common/PageMeta';
 
 export default function FavoritesPage() {
   const { items, removeItem } = useFavoritesStore();
@@ -13,6 +14,7 @@ export default function FavoritesPage() {
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+        <PageMeta title="Избранное — ENTER.TJ" description="Ваши избранные товары в ENTER.TJ." noIndex />
         <Breadcrumb items={[{ label: 'Избранное' }]} />
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <Heart className="h-16 w-16 text-muted" />
@@ -26,6 +28,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <PageMeta title="Избранное — ENTER.TJ" description="Ваши избранные товары в ENTER.TJ." noIndex />
       <Breadcrumb items={[{ label: 'Избранное' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">Избранное ({items.length})</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

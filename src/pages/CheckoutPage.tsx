@@ -14,6 +14,7 @@ import { useOrdersStore } from '@/store/ordersStore';
 import { useAuthStore } from '@/store/authStore';
 import { sendOrderToTelegram } from '@/lib/telegram';
 import { toast } from 'sonner';
+import PageMeta from '@/components/common/PageMeta';
 import type { CheckoutForm } from '@/types';
 
 const schema = z.object({
@@ -92,6 +93,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <PageMeta title="Оформление заказа — ENTER.TJ" description="Оформите заказ в ENTER.TJ." noIndex />
       <Breadcrumb items={[{ label: 'Корзина', href: '/cart' }, { label: 'Оформление заказа' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">Оформление заказа</h1>
 

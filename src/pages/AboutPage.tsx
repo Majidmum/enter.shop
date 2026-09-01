@@ -1,5 +1,6 @@
 import { Building2, Users, Award, Truck, Shield, Headphones, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import Breadcrumb from '@/components/shared/Breadcrumb';
+import PageMeta from '@/components/common/PageMeta';
 
 const stats = [
   { value: '5+', label: 'Лет на рынке' },
@@ -17,6 +18,10 @@ const team = [
 export default function AboutPage() {
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="О нас — ENTER.TJ"
+        description="ENTER.TJ — надёжный поставщик компьютерной техники и офисной мебели в Душанбе. Узнайте больше о нашей компании, гарантиях и сервисе."
+      />
       {/* Hero */}
       <div className="bg-secondary text-white py-16">
         <div className="container mx-auto px-4">

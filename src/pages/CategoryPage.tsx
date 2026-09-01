@@ -8,6 +8,7 @@ import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+import PageMeta from '@/components/common/PageMeta';
 import type { Product, Category, Brand } from '@/types';
 
 const PAGE_SIZE = 12;
@@ -62,6 +63,10 @@ export default function CategoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <PageMeta
+        title={`${category.name} — купить в Душанбе | ENTER.TJ`}
+        description={`${category.name}: широкий выбор в интернет-магазине ENTER.TJ. Доставка по Душанбе и Таджикистану, официальная гарантия.`}
+      />
       <Breadcrumb items={[{ label: 'Категории', href: '/categories' }, { label: category.name }]} />
 
       {/* Banner */}

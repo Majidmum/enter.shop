@@ -7,6 +7,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
+import PageMeta from '@/components/common/PageMeta';
 
 type Tab = 'profile' | 'orders' | 'favorites' | 'addresses' | 'settings';
 
@@ -29,6 +30,7 @@ export default function AccountPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <PageMeta title="Личный кабинет — ENTER.TJ" description="Ваш личный кабинет в ENTER.TJ." noIndex />
       <Breadcrumb items={[{ label: 'Аккаунт' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">Мой аккаунт</h1>
 

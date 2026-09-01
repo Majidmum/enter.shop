@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Laptop, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
+import PageMeta from '@/components/common/PageMeta';
 
 const loginSchema = z.object({
   email: z.string().email('Некорректный email'),
@@ -42,6 +43,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
+      <PageMeta title="Вход — ENTER.TJ" description="Войдите в личный кабинет ENTER.TJ." noIndex />
       {/* Left panel */}
       <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-secondary relative overflow-hidden">
         <div className="relative z-10 text-center px-8">

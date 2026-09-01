@@ -3,6 +3,7 @@ import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { useCartStore } from '@/store/cartStore';
+import PageMeta from '@/components/common/PageMeta';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total, itemCount } = useCartStore();
@@ -10,6 +11,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+        <PageMeta title="Корзина — ENTER.TJ" description="Ваша корзина в ENTER.TJ." noIndex />
         <Breadcrumb items={[{ label: 'Корзина' }]} />
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <ShoppingCart className="h-16 w-16 text-muted" />
@@ -23,6 +25,7 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <PageMeta title="Корзина — ENTER.TJ" description="Ваша корзина в ENTER.TJ." noIndex />
       <Breadcrumb items={[{ label: 'Корзина' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">Корзина ({itemCount()} товаров)</h1>
 

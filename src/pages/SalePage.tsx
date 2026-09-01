@@ -8,6 +8,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { Badge } from '@/components/ui/badge';
 import { fetchProducts } from '@/lib/supabaseData';
 import { promotions } from '@/lib/mockData';
+import PageMeta from '@/components/common/PageMeta';
 import type { Product } from '@/types';
 
 const PAGE_SIZE = 12;
@@ -34,6 +35,10 @@ export default function SalePage() {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Акции и скидки — ENTER.TJ"
+        description="Скидки до 20% на ноутбуки, ПК, мониторы, офисную мебель и аксессуары в ENTER.TJ. Актуальные акции и специальные предложения в Душанбе."
+      />
       {/* Hero */}
       <div className="bg-gradient-to-r from-secondary via-secondary to-primary/80 text-white py-14">
         <div className="container mx-auto px-4">

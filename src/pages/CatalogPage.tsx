@@ -11,6 +11,7 @@ import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+import PageMeta from '@/components/common/PageMeta';
 import type { Product, Category, Brand } from '@/types';
 
 const PAGE_SIZE = 12;
@@ -157,6 +158,10 @@ export default function CatalogPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <PageMeta
+        title={searchQuery ? `Поиск: "${searchQuery}" — ENTER.TJ` : 'Каталог товаров — ноутбуки, ПК, мебель | ENTER.TJ'}
+        description="Полный каталог компьютерной техники и офисной мебели ENTER.TJ: ноутбуки, ПК, мониторы, принтеры, кресла и столы. Фильтры по цене, бренду и категории."
+      />
       <Breadcrumb items={[{ label: 'Каталог' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">
         {searchQuery ? `Поиск: "${searchQuery}"` : 'Каталог товаров'}

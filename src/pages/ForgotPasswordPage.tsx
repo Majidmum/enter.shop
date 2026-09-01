@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Laptop, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import PageMeta from '@/components/common/PageMeta';
 
 const schema = z.object({ email: z.string().email('Некорректный email') });
 
@@ -23,6 +24,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <PageMeta title="Восстановление пароля — ENTER.TJ" description="Восстановите доступ к аккаунту ENTER.TJ." noIndex />
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">

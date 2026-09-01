@@ -1,9 +1,14 @@
 import { Truck, MapPin, Clock, CreditCard, Banknote, Smartphone, RotateCcw, CheckCircle } from 'lucide-react';
 import Breadcrumb from '@/components/shared/Breadcrumb';
+import PageMeta from '@/components/common/PageMeta';
 
 export default function DeliveryPage() {
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Доставка и оплата — ENTER.TJ"
+        description="Условия доставки и оплаты в интернет-магазине ENTER.TJ: доставка по Душанбе, самовывоз, наличный и безналичный расчёт."
+      />
       <div className="bg-secondary text-white py-12">
         <div className="container mx-auto px-4">
           <Breadcrumb items={[{ label: 'Доставка и оплата' }]} />
