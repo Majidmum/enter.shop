@@ -102,18 +102,6 @@ export default function LoginPage() {
             Нет аккаунта?{' '}
             <Link to="/register" className="text-primary hover:underline font-medium">Зарегистрироваться</Link>
           </p>
-
-          <div className="mt-4 p-3 rounded-lg bg-muted text-xs text-muted-foreground flex flex-col gap-1.5">
-            <p className="font-semibold text-foreground">Тестовые аккаунты:</p>
-            <div className="flex items-center justify-between">
-              <span>👤 Пользователь: <span className="font-medium">demo@enter.tj</span></span>
-              <span className="text-muted-foreground">любой пароль 6+ симв.</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>🔐 Администратор: <span className="font-medium">admin@enter.tj</span></span>
-              <span className="font-medium text-primary">admin123</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
