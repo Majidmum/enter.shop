@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,7 @@ export default function AdminCategories() {
 
   const handleSave = async () => {
     if (!draft.name) { toast.error('Введите название категории'); return; }
+    if (!draft.image) { toast.error('Загрузите изображение категории'); return; }
     setSaving(true);
     try {
       if (editing) {
@@ -38,7 +39,7 @@ export default function AdminCategories() {
         setItems((prev) => prev.map((c) => c.id === editing.id ? updated : c));
         toast.success('Категория обновлена');
       } else {
-        const created = await createCategory({ name: draft.name, slug: draft.slug });
+        const created = await createCategory({ name: draft.name, slug: draft.slug, image: draft.image });
         setItems((prev) => [...prev, created]);
         toast.success('Категория добавлена');
       }
@@ -131,6 +132,45 @@ export default function AdminCategories() {
             <div>
               <Label>Slug</Label>
               <Input className="mt-1" value={draft.slug || ''} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="генерируется автоматически" />
+            </div>
+            <div>
+              <Label>Изображение категории *</Label>
+              <div className="mt-1 border-2 border-dashed border-border rounded-lg p-3 bg-muted/30">
+                {draft.image ? (
+                  <div className="relative w-24 h-24 group">
+                    <img src={draft.image} alt="" className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => setDraft({ ...draft, image: '' })}
+                      className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="block cursor-pointer">
+                    <div className="flex flex-col items-center justify-center gap-1 py-6">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Нажмите, чтобы загрузить фото</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const result = event.target?.result;
+                          if (typeof result === 'string') setDraft((prev) => ({ ...prev, image: result }));
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>

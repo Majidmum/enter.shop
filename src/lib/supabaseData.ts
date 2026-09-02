@@ -33,7 +33,7 @@ export async function createCategory(input: {
     .insert({
       name: input.name,
       slug,
-      image: input.image || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80',
+      image: input.image || '',
     })
     .select()
     .single();
