@@ -1,0 +1,101 @@
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index 8b8c662..e6a3568 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -147,8 +147,8 @@ export default function ProductPage() {
+           </div>
+ 
+           {/* Price */}
+-          <div className="flex items-baseline gap-3">
+-            <span className="text-3xl font-bold text-foreground">{product.price.toLocaleString()} сом.</span>
++          <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
++            <span className="text-2xl md:text-3xl font-bold text-foreground">{product.price.toLocaleString()} сом.</span>
+             {product.oldPrice && (
+               <span className="text-lg text-muted-foreground line-through">{product.oldPrice.toLocaleString()} сом.</span>
+             )}
+@@ -183,17 +183,18 @@ export default function ProductPage() {
+               </div>
+             </div>
+ 
+-            <div className="flex gap-3 flex-wrap">
+-              <Button onClick={handleBuyNow} className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold" disabled={product.stock === 0}>
++            <div className="flex flex-col md:flex-row gap-2 md:gap-3">
++              <Button onClick={handleBuyNow} className="w-full md:flex-1 bg-primary hover:bg-primary/90 text-white font-semibold" disabled={product.stock === 0}>
+                 Купить сейчас
+               </Button>
+-              <Button onClick={handleAddToCart} variant="outline" className="flex-1" disabled={product.stock === 0}>
+-                <ShoppingCart className="h-4 w-4 mr-1.5" /> В корзину
+-              </Button>
+-              <Button onClick={() => toggle(product)} variant="outline" size="icon"
+-                className={fav ? 'border-primary text-primary' : ''}>
+-                <Heart className={`h-4 w-4 ${fav ? 'fill-current' : ''}`} />
+-              </Button>
++              <div className="flex gap-2 md:gap-3 md:flex-1">
++                <Button onClick={handleAddToCart} variant="outline" className="flex-1" disabled={product.stock === 0}>
++                  <ShoppingCart className="h-4 w-4 mr-1.5" /> В корзину
++                </Button>
++                <Button onClick={() => toggle(product)} variant="outline" size="icon" className={`shrink-0 ${fav ? 'border-primary text-primary' : ''}`}>
++                  <Heart className={`h-4 w-4 ${fav ? 'fill-current' : ''}`} />
++                </Button>
++              </div>
+             </div>
+           </div>
+ 
+@@ -218,22 +219,22 @@ export default function ProductPage() {
+       {/* Tabs */}
+       <div className="mt-10">
+         <Tabs defaultValue="description">
+-          <TabsList className="w-full md:w-auto flex">
+-            <TabsTrigger value="description" className="flex-1 md:flex-none">Описание</TabsTrigger>
+-            <TabsTrigger value="specs" className="flex-1 md:flex-none">Характеристики</TabsTrigger>
+-            <TabsTrigger value="reviews" className="flex-1 md:flex-none">Отзывы ({productReviews.length})</TabsTrigger>
+-            <TabsTrigger value="delivery" className="flex-1 md:flex-none">Доставка</TabsTrigger>
++          <TabsList className="w-full md:w-auto flex overflow-x-auto justify-start gap-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
++            <TabsTrigger value="description" className="shrink-0">Описание</TabsTrigger>
++            <TabsTrigger value="specs" className="shrink-0">Характеристики</TabsTrigger>
++            <TabsTrigger value="reviews" className="shrink-0">Отзывы ({productReviews.length})</TabsTrigger>
++            <TabsTrigger value="delivery" className="shrink-0">Доставка</TabsTrigger>
+           </TabsList>
+ 
+           <TabsContent value="description" className="mt-4 prose prose-sm max-w-none">
+-            <div className="rounded-xl bg-card border border-border p-5">
++            <div className="rounded-xl bg-card border border-border p-4 sm:p-5">
+               <p className="text-foreground leading-relaxed">{product.description}</p>
+             </div>
+           </TabsContent>
+ 
+           <TabsContent value="specs" className="mt-4">
+-            <div className="rounded-xl bg-card border border-border overflow-hidden">
+-              <table className="w-full text-sm">
++            <div className="rounded-xl bg-card border border-border overflow-x-auto">
++              <table className="w-full text-sm min-w-[320px]">
+                 <tbody>
+                   {product.specs.map((spec, i) => (
+                     <tr key={i} className={i % 2 === 0 ? 'bg-muted/40' : ''}>
+@@ -247,7 +248,7 @@ export default function ProductPage() {
+           </TabsContent>
+ 
+           <TabsContent value="reviews" className="mt-4">
+-            <div className="rounded-xl bg-card border border-border p-5">
++            <div className="rounded-xl bg-card border border-border p-4 sm:p-5">
+               {productReviews.length > 0 ? (
+                 <div className="flex flex-col gap-4">
+                   {productReviews.map((r) => (
+@@ -271,7 +272,7 @@ export default function ProductPage() {
+             </div>
+ 
+             {/* Форма добавления отзыва */}
+-            <div className="rounded-xl bg-card border border-border p-5 mt-4">
++            <div className="rounded-xl bg-card border border-border p-4 sm:p-5 mt-4">
+               <h3 className="font-semibold mb-3">Оставить отзыв</h3>
+               <div className="flex flex-col gap-3">
+                 <div>
+@@ -324,7 +325,7 @@ export default function ProductPage() {
+           </TabsContent>
+ 
+           <TabsContent value="delivery" className="mt-4">
+-            <div className="rounded-xl bg-card border border-border p-5 flex flex-col gap-3 text-sm text-foreground">
++            <div className="rounded-xl bg-card border border-border p-4 sm:p-5 flex flex-col gap-3 text-sm text-foreground">
+               <div className="flex items-start gap-2"><Truck className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Бесплатная доставка</p><p className="text-muted-foreground">Доставка по Душанбе за 1–2 рабочих дня. Бесплатно при заказе от 500 сомони.</p></div></div>
+               <div className="flex items-start gap-2"><Check className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Самовывоз</p><p className="text-muted-foreground">Бесплатный самовывоз из нашего магазина в Душанбе.</p></div></div>
+               <div className="flex items-start gap-2"><Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Гарантия</p><p className="text-muted-foreground">Все товары включают официальную гарантию производителя 12–24 месяца.</p></div></div>
