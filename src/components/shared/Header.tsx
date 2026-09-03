@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useAuthStore } from '@/store/authStore';
+import { useTheme } from '@/components/theme-provider';
 import { categories } from '@/lib/mockData';
 
 const navLinks = [
@@ -18,10 +19,26 @@ const navLinks = [
   { label: 'Контакты', href: '/contacts' },
 ];
 
+function ThemeToggle({ className = '' }: { className?: string }) {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={`h-9 w-9 ${className}`}
+      onClick={toggleTheme}
+      aria-label="Переключить тему"
+    >
+      {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </Button>
+  );
+}
+
 export default function Header() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
 
   const cartCount = useCartStore((s) => s.itemCount());
@@ -33,12 +50,13 @@ export default function Header() {
     if (query.trim()) {
       navigate(`/catalog?search=${encodeURIComponent(query.trim())}`);
       setQuery('');
+      setMobileSearchOpen(false);
     }
   };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
-      {/* Top bar */}
+      {/* Top bar (desktop only) */}
       <div className="bg-secondary text-white/70 text-xs hidden md:block">
         <div className="container mx-auto px-4 flex items-center justify-between h-8">
           <span>Душанбе, Таджикистан · Пн–Сб 9:00–19:00</span>
@@ -50,7 +68,7 @@ export default function Header() {
       </div>
 
       {/* Main bar */}
-      <div className="container mx-auto px-4 h-16 flex items-center gap-3">
+      <div className="container mx-auto px-4 h-14 md:h-16 flex items-center gap-2 md:gap-3">
         {/* Mobile menu trigger */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
@@ -85,11 +103,8 @@ export default function Header() {
         </Sheet>
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          
-            <img src="/enter-logo-white-bg.png" alt="Logo" className="h-10 w-28" />
-          
-          
+        <Link to="/" className="flex items-center shrink-0 min-w-0">
+          <img src="/enter-logo-white-bg.png" alt="ENTER.TJ" className="h-8 md:h-10 w-auto max-w-[110px] md:max-w-none object-contain" />
         </Link>
 
         {/* Catalog dropdown desktop */}
@@ -120,8 +135,8 @@ export default function Header() {
           )}
         </div>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="flex-1 min-w-0 flex gap-2">
+        {/* Search — desktop: always visible inline. Mobile: hidden, toggled via icon below */}
+        <form onSubmit={handleSearch} className="hidden md:flex flex-1 min-w-0 gap-2">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
@@ -131,14 +146,26 @@ export default function Header() {
               className="pl-9 h-9 w-full"
             />
           </div>
-          <Button type="submit" className="h-9 bg-primary hover:bg-primary/90 text-white hidden sm:flex shrink-0">
+          <Button type="submit" className="h-9 bg-primary hover:bg-primary/90 text-white shrink-0">
             Найти
           </Button>
         </form>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Favorites */}
+        {/* Spacer pushes mobile actions to the right */}
+        <div className="flex-1 md:hidden" />
+
+        {/* Mobile compact actions: search toggle + theme */}
+        <div className="flex items-center gap-0.5 md:hidden shrink-0">
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileSearchOpen((v) => !v)} aria-label="Поиск">
+            {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+          </Button>
+          <ThemeToggle />
+        </div>
+
+        {/* Desktop actions */}
+        <div className="hidden md:flex items-center gap-1 shrink-0">
+          <ThemeToggle />
+
           <Link to="/favorites">
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <Heart className="h-5 w-5" />
@@ -150,7 +177,6 @@ export default function Header() {
             </Button>
           </Link>
 
-          {/* Cart */}
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <ShoppingCart className="h-5 w-5" />
@@ -162,7 +188,6 @@ export default function Header() {
             </Button>
           </Link>
 
-          {/* User */}
           <Link to={!isAuthenticated ? '/login' : user?.role === 'admin' ? '/admin' : '/account'}>
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <User className="h-5 w-5" />
@@ -170,6 +195,27 @@ export default function Header() {
           </Link>
         </div>
       </div>
+
+      {/* Mobile expandable search row */}
+      {mobileSearchOpen && (
+        <div className="md:hidden border-t border-border px-4 py-2.5 bg-card">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Поиск товаров..."
+                className="pl-9 h-10 w-full"
+              />
+            </div>
+            <Button type="submit" className="h-10 bg-primary hover:bg-primary/90 text-white shrink-0">
+              Найти
+            </Button>
+          </form>
+        </div>
+      )}
 
       {/* Secondary nav (desktop) */}
       <div className="hidden md:block border-t border-border bg-background/80 backdrop-blur-sm">

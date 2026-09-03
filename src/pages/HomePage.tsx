@@ -1,30 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2 } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
-import CategoryCard from '@/components/shared/CategoryCard';
 import { getBanners } from '@/lib/getStorageData';
-import { fetchProducts, fetchCategories, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
+import { fetchProducts, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
-import type { Product, Category, Brand, Review } from '@/types';
+import type { Product, Brand, Review } from '@/types';
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
   const banners = getBanners();
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchApprovedReviews()])
-      .then(([p, c, b, r]) => { setProducts(p); setCategories(c); setBrands(b); setApprovedReviews(r.slice(0, 4)); });
+    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews()])
+      .then(([p, b, r]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); });
   }, []);
 
   const [bannerIdx, setBannerIdx] = useState(0);
   const activeBanners = banners.filter((b) => b.status === 'active');
-  const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 8);
-  const newProducts = products.filter((p) => p.isNew).slice(0, 8);
+
+  // "Популярные товары" — на основе реальной оценки и количества отзывов,
+  // а не ручного флажка. Чем выше рейтинг и чем больше отзывов — тем выше в списке.
+  const popularProducts = [...products]
+    .filter((p) => p.status === 'active')
+    .sort((a, b) => (b.rating - a.rating) || (b.reviewCount - a.reviewCount))
+    .slice(0, 8);
+
+  // "Новинки" — управляется администратором вручную (переключатель в форме товара)
+  const newProducts = products.filter((p) => p.isNew && p.status === 'active').slice(0, 8);
 
   useEffect(() => {
     const t = setInterval(() => setBannerIdx((i) => (i + 1) % activeBanners.length), 5000);
@@ -96,44 +102,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">Категории товаров</h2>
-          <Link to="/categories" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-            Все категории <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {categories.slice(0, 7).map((cat) => (
-            <CategoryCard key={cat.id} category={cat} />
-          ))}
-        </div>
-      </section>
-
-      {/* Featured Products */}
+      {/* Popular Products (по рейтингу) */}
       <section className="bg-muted/50 py-10">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground">Популярные товары</h2>
-            <Link to="/catalog?sort=featured" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">Популярные товары</h2>
+            </div>
+            <Link to="/catalog?sort=rating" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
               Смотреть все <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+          <p className="text-sm text-muted-foreground mb-6">По оценкам и отзывам наших покупателей</p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {featuredProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+            {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         </div>
       </section>
 
       {/* Sale Banner */}
       <section className="container mx-auto px-4 py-10">
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-primary p-8 text-white">
-          <div className="relative z-10">
-            <p className="text-sm font-semibold text-white/80 uppercase tracking-wider mb-2">Специальное предложение</p>
-            <h2 className="text-2xl md:text-4xl font-bold mb-2">Скидки до 20%</h2>
-            <p className="text-white/80 mb-4">Офисные кресла, мониторы, ноутбуки и многое другое</p>
-            <Button asChild className="bg-white hover:bg-white/90 font-semibold" style={{ color: 'hsl(var(--primary))' }}>
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-primary p-8 md:p-12 text-white">
+          {/* Decorative blurred shapes */}
+          <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-10 h-56 w-56 rounded-full bg-black/10 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider mb-4">
+              <Tag className="h-3.5 w-3.5" /> Специальное предложение
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black mb-3 leading-tight">Скидки до 20%</h2>
+            <p className="text-white/85 mb-6 text-base md:text-lg">Офисные кресла, мониторы, ноутбуки и многое другое</p>
+            <Button asChild className="bg-white hover:bg-white/90 font-semibold shadow-lg" style={{ color: 'hsl(var(--primary))' }}>
               <Link to="/sale">Смотреть акции <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
@@ -143,14 +144,21 @@ export default function HomePage() {
       {/* New Products */}
       <section className="container mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">Новинки</h2>
-          <Link to="/catalog?filter=new" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">Новинки</h2>
+          </div>
+          <Link to="/catalog?filter=new" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
             Смотреть все <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
+        {newProducts.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Новинки скоро появятся.</p>
+        )}
       </section>
 
       {/* Office Turnkey */}
@@ -194,19 +202,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Brands */}
-      <section className="bg-muted/50 py-10">
-        <div className="container mx-auto px-4">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Наши бренды</h2>
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-4 items-center justify-items-center">
-            {brands.map((brand) => (
-              <div key={brand.id} className="flex h-12 items-center justify-center px-2 opacity-60 hover:opacity-100 transition-opacity">
-                <img src={brand.logo} alt={brand.name} className="h-8 object-contain" loading="lazy" />
-              </div>
-            ))}
+      {/* Brands — бесконечная автопрокрутка */}
+      {brands.length > 0 && (
+        <section className="bg-muted/50 py-10 overflow-hidden">
+          <div className="container mx-auto px-4">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Наши бренды</h2>
           </div>
-        </div>
-      </section>
+          <div className="relative w-full overflow-hidden group">
+            {/* Затухание по краям */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10 bg-gradient-to-r from-muted/50 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10 bg-gradient-to-l from-muted/50 to-transparent" />
+            <div className="flex w-max animate-[brand-scroll_30s_linear_infinite] group-hover:[animation-play-state:paused]">
+              {[...brands, ...brands].map((brand, i) => (
+                <div key={`${brand.id}-${i}`} className="flex h-16 w-32 shrink-0 items-center justify-center px-4 opacity-60 hover:opacity-100 transition-opacity">
+                  <img src={brand.logo} alt={brand.name} className="h-8 max-w-full object-contain" loading="lazy" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Reviews */}
       <section className="container mx-auto px-4 py-12">

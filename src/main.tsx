@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { AppWrapper } from "./components/common/PageMeta.tsx";
+import { ThemeProvider } from "./components/theme-provider.tsx";
 import "./index.css";
 
 Sentry.init({
@@ -10,9 +11,11 @@ Sentry.init({
 });
 
 createRoot(document.getElementById("root")!).render(
-  <Sentry.ErrorBoundary fallback={<p>应用发生错误，请刷新页面重试</p>}>
-    <AppWrapper>
-      <App />
-    </AppWrapper>
+  <Sentry.ErrorBoundary fallback={<p>Произошла ошибка. Пожалуйста, обновите страницу.</p>}>
+    <ThemeProvider>
+      <AppWrapper>
+        <App />
+      </AppWrapper>
+    </ThemeProvider>
   </Sentry.ErrorBoundary>
 );

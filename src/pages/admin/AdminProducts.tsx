@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
   fetchProducts, createProduct, updateProduct, deleteProduct,
@@ -80,6 +81,8 @@ export default function AdminProducts() {
           status: draft.status as 'active' | 'inactive',
           description: draft.description,
           images: uploadedImages,
+          isNew: !!draft.isNew,
+          isFeatured: !!draft.isFeatured,
         });
         setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p));
         toast.success('Товар обновлён');
@@ -94,6 +97,8 @@ export default function AdminProducts() {
           status: (draft.status as 'active' | 'inactive') || 'active',
           description: draft.description || '',
           images: uploadedImages,
+          isNew: !!draft.isNew,
+          isFeatured: !!draft.isFeatured,
         });
         setItems((prev) => [created, ...prev]);
         toast.success('Товар добавлен');
@@ -262,6 +267,16 @@ export default function AdminProducts() {
                   <SelectItem value="inactive">Неактивен</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="md:col-span-2 grid grid-cols-2 gap-3">
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <Label className="cursor-pointer">Новинка</Label>
+                <Switch checked={!!draft.isNew} onCheckedChange={(v) => setDraft({ ...draft, isNew: v })} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <Label className="cursor-pointer">Популярный</Label>
+                <Switch checked={!!draft.isFeatured} onCheckedChange={(v) => setDraft({ ...draft, isFeatured: v })} />
+              </div>
             </div>
             <div className="md:col-span-2">
               <Label>Описание</Label>
