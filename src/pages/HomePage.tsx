@@ -7,6 +7,7 @@ import ProductCard from '@/components/shared/ProductCard';
 import { getBanners } from '@/lib/getStorageData';
 import { fetchProducts, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
+import Reveal from '@/components/common/Reveal';
 import type { Product, Brand, Review } from '@/types';
 
 export default function HomePage() {
@@ -106,7 +107,7 @@ export default function HomePage() {
 
       {/* Popular Products (по рейтингу) */}
       <section className="bg-muted/50 py-10">
-        <div className="container mx-auto px-4">
+        <Reveal className="container mx-auto px-4" translateY={32}>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
@@ -120,12 +121,12 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* Sale Banner */}
       <section className="container mx-auto px-4 py-10">
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-primary p-8 md:p-12 text-white">
+        <Reveal scaleFrom={0.92} duration={600} className="relative rounded-2xl overflow-hidden bg-gradient-primary p-8 md:p-12 text-white">
           {/* Decorative blurred shapes */}
           <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-16 -left-10 h-56 w-56 rounded-full bg-black/10 blur-3xl pointer-events-none" />
@@ -140,33 +141,35 @@ export default function HomePage() {
               <Link to="/sale">{t('home.special_offer_cta')} <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* New Products */}
-      <section className="container mx-auto px-4 pb-10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.new_products')}</h2>
+      <section className="pb-10">
+        <Reveal translateY={32} className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.new_products')}</h2>
+            </div>
+            <Link to="/catalog?filter=new" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
+              {t('common.view_all')} <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <Link to="/catalog?filter=new" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
-            {t('common.view_all')} <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        {newProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">{t('home.new_products_empty')}</p>
-        )}
+          {newProducts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('home.new_products_empty')}</p>
+          )}
+        </Reveal>
       </section>
 
       {/* Office Turnkey */}
       <section className="bg-secondary py-12">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex-1 min-w-0">
+          <Reveal translateX={-40} className="flex-1 min-w-0">
             <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">{t('home.office_business_label')}</p>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{t('home.office_title')}</h2>
             <p className="text-white/70 mb-6">
@@ -177,29 +180,33 @@ export default function HomePage() {
                 {t('home.office_cta')} <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-3 flex-1 min-w-0">
+          </Reveal>
+          <Reveal translateX={40} delay={150} className="grid grid-cols-2 gap-3 flex-1 min-w-0">
             {[t('home.office_item_computers'), t('home.office_item_furniture'), t('home.office_item_printers'), t('home.office_item_network')].map((item) => (
               <div key={item} className="rounded-xl bg-white/10 p-4 text-center border border-white/10">
                 <p className="text-white font-medium text-sm">{item}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Why choose us */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.why_choose_us')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {advantages.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex flex-col items-center text-center p-5 rounded-xl bg-card border border-border card-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-3">
-                <Icon className="h-6 w-6 text-primary" />
+        <Reveal translateY={16} className="text-center mb-8">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.why_choose_us')}</h2>
+        </Reveal>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" style={{ perspective: '1000px' }}>
+          {advantages.map(({ icon: Icon, title, desc }, i) => (
+            <Reveal key={title} rotateX={25} translateY={24} delay={i * 100}>
+              <div className="flex flex-col items-center text-center p-5 rounded-xl bg-card border border-border card-shadow h-full">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-3">
+                  <Icon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">{title}</h3>
+                <p className="text-sm text-muted-foreground">{desc}</p>
               </div>
-              <h3 className="font-semibold text-foreground mb-1">{title}</h3>
-              <p className="text-sm text-muted-foreground">{desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -208,7 +215,9 @@ export default function HomePage() {
       {brands.length > 0 && (
         <section className="bg-muted/50 py-10 overflow-hidden">
           <div className="container mx-auto px-4">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.our_brands')}</h2>
+            <Reveal translateY={16} className="text-center mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.our_brands')}</h2>
+            </Reveal>
           </div>
           <div className="relative w-full overflow-hidden group">
             {/* Затухание по краям */}
@@ -227,34 +236,38 @@ export default function HomePage() {
 
       {/* Reviews */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.reviews_title')}</h2>
+        <Reveal translateY={16} className="text-center mb-8">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.reviews_title')}</h2>
+        </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {approvedReviews.map((r) => (
-            <div key={r.id} className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
-                ))}
+          {approvedReviews.map((r, i) => (
+            <Reveal key={r.id} translateY={32} delay={i * 100}>
+              <div className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2 h-full">
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <Star key={i} className={`h-4 w-4 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
+                  ))}
+                </div>
+                <p className="text-sm text-foreground line-clamp-3">{r.text}</p>
+                <div className="mt-auto pt-2 border-t border-border">
+                  <p className="text-xs font-semibold text-foreground">{r.authorName}</p>
+                  <p className="text-xs text-muted-foreground">{r.productName}</p>
+                </div>
               </div>
-              <p className="text-sm text-foreground line-clamp-3">{r.text}</p>
-              <div className="mt-auto pt-2 border-t border-border">
-                <p className="text-xs font-semibold text-foreground">{r.authorName}</p>
-                <p className="text-xs text-muted-foreground">{r.productName}</p>
-              </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* Instagram CTA */}
       <section className="bg-gradient-primary py-10">
-        <div className="container mx-auto px-4 text-center">
+        <Reveal scaleFrom={0.92} duration={600} className="container mx-auto px-4 text-center">
           <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{t('home.instagram_title')}</h2>
           <p className="text-white/80 mb-4 text-sm">{t('home.instagram_subtitle')}</p>
           <Button asChild className="bg-white hover:bg-white/90 font-semibold" style={{ color: 'hsl(var(--primary))' }}>
             <a href="https://instagram.com" target="_blank" rel="noreferrer">@enter.tj</a>
           </Button>
-        </div>
+        </Reveal>
       </section>
     </div>
   );
