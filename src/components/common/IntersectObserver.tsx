@@ -5,11 +5,6 @@ import { Observer } from 'tailwindcss-intersect';
 const IntersectObserver = () => {
   const location = useLocation();
 
-  // Первый запуск наблюдателя — без этого intersect: варианты вообще не срабатывают.
-  useEffect(() => {
-    Observer.start();
-  }, []);
-
   useEffect(() => {
     // When the location changes, we need to restart the observer
     // to pick up new elements on the page.

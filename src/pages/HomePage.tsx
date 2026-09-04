@@ -106,7 +106,7 @@ export default function HomePage() {
 
       {/* Popular Products (по рейтингу) */}
       <section className="bg-muted/50 py-10">
-        <div className="container mx-auto px-4 opacity-0 translate-y-8 transition-all duration-700 ease-out intersect:opacity-100 intersect:translate-y-0 intersect-once">
+        <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
@@ -125,7 +125,7 @@ export default function HomePage() {
 
       {/* Sale Banner */}
       <section className="container mx-auto px-4 py-10">
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-primary p-8 md:p-12 text-white opacity-0 scale-95 transition-all duration-700 ease-out intersect:opacity-100 intersect:scale-100 intersect-once">
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-primary p-8 md:p-12 text-white">
           {/* Decorative blurred shapes */}
           <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-16 -left-10 h-56 w-56 rounded-full bg-black/10 blur-3xl pointer-events-none" />
@@ -144,7 +144,7 @@ export default function HomePage() {
       </section>
 
       {/* New Products */}
-      <section className="container mx-auto px-4 pb-10 opacity-0 translate-y-8 transition-all duration-700 ease-out intersect:opacity-100 intersect:translate-y-0 intersect-once">
+      <section className="container mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -166,7 +166,7 @@ export default function HomePage() {
       {/* Office Turnkey */}
       <section className="bg-secondary py-12">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex-1 min-w-0 opacity-0 -translate-x-8 transition-all duration-700 ease-out intersect:opacity-100 intersect:translate-x-0 intersect-once">
+          <div className="flex-1 min-w-0">
             <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">{t('home.office_business_label')}</p>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{t('home.office_title')}</h2>
             <p className="text-white/70 mb-6">
@@ -178,7 +178,7 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 flex-1 min-w-0 opacity-0 translate-x-8 transition-all duration-700 ease-out delay-150 intersect:opacity-100 intersect:translate-x-0 intersect-once">
+          <div className="grid grid-cols-2 gap-3 flex-1 min-w-0">
             {[t('home.office_item_computers'), t('home.office_item_furniture'), t('home.office_item_printers'), t('home.office_item_network')].map((item) => (
               <div key={item} className="rounded-xl bg-white/10 p-4 text-center border border-white/10">
                 <p className="text-white font-medium text-sm">{item}</p>
@@ -190,14 +190,10 @@ export default function HomePage() {
 
       {/* Why choose us */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8 opacity-0 translate-y-4 transition-all duration-700 ease-out intersect:opacity-100 intersect:translate-y-0 intersect-once">{t('home.why_choose_us')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" style={{ perspective: '1000px' }}>
-          {advantages.map(({ icon: Icon, title, desc }, i) => (
-            <div
-              key={title}
-              className="flex flex-col items-center text-center p-5 rounded-xl bg-card border border-border card-shadow opacity-0 [transform:rotateX(25deg)_translateY(24px)] transition-all duration-700 ease-out intersect:opacity-100 intersect:[transform:rotateX(0deg)_translateY(0px)] intersect-once"
-              style={{ transitionDelay: `${i * 100}ms` }}
-            >
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.why_choose_us')}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {advantages.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="flex flex-col items-center text-center p-5 rounded-xl bg-card border border-border card-shadow">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-3">
                 <Icon className="h-6 w-6 text-primary" />
               </div>
@@ -212,7 +208,7 @@ export default function HomePage() {
       {brands.length > 0 && (
         <section className="bg-muted/50 py-10 overflow-hidden">
           <div className="container mx-auto px-4">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8 opacity-0 translate-y-4 transition-all duration-700 ease-out intersect:opacity-100 intersect:translate-y-0 intersect-once">{t('home.our_brands')}</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.our_brands')}</h2>
           </div>
           <div className="relative w-full overflow-hidden group">
             {/* Затухание по краям */}
@@ -231,14 +227,10 @@ export default function HomePage() {
 
       {/* Reviews */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8 opacity-0 translate-y-4 transition-all duration-700 ease-out intersect:opacity-100 intersect:translate-y-0 intersect-once">{t('home.reviews_title')}</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.reviews_title')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {approvedReviews.map((r, i) => (
-            <div
-              key={r.id}
-              className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2 opacity-0 translate-y-8 transition-all duration-700 ease-out intersect:opacity-100 intersect:translate-y-0 intersect-once"
-              style={{ transitionDelay: `${i * 100}ms` }}
-            >
+          {approvedReviews.map((r) => (
+            <div key={r.id} className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2">
               <div className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }, (_, i) => (
                   <Star key={i} className={`h-4 w-4 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
@@ -256,7 +248,7 @@ export default function HomePage() {
 
       {/* Instagram CTA */}
       <section className="bg-gradient-primary py-10">
-        <div className="container mx-auto px-4 text-center opacity-0 scale-95 transition-all duration-700 ease-out intersect:opacity-100 intersect:scale-100 intersect-once">
+        <div className="container mx-auto px-4 text-center">
           <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{t('home.instagram_title')}</h2>
           <p className="text-white/80 mb-4 text-sm">{t('home.instagram_subtitle')}</p>
           <Button asChild className="bg-white hover:bg-white/90 font-semibold" style={{ color: 'hsl(var(--primary))' }}>
