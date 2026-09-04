@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
+import "./i18n/config.ts";
 import "./index.css";
 
 Sentry.init({

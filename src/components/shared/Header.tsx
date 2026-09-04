@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -9,18 +10,11 @@ import { useFavoritesStore } from '@/store/favoritesStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/components/theme-provider';
 import { fetchCategories } from '@/lib/supabaseData';
+import { SUPPORTED_LANGUAGES } from '@/i18n/config';
 import type { Category } from '@/types';
 
-const navLinks = [
-  { label: 'Каталог', href: '/catalog' },
-  { label: 'Акции', href: '/sale' },
-  { label: 'Офис под ключ', href: '/office' },
-  { label: 'Доставка', href: '/delivery' },
-  { label: 'О нас', href: '/about' },
-  { label: 'Контакты', href: '/contacts' },
-];
-
 function ThemeToggle({ className = '' }: { className?: string }) {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   return (
     <Button
@@ -28,14 +22,49 @@ function ThemeToggle({ className = '' }: { className?: string }) {
       size="icon"
       className={`h-9 w-9 ${className}`}
       onClick={toggleTheme}
-      aria-label="Переключить тему"
+      aria-label={t('header.theme_toggle_aria')}
     >
       {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
     </Button>
   );
 }
 
+function LanguageToggle({ className = '' }: { className?: string }) {
+  const { i18n, t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const current = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) || SUPPORTED_LANGUAGES[0];
+
+  return (
+    <div className={`relative ${className}`}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9"
+        onClick={() => setOpen((v) => !v)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        aria-label={t('header.language_toggle_aria')}
+      >
+        <Languages className="h-5 w-5" />
+      </Button>
+      {open && (
+        <div className="absolute top-full right-0 mt-1 w-24 rounded-lg bg-card border border-border shadow-lg z-50 py-1">
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => { i18n.changeLanguage(lang.code); setOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors ${lang.code === current.code ? 'text-primary font-semibold' : ''}`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Header() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -51,6 +80,15 @@ export default function Header() {
   const favCount = useFavoritesStore((s) => s.items.length);
   const { isAuthenticated, user } = useAuthStore();
 
+  const navLinks = [
+    { label: t('common.catalog'), href: '/catalog' },
+    { label: t('header.nav_sale'), href: '/sale' },
+    { label: t('header.nav_office'), href: '/office' },
+    { label: t('header.nav_delivery'), href: '/delivery' },
+    { label: t('header.nav_about'), href: '/about' },
+    { label: t('header.nav_contacts'), href: '/contacts' },
+  ];
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -65,10 +103,10 @@ export default function Header() {
       {/* Top bar (desktop only) */}
       <div className="bg-secondary text-white/70 text-xs hidden md:block">
         <div className="container mx-auto px-4 flex items-center justify-between h-8">
-          <span>Душанбе, Таджикистан · Пн–Сб 9:00–19:00</span>
+          <span>{t('header.location_line')}</span>
           <div className="flex items-center gap-4">
             <a href="tel:+992555000070" className="hover:text-white transition-colors">+992 555 000 070</a>
-            <Link to="/delivery" className="hover:text-white transition-colors">Доставка</Link>
+            <Link to="/delivery" className="hover:text-white transition-colors">{t('header.delivery')}</Link>
           </div>
         </div>
       </div>
@@ -97,7 +135,7 @@ export default function Header() {
                 </Link>
               ))}
               <div className="border-t border-sidebar-border my-2" />
-              <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">Категории</p>
+              <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">{t('header.categories')}</p>
               {categories.slice(0, 8).map((cat) => (
                 <Link key={cat.id} to={`/category/${cat.slug}`} onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
@@ -121,7 +159,7 @@ export default function Header() {
             className="flex items-center gap-1 px-3 h-9 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
           >
             <Menu className="h-4 w-4" />
-            <span>Каталог</span>
+            <span>{t('common.catalog')}</span>
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
           {catOpen && (
@@ -139,7 +177,7 @@ export default function Header() {
                   </Link>
                 ))
               ) : (
-                <p className="px-4 py-2.5 text-sm text-muted-foreground">Категории скоро появятся</p>
+                <p className="px-4 py-2.5 text-sm text-muted-foreground">{t('header.categories_empty')}</p>
               )}
             </div>
           )}
@@ -152,28 +190,30 @@ export default function Header() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Поиск товаров..."
+              placeholder={t('common.search_placeholder')}
               className="pl-9 h-9 w-full"
             />
           </div>
           <Button type="submit" className="h-9 bg-primary hover:bg-primary/90 text-white shrink-0">
-            Найти
+            {t('common.search_button')}
           </Button>
         </form>
 
         {/* Spacer pushes mobile actions to the right */}
         <div className="flex-1 md:hidden" />
 
-        {/* Mobile compact actions: search toggle + theme */}
+        {/* Mobile compact actions: search toggle + language + theme */}
         <div className="flex items-center gap-0.5 md:hidden shrink-0">
-          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileSearchOpen((v) => !v)} aria-label="Поиск">
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileSearchOpen((v) => !v)} aria-label={t('header.search_aria')}>
             {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
           </Button>
+          <LanguageToggle />
           <ThemeToggle />
         </div>
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-1 shrink-0">
+          <LanguageToggle />
           <ThemeToggle />
 
           <Link to="/favorites">
@@ -216,12 +256,12 @@ export default function Header() {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Поиск товаров..."
+                placeholder={t('common.search_placeholder')}
                 className="pl-9 h-10 w-full"
               />
             </div>
             <Button type="submit" className="h-10 bg-primary hover:bg-primary/90 text-white shrink-0">
-              Найти
+              {t('common.search_button')}
             </Button>
           </form>
         </div>

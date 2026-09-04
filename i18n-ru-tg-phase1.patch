@@ -1,0 +1,914 @@
+diff --git a/package.json b/package.json
+index b488ea7..62c9339 100644
+--- a/package.json
++++ b/package.json
+@@ -48,6 +48,8 @@
+     "date-fns": "^3.6.0",
+     "embla-carousel-react": "^8.6.0",
+     "eventsource-parser": "^3.0.6",
++    "i18next": "^26.4.1",
++    "i18next-browser-languagedetector": "^8.2.1",
+     "input-otp": "^1.4.2",
+     "ky": "^1.13.0",
+     "leaflet": "^1.9.4",
+@@ -63,6 +65,7 @@
+     "react-dropzone": "^14.3.8",
+     "react-helmet-async": "^2.0.5",
+     "react-hook-form": "^7.66.0",
++    "react-i18next": "^17.0.13",
+     "react-leaflet": "^4.2.1",
+     "react-resizable-panels": "^2.1.8",
+     "react-router": "^7.9.5",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 56dd542..6d70e67 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -122,6 +122,12 @@ importers:
+       eventsource-parser:
+         specifier: ^3.0.6
+         version: 3.1.0
++      i18next:
++        specifier: ^26.4.1
++        version: 26.4.1(typescript@5.9.3)
++      i18next-browser-languagedetector:
++        specifier: ^8.2.1
++        version: 8.2.1
+       input-otp:
+         specifier: ^1.4.2
+         version: 1.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+@@ -167,6 +173,9 @@ importers:
+       react-hook-form:
+         specifier: ^7.66.0
+         version: 7.85.0(react@18.3.1)
++      react-i18next:
++        specifier: ^17.0.13
++        version: 17.0.13(i18next@26.4.1(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+       react-leaflet:
+         specifier: ^4.2.1
+         version: 4.2.1(leaflet@1.9.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+@@ -208,7 +217,7 @@ importers:
+         version: 3.25.76
+       zustand:
+         specifier: ^5.0.14
+-        version: 5.0.14(@types/react@19.2.18)(react@18.3.1)
++        version: 5.0.14(@types/react@19.2.18)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
+     devDependencies:
+       '@biomejs/biome':
+         specifier: 2.4.5
+@@ -2342,6 +2351,9 @@ packages:
+   hoist-non-react-statics@3.3.2:
+     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
+ 
++  html-parse-stringify@4.0.1:
++    resolution: {integrity: sha512-0zHsZJrK7S3K2aucXWL6ycoYJ/iNtIcFHC/nYQgFklPtrv5LpJctIiSCroWZWeuoXvuyFdzp6KzjJQ+OT5MfFw==}
++
+   html-url-attributes@3.0.1:
+     resolution: {integrity: sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==}
+ 
+@@ -2352,6 +2364,17 @@ packages:
+     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
+     engines: {node: '>= 6'}
+ 
++  i18next-browser-languagedetector@8.2.1:
++    resolution: {integrity: sha512-bZg8+4bdmaOiApD7N7BPT9W8MLZG+nPTOFlLiJiT8uzKXFjhxw4v2ierCXOwB5sFDMtuA5G4kgYZ0AznZxQ/cw==}
++
++  i18next@26.4.1:
++    resolution: {integrity: sha512-9YbX5E6gd1H+yaOSX3izCsPj5iWXyH7X4oC+iuHHJJw8AeHglzOK5SJf+1CHxaYKYigcea+8jvzSxqYx46YvyA==}
++    peerDependencies:
++      typescript: ^5 || ^6 || ^7
++    peerDependenciesMeta:
++      typescript:
++        optional: true
++
+   iceberg-js@0.8.1:
+     resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
+     engines: {node: '>=20.0.0'}
+@@ -3040,6 +3063,22 @@ packages:
+     peerDependencies:
+       react: ^16.8.0 || ^17 || ^18 || ^19
+ 
++  react-i18next@17.0.13:
++    resolution: {integrity: sha512-Cc1PscmblIHA1kljTqDwrcVMI21ydgmUzw0UAeQBe7pAOgfuRLfzXze4EUBQoeDiICzFIXXhHFoZxuetNg5D0Q==}
++    peerDependencies:
++      i18next: '>= 26.2.0'
++      react: '>= 16.8.0'
++      react-dom: '*'
++      react-native: '*'
++      typescript: ^5 || ^6 || ^7
++    peerDependenciesMeta:
++      react-dom:
++        optional: true
++      react-native:
++        optional: true
++      typescript:
++        optional: true
++
+   react-is@16.13.1:
+     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
+ 
+@@ -3481,6 +3520,11 @@ packages:
+       '@types/react':
+         optional: true
+ 
++  use-sync-external-store@1.6.0:
++    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
++    peerDependencies:
++      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
++
+   util-deprecate@1.0.2:
+     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+ 
+@@ -5719,6 +5763,8 @@ snapshots:
+     dependencies:
+       react-is: 16.13.1
+ 
++  html-parse-stringify@4.0.1: {}
++
+   html-url-attributes@3.0.1: {}
+ 
+   html-void-elements@3.0.0: {}
+@@ -5730,6 +5776,14 @@ snapshots:
+     transitivePeerDependencies:
+       - supports-color
+ 
++  i18next-browser-languagedetector@8.2.1:
++    dependencies:
++      '@babel/runtime': 7.29.7
++
++  i18next@26.4.1(typescript@5.9.3):
++    optionalDependencies:
++      typescript: 5.9.3
++
+   iceberg-js@0.8.1: {}
+ 
+   iconv-lite@0.6.3:
+@@ -6575,6 +6629,17 @@ snapshots:
+     dependencies:
+       react: 18.3.1
+ 
++  react-i18next@17.0.13(i18next@26.4.1(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3):
++    dependencies:
++      '@babel/runtime': 7.29.7
++      html-parse-stringify: 4.0.1
++      i18next: 26.4.1(typescript@5.9.3)
++      react: 18.3.1
++      use-sync-external-store: 1.6.0(react@18.3.1)
++    optionalDependencies:
++      react-dom: 18.3.1(react@18.3.1)
++      typescript: 5.9.3
++
+   react-is@16.13.1: {}
+ 
+   react-is@18.3.1: {}
+@@ -7110,6 +7175,10 @@ snapshots:
+     optionalDependencies:
+       '@types/react': 19.2.18
+ 
++  use-sync-external-store@1.6.0(react@18.3.1):
++    dependencies:
++      react: 18.3.1
++
+   util-deprecate@1.0.2: {}
+ 
+   uuid@14.0.1: {}
+@@ -7213,9 +7282,10 @@ snapshots:
+ 
+   zod@3.25.76: {}
+ 
+-  zustand@5.0.14(@types/react@19.2.18)(react@18.3.1):
++  zustand@5.0.14(@types/react@19.2.18)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)):
+     optionalDependencies:
+       '@types/react': 19.2.18
+       react: 18.3.1
++      use-sync-external-store: 1.6.0(react@18.3.1)
+ 
+   zwitch@2.0.4: {}
+diff --git a/src/components/shared/Footer.tsx b/src/components/shared/Footer.tsx
+index 4c2342a..9bf3cbe 100644
+--- a/src/components/shared/Footer.tsx
++++ b/src/components/shared/Footer.tsx
+@@ -1,4 +1,5 @@
+ import { Link } from 'react-router-dom';
++import { useTranslation } from 'react-i18next';
+ import { Phone, MapPin, Instagram, Send, MessageCircle, Laptop } from 'lucide-react';
+ 
+ const footerLinks = {
+@@ -10,15 +11,17 @@ const footerLinks = {
+     { label: 'Аксессуары', href: '/category/accessories' },
+   ],
+   info: [
+-    { label: 'О нас', href: '/about' },
+-    { label: 'Доставка и оплата', href: '/delivery' },
+-    { label: 'Акции', href: '/sale' },
+-    { label: 'Офис под ключ', href: '/office' },
+-    { label: 'Контакты', href: '/contacts' },
++    { key: 'header.nav_about', href: '/about' },
++    { key: 'header.nav_delivery', href: '/delivery' },
++    { key: 'header.nav_sale', href: '/sale' },
++    { key: 'header.nav_office', href: '/office' },
++    { key: 'header.nav_contacts', href: '/contacts' },
+   ],
+ };
+ 
+ export default function Footer() {
++  const { t } = useTranslation();
++
+   return (
+     <footer className="bg-secondary text-white/80">
+       <div className="container mx-auto px-4 py-12">
+@@ -32,7 +35,7 @@ export default function Footer() {
+               <span className="text-xl font-bold text-white">ENTER<span className="text-primary">.TJ</span></span>
+             </Link>
+             <p className="text-sm text-white/60 mb-4">
+-              Компьютерная техника и офисная мебель. Оборудование для дома и бизнеса в Душанбе.
++              {t('footer.brand_description')}
+             </p>
+             <div className="flex items-center gap-3">
+               <a href="https://instagram.com" target="_blank" rel="noreferrer"
+@@ -52,7 +55,7 @@ export default function Footer() {
+ 
+           {/* Catalog */}
+           <div>
+-            <h4 className="font-semibold text-white mb-4">Каталог</h4>
++            <h4 className="font-semibold text-white mb-4">{t('common.catalog')}</h4>
+             <ul className="space-y-2">
+               {footerLinks.catalog.map((link) => (
+                 <li key={link.href}>
+@@ -66,12 +69,12 @@ export default function Footer() {
+ 
+           {/* Info */}
+           <div>
+-            <h4 className="font-semibold text-white mb-4">Информация</h4>
++            <h4 className="font-semibold text-white mb-4">{t('footer.info_heading')}</h4>
+             <ul className="space-y-2">
+               {footerLinks.info.map((link) => (
+                 <li key={link.href}>
+                   <Link to={link.href} className="text-sm text-white/60 hover:text-primary transition-colors">
+-                    {link.label}
++                    {t(link.key)}
+                   </Link>
+                 </li>
+               ))}
+@@ -80,7 +83,7 @@ export default function Footer() {
+ 
+           {/* Contacts */}
+           <div>
+-            <h4 className="font-semibold text-white mb-4">Контакты</h4>
++            <h4 className="font-semibold text-white mb-4">{t('footer.contacts_heading')}</h4>
+             <div className="space-y-3">
+               <a href="tel:+992555000070" className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors">
+                 <Phone className="h-4 w-4 text-primary shrink-0" />
+@@ -88,11 +91,11 @@ export default function Footer() {
+               </a>
+               <div className="flex items-start gap-2 text-sm text-white/60">
+                 <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+-                <span>Душанбе, Таджикистан</span>
++                <span>{t('footer.location')}</span>
+               </div>
+               <div className="text-sm text-white/60">
+-                <p>Пн–Сб: 9:00–19:00</p>
+-                <p>Вс: 10:00–17:00</p>
++                <p>{t('footer.working_hours_weekday')}</p>
++                <p>{t('footer.working_hours_weekend')}</p>
+               </div>
+             </div>
+           </div>
+@@ -101,8 +104,8 @@ export default function Footer() {
+ 
+       <div className="border-t border-white/10">
+         <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2">
+-          <p className="text-xs text-white/40">© 2025 ENTER.TJ. Все права защищены.</p>
+-          <p className="text-xs text-white/40">Компьютерная техника и офисное оборудование в Душанбе</p>
++          <p className="text-xs text-white/40">{t('footer.copyright')}</p>
++          <p className="text-xs text-white/40">{t('footer.tagline')}</p>
+         </div>
+       </div>
+     </footer>
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index dd8c638..b4b984d 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -1,6 +1,7 @@
+ import { useState, useEffect } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon } from 'lucide-react';
++import { useTranslation } from 'react-i18next';
++import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+@@ -9,18 +10,11 @@ import { useFavoritesStore } from '@/store/favoritesStore';
+ import { useAuthStore } from '@/store/authStore';
+ import { useTheme } from '@/components/theme-provider';
+ import { fetchCategories } from '@/lib/supabaseData';
++import { SUPPORTED_LANGUAGES } from '@/i18n/config';
+ import type { Category } from '@/types';
+ 
+-const navLinks = [
+-  { label: 'Каталог', href: '/catalog' },
+-  { label: 'Акции', href: '/sale' },
+-  { label: 'Офис под ключ', href: '/office' },
+-  { label: 'Доставка', href: '/delivery' },
+-  { label: 'О нас', href: '/about' },
+-  { label: 'Контакты', href: '/contacts' },
+-];
+-
+ function ThemeToggle({ className = '' }: { className?: string }) {
++  const { t } = useTranslation();
+   const { theme, toggleTheme } = useTheme();
+   return (
+     <Button
+@@ -28,14 +22,49 @@ function ThemeToggle({ className = '' }: { className?: string }) {
+       size="icon"
+       className={`h-9 w-9 ${className}`}
+       onClick={toggleTheme}
+-      aria-label="Переключить тему"
++      aria-label={t('header.theme_toggle_aria')}
+     >
+       {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+     </Button>
+   );
+ }
+ 
++function LanguageToggle({ className = '' }: { className?: string }) {
++  const { i18n, t } = useTranslation();
++  const [open, setOpen] = useState(false);
++  const current = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) || SUPPORTED_LANGUAGES[0];
++
++  return (
++    <div className={`relative ${className}`}>
++      <Button
++        variant="ghost"
++        size="icon"
++        className="h-9 w-9"
++        onClick={() => setOpen((v) => !v)}
++        onBlur={() => setTimeout(() => setOpen(false), 150)}
++        aria-label={t('header.language_toggle_aria')}
++      >
++        <Languages className="h-5 w-5" />
++      </Button>
++      {open && (
++        <div className="absolute top-full right-0 mt-1 w-24 rounded-lg bg-card border border-border shadow-lg z-50 py-1">
++          {SUPPORTED_LANGUAGES.map((lang) => (
++            <button
++              key={lang.code}
++              onClick={() => { i18n.changeLanguage(lang.code); setOpen(false); }}
++              className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors ${lang.code === current.code ? 'text-primary font-semibold' : ''}`}
++            >
++              {lang.label}
++            </button>
++          ))}
++        </div>
++      )}
++    </div>
++  );
++}
++
+ export default function Header() {
++  const { t } = useTranslation();
+   const navigate = useNavigate();
+   const [query, setQuery] = useState('');
+   const [mobileOpen, setMobileOpen] = useState(false);
+@@ -51,6 +80,15 @@ export default function Header() {
+   const favCount = useFavoritesStore((s) => s.items.length);
+   const { isAuthenticated, user } = useAuthStore();
+ 
++  const navLinks = [
++    { label: t('common.catalog'), href: '/catalog' },
++    { label: t('header.nav_sale'), href: '/sale' },
++    { label: t('header.nav_office'), href: '/office' },
++    { label: t('header.nav_delivery'), href: '/delivery' },
++    { label: t('header.nav_about'), href: '/about' },
++    { label: t('header.nav_contacts'), href: '/contacts' },
++  ];
++
+   const handleSearch = (e: React.FormEvent) => {
+     e.preventDefault();
+     if (query.trim()) {
+@@ -65,10 +103,10 @@ export default function Header() {
+       {/* Top bar (desktop only) */}
+       <div className="bg-secondary text-white/70 text-xs hidden md:block">
+         <div className="container mx-auto px-4 flex items-center justify-between h-8">
+-          <span>Душанбе, Таджикистан · Пн–Сб 9:00–19:00</span>
++          <span>{t('header.location_line')}</span>
+           <div className="flex items-center gap-4">
+             <a href="tel:+992555000070" className="hover:text-white transition-colors">+992 555 000 070</a>
+-            <Link to="/delivery" className="hover:text-white transition-colors">Доставка</Link>
++            <Link to="/delivery" className="hover:text-white transition-colors">{t('header.delivery')}</Link>
+           </div>
+         </div>
+       </div>
+@@ -97,7 +135,7 @@ export default function Header() {
+                 </Link>
+               ))}
+               <div className="border-t border-sidebar-border my-2" />
+-              <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">Категории</p>
++              <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">{t('header.categories')}</p>
+               {categories.slice(0, 8).map((cat) => (
+                 <Link key={cat.id} to={`/category/${cat.slug}`} onClick={() => setMobileOpen(false)}
+                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
+@@ -121,7 +159,7 @@ export default function Header() {
+             className="flex items-center gap-1 px-3 h-9 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
+           >
+             <Menu className="h-4 w-4" />
+-            <span>Каталог</span>
++            <span>{t('common.catalog')}</span>
+             <ChevronDown className="h-3.5 w-3.5" />
+           </button>
+           {catOpen && (
+@@ -139,7 +177,7 @@ export default function Header() {
+                   </Link>
+                 ))
+               ) : (
+-                <p className="px-4 py-2.5 text-sm text-muted-foreground">Категории скоро появятся</p>
++                <p className="px-4 py-2.5 text-sm text-muted-foreground">{t('header.categories_empty')}</p>
+               )}
+             </div>
+           )}
+@@ -152,28 +190,30 @@ export default function Header() {
+             <Input
+               value={query}
+               onChange={(e) => setQuery(e.target.value)}
+-              placeholder="Поиск товаров..."
++              placeholder={t('common.search_placeholder')}
+               className="pl-9 h-9 w-full"
+             />
+           </div>
+           <Button type="submit" className="h-9 bg-primary hover:bg-primary/90 text-white shrink-0">
+-            Найти
++            {t('common.search_button')}
+           </Button>
+         </form>
+ 
+         {/* Spacer pushes mobile actions to the right */}
+         <div className="flex-1 md:hidden" />
+ 
+-        {/* Mobile compact actions: search toggle + theme */}
++        {/* Mobile compact actions: search toggle + language + theme */}
+         <div className="flex items-center gap-0.5 md:hidden shrink-0">
+-          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileSearchOpen((v) => !v)} aria-label="Поиск">
++          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileSearchOpen((v) => !v)} aria-label={t('header.search_aria')}>
+             {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+           </Button>
++          <LanguageToggle />
+           <ThemeToggle />
+         </div>
+ 
+         {/* Desktop actions */}
+         <div className="hidden md:flex items-center gap-1 shrink-0">
++          <LanguageToggle />
+           <ThemeToggle />
+ 
+           <Link to="/favorites">
+@@ -216,12 +256,12 @@ export default function Header() {
+                 autoFocus
+                 value={query}
+                 onChange={(e) => setQuery(e.target.value)}
+-                placeholder="Поиск товаров..."
++                placeholder={t('common.search_placeholder')}
+                 className="pl-9 h-10 w-full"
+               />
+             </div>
+             <Button type="submit" className="h-10 bg-primary hover:bg-primary/90 text-white shrink-0">
+-              Найти
++              {t('common.search_button')}
+             </Button>
+           </form>
+         </div>
+diff --git a/src/components/shared/MobileBottomNav.tsx b/src/components/shared/MobileBottomNav.tsx
+index f63e3dc..af7d144 100644
+--- a/src/components/shared/MobileBottomNav.tsx
++++ b/src/components/shared/MobileBottomNav.tsx
+@@ -1,24 +1,25 @@
+ import { Link, useLocation } from 'react-router-dom';
++import { useTranslation } from 'react-i18next';
+ import { Home, Grid3X3, Heart, ShoppingCart, User } from 'lucide-react';
+ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
+ import { useAuthStore } from '@/store/authStore';
+ 
+-const baseNavItems = [
+-  { icon: Home, label: 'Главная', href: '/' },
+-  { icon: Grid3X3, label: 'Каталог', href: '/catalog' },
+-  { icon: Heart, label: 'Избранное', href: '/favorites' },
+-  { icon: ShoppingCart, label: 'Корзина', href: '/cart' },
+-];
+-
+ export default function MobileBottomNav() {
++  const { t } = useTranslation();
+   const { pathname } = useLocation();
+   const cartCount = useCartStore((s) => s.itemCount());
+   const favCount = useFavoritesStore((s) => s.items.length);
+   const user = useAuthStore((s) => s.user);
+ 
+   const profileHref = user?.role === 'admin' ? '/admin' : '/account';
+-  const navItems = [...baseNavItems, { icon: User, label: 'Профиль', href: profileHref }];
++  const navItems = [
++    { icon: Home, label: t('common.home'), href: '/' },
++    { icon: Grid3X3, label: t('common.catalog'), href: '/catalog' },
++    { icon: Heart, label: t('common.favorites'), href: '/favorites' },
++    { icon: ShoppingCart, label: t('common.cart'), href: '/cart' },
++    { icon: User, label: t('common.profile'), href: profileHref },
++  ];
+ 
+   return (
+     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border">
+diff --git a/src/i18n/config.ts b/src/i18n/config.ts
+new file mode 100644
+index 0000000..a3cddc4
+--- /dev/null
++++ b/src/i18n/config.ts
+@@ -0,0 +1,34 @@
++import i18n from 'i18next';
++import { initReactI18next } from 'react-i18next';
++import LanguageDetector from 'i18next-browser-languagedetector';
++import ru from './locales/ru.json';
++import tg from './locales/tg.json';
++
++export const SUPPORTED_LANGUAGES = [
++  { code: 'ru', label: 'RU' },
++  { code: 'tg', label: 'ТҶ' },
++] as const;
++
++i18n
++  .use(LanguageDetector)
++  .use(initReactI18next)
++  .init({
++    resources: {
++      ru: { translation: ru },
++      tg: { translation: tg },
++    },
++    fallbackLng: 'ru',
++    supportedLngs: ['ru', 'tg'],
++    interpolation: {
++      escapeValue: false,
++    },
++    detection: {
++      // Порядок определения языка: сначала то, что пользователь выбрал сам
++      // и сохранил, затем язык браузера, и в конце — русский по умолчанию.
++      order: ['localStorage', 'navigator'],
++      caches: ['localStorage'],
++      lookupLocalStorage: 'enter-tj-language',
++    },
++  });
++
++export default i18n;
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+new file mode 100644
+index 0000000..10f2950
+--- /dev/null
++++ b/src/i18n/locales/ru.json
+@@ -0,0 +1,82 @@
++{
++  "common": {
++    "catalog": "Каталог",
++    "cart": "Корзина",
++    "favorites": "Избранное",
++    "profile": "Профиль",
++    "home": "Главная",
++    "search_placeholder": "Поиск товаров...",
++    "search_button": "Найти",
++    "add_to_cart": "В корзину",
++    "buy_now": "Купить сейчас",
++    "view_all": "Смотреть все",
++    "login": "Войти",
++    "register": "Зарегистрироваться",
++    "logout": "Выйти",
++    "loading": "Загрузка...",
++    "save": "Сохранить",
++    "cancel": "Отмена",
++    "delete": "Удалить",
++    "edit": "Изменить",
++    "add": "Добавить",
++    "currency": "сом."
++  },
++  "header": {
++    "location_line": "Душанбе, Таджикистан · Пн–Сб 9:00–19:00",
++    "delivery": "Доставка",
++    "nav_sale": "Акции",
++    "nav_office": "Офис под ключ",
++    "nav_delivery": "Доставка",
++    "nav_about": "О нас",
++    "nav_contacts": "Контакты",
++    "categories": "Категории",
++    "categories_empty": "Категории скоро появятся",
++    "search_aria": "Поиск",
++    "theme_toggle_aria": "Переключить тему",
++    "language_toggle_aria": "Сменить язык"
++  },
++  "footer": {
++    "brand_description": "Компьютерная техника и офисная мебель. Оборудование для дома и бизнеса в Душанбе.",
++    "info_heading": "Информация",
++    "contacts_heading": "Контакты",
++    "working_hours_weekday": "Пн–Сб: 9:00–19:00",
++    "working_hours_weekend": "Вс: 10:00–17:00",
++    "location": "Душанбе, Таджикистан",
++    "copyright": "© 2025 ENTER.TJ. Все права защищены.",
++    "tagline": "Компьютерная техника и офисное оборудование в Душанбе"
++  },
++  "home": {
++    "meta_title": "ENTER.TJ — Компьютерная техника и офисная мебель в Душанбе",
++    "meta_description": "Ноутбуки, ПК, мониторы, принтеры и офисная мебель с доставкой по Душанбе и Таджикистану. Официальная гарантия, широкий выбор брендов.",
++    "popular_products": "Популярные товары",
++    "popular_products_subtitle": "По оценкам и отзывам наших покупателей",
++    "special_offer_badge": "Специальное предложение",
++    "special_offer_title": "Скидки до 20%",
++    "special_offer_subtitle": "Офисные кресла, мониторы, ноутбуки и многое другое",
++    "special_offer_cta": "Смотреть акции",
++    "new_products": "Новинки",
++    "new_products_empty": "Новинки скоро появятся.",
++    "our_brands": "Наши бренды",
++    "advantage_delivery_title": "Бесплатная доставка",
++    "advantage_delivery_desc": "Бесплатная доставка по Душанбе при заказе от 500 сомони",
++    "advantage_warranty_title": "Официальная гарантия",
++    "advantage_warranty_desc": "Все товары имеют официальную гарантию производителя",
++    "advantage_support_title": "Экспертная поддержка",
++    "advantage_support_desc": "Наши специалисты помогут выбрать подходящий товар",
++    "advantage_business_title": "Корпоративным клиентам",
++    "advantage_business_desc": "Специальные условия для бизнеса и организаций",
++    "banner_sale_button": "Акции",
++    "office_business_label": "Для бизнеса",
++    "office_title": "Офис под ключ",
++    "office_description": "Мы полностью оснастим ваш офис — от компьютеров и мебели до сетевого оборудования. Специальные цены для корпоративных клиентов.",
++    "office_cta": "Узнать подробнее",
++    "office_item_computers": "Компьютеры",
++    "office_item_furniture": "Мебель",
++    "office_item_printers": "Принтеры",
++    "office_item_network": "Сети",
++    "why_choose_us": "Почему выбирают ENTER.TJ",
++    "reviews_title": "Отзывы покупателей",
++    "instagram_title": "Подписывайтесь на Instagram",
++    "instagram_subtitle": "Новинки, акции и полезные советы"
++  }
++}
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+new file mode 100644
+index 0000000..6de90cc
+--- /dev/null
++++ b/src/i18n/locales/tg.json
+@@ -0,0 +1,82 @@
++{
++  "common": {
++    "catalog": "Каталог",
++    "cart": "Сабад",
++    "favorites": "Дӯстдоштаҳо",
++    "profile": "Профил",
++    "home": "Асосӣ",
++    "search_placeholder": "Ҷустуҷӯи мол...",
++    "search_button": "Ёфтан",
++    "add_to_cart": "Ба сабад",
++    "buy_now": "Ҳозир харидан",
++    "view_all": "Ҳамаро дидан",
++    "login": "Воридшавӣ",
++    "register": "Бақайдгирӣ",
++    "logout": "Баромадан",
++    "loading": "Боркунӣ...",
++    "save": "Нигоҳ доштан",
++    "cancel": "Бекор кардан",
++    "delete": "Нест кардан",
++    "edit": "Тағйир додан",
++    "add": "Илова кардан",
++    "currency": "сомонӣ"
++  },
++  "header": {
++    "location_line": "Душанбе, Тоҷикистон · Дш–Шн 9:00–19:00",
++    "delivery": "Расонидан",
++    "nav_sale": "Тахфифҳо",
++    "nav_office": "Ҷиҳозонии дафтар",
++    "nav_delivery": "Расонидан",
++    "nav_about": "Дар бораи мо",
++    "nav_contacts": "Тамос",
++    "categories": "Категорияҳо",
++    "categories_empty": "Категорияҳо ба зудӣ пайдо мешаванд",
++    "search_aria": "Ҷустуҷӯ",
++    "theme_toggle_aria": "Иваз кардани мавзӯъ",
++    "language_toggle_aria": "Иваз кардани забон"
++  },
++  "footer": {
++    "brand_description": "Техникаи компютерӣ ва мебели идорӣ. Таҷҳизот барои хона ва бизнес дар Душанбе.",
++    "info_heading": "Маълумот",
++    "contacts_heading": "Тамос",
++    "working_hours_weekday": "Дш–Шн: 9:00–19:00",
++    "working_hours_weekend": "Яш: 10:00–17:00",
++    "location": "Душанбе, Тоҷикистон",
++    "copyright": "© 2025 ENTER.TJ. Ҳамаи ҳуқуқҳо ҳифз шудаанд.",
++    "tagline": "Техникаи компютерӣ ва таҷҳизоти идорӣ дар Душанбе"
++  },
++  "home": {
++    "meta_title": "ENTER.TJ — Техникаи компютерӣ ва мебели идорӣ дар Душанбе",
++    "meta_description": "Лэптопҳо, компютерҳо, мониторҳо, принтерҳо ва мебели идорӣ бо расонидан дар Душанбе ва Тоҷикистон. Кафолати расмӣ, интихоби васеи брендҳо.",
++    "popular_products": "Молҳои маъмул",
++    "popular_products_subtitle": "Аз рӯи баҳо ва тафсирҳои харидорони мо",
++    "special_offer_badge": "Пешниҳоди махсус",
++    "special_offer_title": "Тахфиф то 20%",
++    "special_offer_subtitle": "Курсиҳои идорӣ, мониторҳо, лэптопҳо ва бисёр чизҳои дигар",
++    "special_offer_cta": "Дидани тахфифҳо",
++    "new_products": "Молҳои нав",
++    "new_products_empty": "Молҳои нав ба зудӣ пайдо мешаванд.",
++    "our_brands": "Бренди мо",
++    "advantage_delivery_title": "Расонидани ройгон",
++    "advantage_delivery_desc": "Расонидани ройгон дар Душанбе ҳангоми фармоиш аз 500 сомонӣ",
++    "advantage_warranty_title": "Кафолати расмӣ",
++    "advantage_warranty_desc": "Ҳамаи молҳо кафолати расмии истеҳсолкунандаро доранд",
++    "advantage_support_title": "Дастгирии коршиносӣ",
++    "advantage_support_desc": "Мутахассисони мо дар интихоби моли мувофиқ кӯмак мекунанд",
++    "advantage_business_title": "Ба мизоҷони корпоративӣ",
++    "advantage_business_desc": "Шартҳои махсус барои бизнес ва созмонҳо",
++    "banner_sale_button": "Тахфифҳо",
++    "office_business_label": "Барои бизнес",
++    "office_title": "Ҷиҳозонии дафтар",
++    "office_description": "Мо дафтари шуморо пурра таъмин мекунем — аз компютер ва мебел то таҷҳизоти шабакавӣ. Нархҳои махсус барои мизоҷони корпоративӣ.",
++    "office_cta": "Маълумоти бештар",
++    "office_item_computers": "Компютерҳо",
++    "office_item_furniture": "Мебел",
++    "office_item_printers": "Принтерҳо",
++    "office_item_network": "Шабакаҳо",
++    "why_choose_us": "Чаро ENTER.TJ-ро интихоб мекунанд",
++    "reviews_title": "Тафсирҳои харидорон",
++    "instagram_title": "Ба Instagram обуна шавед",
++    "instagram_subtitle": "Молҳои нав, тахфифҳо ва маслиҳатҳои муфид"
++  }
++}
+diff --git a/src/main.tsx b/src/main.tsx
+index 9b6b09e..a1f7be2 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
+ import App from "./App.tsx";
+ import { AppWrapper } from "./components/common/PageMeta.tsx";
+ import { ThemeProvider } from "./components/theme-provider.tsx";
++import "./i18n/config.ts";
+ import "./index.css";
+ 
+ Sentry.init({
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 8c638cf..bf808de 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -1,5 +1,6 @@
+ import { useState, useEffect } from 'react';
+ import { Link } from 'react-router-dom';
++import { useTranslation } from 'react-i18next';
+ import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import ProductCard from '@/components/shared/ProductCard';
+@@ -9,6 +10,7 @@ import PageMeta from '@/components/common/PageMeta';
+ import type { Product, Brand, Review } from '@/types';
+ 
+ export default function HomePage() {
++  const { t } = useTranslation();
+   const [products, setProducts] = useState<Product[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
+   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
+@@ -41,17 +43,17 @@ export default function HomePage() {
+   const nextBanner = () => setBannerIdx((i) => (i + 1) % activeBanners.length);
+ 
+   const advantages = [
+-    { icon: Truck, title: 'Бесплатная доставка', desc: 'Бесплатная доставка по Душанбе при заказе от 500 сомони' },
+-    { icon: Shield, title: 'Официальная гарантия', desc: 'Все товары имеют официальную гарантию производителя' },
+-    { icon: Headphones, title: 'Экспертная поддержка', desc: 'Наши специалисты помогут выбрать подходящий товар' },
+-    { icon: Building2, title: 'Корпоративным клиентам', desc: 'Специальные условия для бизнеса и организаций' },
++    { icon: Truck, title: t('home.advantage_delivery_title'), desc: t('home.advantage_delivery_desc') },
++    { icon: Shield, title: t('home.advantage_warranty_title'), desc: t('home.advantage_warranty_desc') },
++    { icon: Headphones, title: t('home.advantage_support_title'), desc: t('home.advantage_support_desc') },
++    { icon: Building2, title: t('home.advantage_business_title'), desc: t('home.advantage_business_desc') },
+   ];
+ 
+   return (
+     <div className="pb-16 md:pb-0">
+       <PageMeta
+-        title="ENTER.TJ — Компьютерная техника и офисная мебель в Душанбе"
+-        description="Ноутбуки, ПК, мониторы, принтеры и офисная мебель с доставкой по Душанбе и Таджикистану. Официальная гарантия, широкий выбор брендов."
++        title={t('home.meta_title')}
++        description={t('home.meta_description')}
+       />
+       {/* Hero Banner */}
+       <section className="relative w-full overflow-hidden bg-secondary">
+@@ -75,7 +77,7 @@ export default function HomePage() {
+                   </Link>
+                   <Link to="/sale">
+                     <Button variant="ghost" className="border border-white/60 text-white hover:bg-white/10 px-6">
+-                      Акции
++                      {t('home.banner_sale_button')}
+                     </Button>
+                   </Link>
+                 </div>
+@@ -108,13 +110,13 @@ export default function HomePage() {
+           <div className="flex items-center justify-between mb-1">
+             <div className="flex items-center gap-2">
+               <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+-              <h2 className="text-xl md:text-2xl font-bold text-foreground">Популярные товары</h2>
++              <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.popular_products')}</h2>
+             </div>
+             <Link to="/catalog?sort=rating" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
+-              Смотреть все <ArrowRight className="h-4 w-4" />
++              {t('common.view_all')} <ArrowRight className="h-4 w-4" />
+             </Link>
+           </div>
+-          <p className="text-sm text-muted-foreground mb-6">По оценкам и отзывам наших покупателей</p>
++          <p className="text-sm text-muted-foreground mb-6">{t('home.popular_products_subtitle')}</p>
+           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+             {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+           </div>
+@@ -130,12 +132,12 @@ export default function HomePage() {
+ 
+           <div className="relative z-10 max-w-xl">
+             <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider mb-4">
+-              <Tag className="h-3.5 w-3.5" /> Специальное предложение
++              <Tag className="h-3.5 w-3.5" /> {t('home.special_offer_badge')}
+             </div>
+-            <h2 className="text-3xl md:text-5xl font-black mb-3 leading-tight">Скидки до 20%</h2>
+-            <p className="text-white/85 mb-6 text-base md:text-lg">Офисные кресла, мониторы, ноутбуки и многое другое</p>
++            <h2 className="text-3xl md:text-5xl font-black mb-3 leading-tight">{t('home.special_offer_title')}</h2>
++            <p className="text-white/85 mb-6 text-base md:text-lg">{t('home.special_offer_subtitle')}</p>
+             <Button asChild className="bg-white hover:bg-white/90 font-semibold shadow-lg" style={{ color: 'hsl(var(--primary))' }}>
+-              <Link to="/sale">Смотреть акции <ArrowRight className="h-4 w-4 ml-1" /></Link>
++              <Link to="/sale">{t('home.special_offer_cta')} <ArrowRight className="h-4 w-4 ml-1" /></Link>
+             </Button>
+           </div>
+         </div>
+@@ -146,10 +148,10 @@ export default function HomePage() {
+         <div className="flex items-center justify-between mb-6">
+           <div className="flex items-center gap-2">
+             <Sparkles className="h-5 w-5 text-primary" />
+-            <h2 className="text-xl md:text-2xl font-bold text-foreground">Новинки</h2>
++            <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.new_products')}</h2>
+           </div>
+           <Link to="/catalog?filter=new" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
+-            Смотреть все <ArrowRight className="h-4 w-4" />
++            {t('common.view_all')} <ArrowRight className="h-4 w-4" />
+           </Link>
+         </div>
+         {newProducts.length > 0 ? (
+@@ -157,7 +159,7 @@ export default function HomePage() {
+             {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+           </div>
+         ) : (
+-          <p className="text-sm text-muted-foreground">Новинки скоро появятся.</p>
++          <p className="text-sm text-muted-foreground">{t('home.new_products_empty')}</p>
+         )}
+       </section>
+ 
+@@ -165,19 +167,19 @@ export default function HomePage() {
+       <section className="bg-secondary py-12">
+         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
+           <div className="flex-1 min-w-0">
+-            <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">Для бизнеса</p>
+-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Офис под ключ</h2>
++            <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">{t('home.office_business_label')}</p>
++            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{t('home.office_title')}</h2>
+             <p className="text-white/70 mb-6">
+-              Мы полностью оснастим ваш офис — от компьютеров и мебели до сетевого оборудования. Специальные цены для корпоративных клиентов.
++              {t('home.office_description')}
+             </p>
+             <Link to="/office">
+               <Button className="bg-primary hover:bg-primary/90 text-white">
+-                Узнать подробнее <ArrowRight className="h-4 w-4 ml-1" />
++                {t('home.office_cta')} <ArrowRight className="h-4 w-4 ml-1" />
+               </Button>
+             </Link>
+           </div>
+           <div className="grid grid-cols-2 gap-3 flex-1 min-w-0">
+-            {['Компьютеры', 'Мебель', 'Принтеры', 'Сети'].map((item) => (
++            {[t('home.office_item_computers'), t('home.office_item_furniture'), t('home.office_item_printers'), t('home.office_item_network')].map((item) => (
+               <div key={item} className="rounded-xl bg-white/10 p-4 text-center border border-white/10">
+                 <p className="text-white font-medium text-sm">{item}</p>
+               </div>
+@@ -188,7 +190,7 @@ export default function HomePage() {
+ 
+       {/* Why choose us */}
+       <section className="container mx-auto px-4 py-12">
+-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Почему выбирают ENTER.TJ</h2>
++        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.why_choose_us')}</h2>
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+           {advantages.map(({ icon: Icon, title, desc }) => (
+             <div key={title} className="flex flex-col items-center text-center p-5 rounded-xl bg-card border border-border card-shadow">
+@@ -206,7 +208,7 @@ export default function HomePage() {
+       {brands.length > 0 && (
+         <section className="bg-muted/50 py-10 overflow-hidden">
+           <div className="container mx-auto px-4">
+-            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Наши бренды</h2>
++            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.our_brands')}</h2>
+           </div>
+           <div className="relative w-full overflow-hidden group">
+             {/* Затухание по краям */}
+@@ -225,7 +227,7 @@ export default function HomePage() {
+ 
+       {/* Reviews */}
+       <section className="container mx-auto px-4 py-12">
+-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Отзывы покупателей</h2>
++        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.reviews_title')}</h2>
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+           {approvedReviews.map((r) => (
+             <div key={r.id} className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2">
+@@ -247,8 +249,8 @@ export default function HomePage() {
+       {/* Instagram CTA */}
+       <section className="bg-gradient-primary py-10">
+         <div className="container mx-auto px-4 text-center">
+-          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Подписывайтесь на Instagram</h2>
+-          <p className="text-white/80 mb-4 text-sm">Новинки, акции и полезные советы</p>
++          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{t('home.instagram_title')}</h2>
++          <p className="text-white/80 mb-4 text-sm">{t('home.instagram_subtitle')}</p>
+           <Button asChild className="bg-white hover:bg-white/90 font-semibold" style={{ color: 'hsl(var(--primary))' }}>
+             <a href="https://instagram.com" target="_blank" rel="noreferrer">@enter.tj</a>
+           </Button>

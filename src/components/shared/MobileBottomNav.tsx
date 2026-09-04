@@ -1,24 +1,25 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Home, Grid3X3, Heart, ShoppingCart, User } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useAuthStore } from '@/store/authStore';
 
-const baseNavItems = [
-  { icon: Home, label: 'Главная', href: '/' },
-  { icon: Grid3X3, label: 'Каталог', href: '/catalog' },
-  { icon: Heart, label: 'Избранное', href: '/favorites' },
-  { icon: ShoppingCart, label: 'Корзина', href: '/cart' },
-];
-
 export default function MobileBottomNav() {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const cartCount = useCartStore((s) => s.itemCount());
   const favCount = useFavoritesStore((s) => s.items.length);
   const user = useAuthStore((s) => s.user);
 
   const profileHref = user?.role === 'admin' ? '/admin' : '/account';
-  const navItems = [...baseNavItems, { icon: User, label: 'Профиль', href: profileHref }];
+  const navItems = [
+    { icon: Home, label: t('common.home'), href: '/' },
+    { icon: Grid3X3, label: t('common.catalog'), href: '/catalog' },
+    { icon: Heart, label: t('common.favorites'), href: '/favorites' },
+    { icon: ShoppingCart, label: t('common.cart'), href: '/cart' },
+    { icon: User, label: t('common.profile'), href: profileHref },
+  ];
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border">

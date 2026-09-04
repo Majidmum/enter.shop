@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
@@ -9,6 +10,7 @@ import PageMeta from '@/components/common/PageMeta';
 import type { Product, Brand, Review } from '@/types';
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
@@ -41,17 +43,17 @@ export default function HomePage() {
   const nextBanner = () => setBannerIdx((i) => (i + 1) % activeBanners.length);
 
   const advantages = [
-    { icon: Truck, title: 'Бесплатная доставка', desc: 'Бесплатная доставка по Душанбе при заказе от 500 сомони' },
-    { icon: Shield, title: 'Официальная гарантия', desc: 'Все товары имеют официальную гарантию производителя' },
-    { icon: Headphones, title: 'Экспертная поддержка', desc: 'Наши специалисты помогут выбрать подходящий товар' },
-    { icon: Building2, title: 'Корпоративным клиентам', desc: 'Специальные условия для бизнеса и организаций' },
+    { icon: Truck, title: t('home.advantage_delivery_title'), desc: t('home.advantage_delivery_desc') },
+    { icon: Shield, title: t('home.advantage_warranty_title'), desc: t('home.advantage_warranty_desc') },
+    { icon: Headphones, title: t('home.advantage_support_title'), desc: t('home.advantage_support_desc') },
+    { icon: Building2, title: t('home.advantage_business_title'), desc: t('home.advantage_business_desc') },
   ];
 
   return (
     <div className="pb-16 md:pb-0">
       <PageMeta
-        title="ENTER.TJ — Компьютерная техника и офисная мебель в Душанбе"
-        description="Ноутбуки, ПК, мониторы, принтеры и офисная мебель с доставкой по Душанбе и Таджикистану. Официальная гарантия, широкий выбор брендов."
+        title={t('home.meta_title')}
+        description={t('home.meta_description')}
       />
       {/* Hero Banner */}
       <section className="relative w-full overflow-hidden bg-secondary">
@@ -75,7 +77,7 @@ export default function HomePage() {
                   </Link>
                   <Link to="/sale">
                     <Button variant="ghost" className="border border-white/60 text-white hover:bg-white/10 px-6">
-                      Акции
+                      {t('home.banner_sale_button')}
                     </Button>
                   </Link>
                 </div>
@@ -108,13 +110,13 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-              <h2 className="text-xl md:text-2xl font-bold text-foreground">Популярные товары</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.popular_products')}</h2>
             </div>
             <Link to="/catalog?sort=rating" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
-              Смотреть все <ArrowRight className="h-4 w-4" />
+              {t('common.view_all')} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <p className="text-sm text-muted-foreground mb-6">По оценкам и отзывам наших покупателей</p>
+          <p className="text-sm text-muted-foreground mb-6">{t('home.popular_products_subtitle')}</p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
@@ -130,12 +132,12 @@ export default function HomePage() {
 
           <div className="relative z-10 max-w-xl">
             <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider mb-4">
-              <Tag className="h-3.5 w-3.5" /> Специальное предложение
+              <Tag className="h-3.5 w-3.5" /> {t('home.special_offer_badge')}
             </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-3 leading-tight">Скидки до 20%</h2>
-            <p className="text-white/85 mb-6 text-base md:text-lg">Офисные кресла, мониторы, ноутбуки и многое другое</p>
+            <h2 className="text-3xl md:text-5xl font-black mb-3 leading-tight">{t('home.special_offer_title')}</h2>
+            <p className="text-white/85 mb-6 text-base md:text-lg">{t('home.special_offer_subtitle')}</p>
             <Button asChild className="bg-white hover:bg-white/90 font-semibold shadow-lg" style={{ color: 'hsl(var(--primary))' }}>
-              <Link to="/sale">Смотреть акции <ArrowRight className="h-4 w-4 ml-1" /></Link>
+              <Link to="/sale">{t('home.special_offer_cta')} <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
         </div>
@@ -146,10 +148,10 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="text-xl md:text-2xl font-bold text-foreground">Новинки</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.new_products')}</h2>
           </div>
           <Link to="/catalog?filter=new" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
-            Смотреть все <ArrowRight className="h-4 w-4" />
+            {t('common.view_all')} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         {newProducts.length > 0 ? (
@@ -157,7 +159,7 @@ export default function HomePage() {
             {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Новинки скоро появятся.</p>
+          <p className="text-sm text-muted-foreground">{t('home.new_products_empty')}</p>
         )}
       </section>
 
@@ -165,19 +167,19 @@ export default function HomePage() {
       <section className="bg-secondary py-12">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1 min-w-0">
-            <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">Для бизнеса</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Офис под ключ</h2>
+            <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">{t('home.office_business_label')}</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{t('home.office_title')}</h2>
             <p className="text-white/70 mb-6">
-              Мы полностью оснастим ваш офис — от компьютеров и мебели до сетевого оборудования. Специальные цены для корпоративных клиентов.
+              {t('home.office_description')}
             </p>
             <Link to="/office">
               <Button className="bg-primary hover:bg-primary/90 text-white">
-                Узнать подробнее <ArrowRight className="h-4 w-4 ml-1" />
+                {t('home.office_cta')} <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3 flex-1 min-w-0">
-            {['Компьютеры', 'Мебель', 'Принтеры', 'Сети'].map((item) => (
+            {[t('home.office_item_computers'), t('home.office_item_furniture'), t('home.office_item_printers'), t('home.office_item_network')].map((item) => (
               <div key={item} className="rounded-xl bg-white/10 p-4 text-center border border-white/10">
                 <p className="text-white font-medium text-sm">{item}</p>
               </div>
@@ -188,7 +190,7 @@ export default function HomePage() {
 
       {/* Why choose us */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Почему выбирают ENTER.TJ</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.why_choose_us')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {advantages.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex flex-col items-center text-center p-5 rounded-xl bg-card border border-border card-shadow">
@@ -206,7 +208,7 @@ export default function HomePage() {
       {brands.length > 0 && (
         <section className="bg-muted/50 py-10 overflow-hidden">
           <div className="container mx-auto px-4">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Наши бренды</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.our_brands')}</h2>
           </div>
           <div className="relative w-full overflow-hidden group">
             {/* Затухание по краям */}
@@ -225,7 +227,7 @@ export default function HomePage() {
 
       {/* Reviews */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">Отзывы покупателей</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.reviews_title')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {approvedReviews.map((r) => (
             <div key={r.id} className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2">
@@ -247,8 +249,8 @@ export default function HomePage() {
       {/* Instagram CTA */}
       <section className="bg-gradient-primary py-10">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Подписывайтесь на Instagram</h2>
-          <p className="text-white/80 mb-4 text-sm">Новинки, акции и полезные советы</p>
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{t('home.instagram_title')}</h2>
+          <p className="text-white/80 mb-4 text-sm">{t('home.instagram_subtitle')}</p>
           <Button asChild className="bg-white hover:bg-white/90 font-semibold" style={{ color: 'hsl(var(--primary))' }}>
             <a href="https://instagram.com" target="_blank" rel="noreferrer">@enter.tj</a>
           </Button>
