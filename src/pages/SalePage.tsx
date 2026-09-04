@@ -6,20 +6,21 @@ import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { Badge } from '@/components/ui/badge';
-import { fetchProducts } from '@/lib/supabaseData';
-import { promotions } from '@/lib/mockData';
+import { fetchProducts, fetchActivePromotions } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
-import type { Product } from '@/types';
+import type { Product, Promotion } from '@/types';
 
 const PAGE_SIZE = 12;
 
 export default function SalePage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('discount');
 
   useEffect(() => {
     fetchProducts().then(setProducts);
+    fetchActivePromotions().then(setActivePromotions);
   }, []);
 
   const saleProducts = products.filter((p) => !!p.discount).sort((a, b) => {
@@ -31,7 +32,6 @@ export default function SalePage() {
 
   const totalPages = Math.ceil(saleProducts.length / PAGE_SIZE);
   const paginated = saleProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const activePromotions = promotions.filter((p) => p.status === 'active');
 
   return (
     <div className="pb-16 md:pb-0">

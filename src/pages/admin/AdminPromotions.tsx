@@ -7,58 +7,81 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { promotions as initialPromos } from '@/lib/mockData';
+import { fetchPromotions, createPromotion, updatePromotion, deletePromotion } from '@/lib/supabaseData';
 import type { Promotion } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminPromotions() {
-  const [items, setItems] = useState<Promotion[]>(() => {
-    if (typeof window === 'undefined') return initialPromos;
-    const saved = localStorage.getItem('admin_promotions');
-    return saved ? JSON.parse(saved) : initialPromos;
-  });
+  const [items, setItems] = useState<Promotion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Promotion | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Promotion>>({});
 
-  useEffect(() => {
-    localStorage.setItem('admin_promotions', JSON.stringify(items));
-  }, [items]);
+  const load = () => {
+    setLoading(true);
+    fetchPromotions().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
 
   const openNew = () => {
     setEditing(null);
-    setDraft({ name: '', discount: 10, startDate: '', endDate: '', status: 'active', productIds: [] });
+    const today = new Date().toISOString().split('T')[0];
+    const inMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    setDraft({ name: '', discount: 10, startDate: today, endDate: inMonth, status: 'active' });
     setOpen(true);
   };
   const openEdit = (p: Promotion) => { setEditing(p); setDraft({ ...p }); setOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!draft.name || !draft.discount) { toast.error('Заполните обязательные поля'); return; }
-    if (editing) {
-      setItems((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...draft } as Promotion : p));
-      toast.success('Акция обновлена');
-    } else {
-      const newPromo: Promotion = {
-        id: `promo_${Date.now()}`,
-        name: draft.name || '',
-        discount: draft.discount || 10,
-        startDate: draft.startDate || '',
-        endDate: draft.endDate || '',
-        status: (draft.status as 'active' | 'inactive') || 'active',
-        productIds: [],
-      };
-      setItems((prev) => [...prev, newPromo]);
-      toast.success('Акция создана');
+    if (!draft.startDate || !draft.endDate) { toast.error('Укажите даты начала и окончания'); return; }
+
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await updatePromotion(editing.id, {
+          name: draft.name,
+          discount: draft.discount,
+          startDate: draft.startDate,
+          endDate: draft.endDate,
+          status: draft.status as 'active' | 'inactive',
+        });
+        setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p));
+        toast.success('Акция обновлена');
+      } else {
+        const created = await createPromotion({
+          name: draft.name,
+          discount: draft.discount,
+          startDate: draft.startDate,
+          endDate: draft.endDate,
+          status: (draft.status as 'active' | 'inactive') || 'active',
+        });
+        setItems((prev) => [created, ...prev]);
+        toast.success('Акция создана');
+      }
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось сохранить акцию');
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
-    setItems((prev) => prev.filter((p) => p.id !== deleteId));
-    setDeleteId(null);
-    toast.success('Акция удалена');
+    try {
+      await deletePromotion(deleteId);
+      setItems((prev) => prev.filter((p) => p.id !== deleteId));
+      toast.success('Акция удалена');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить акцию');
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   const isActive = (p: Promotion) => {
@@ -123,6 +146,12 @@ export default function AdminPromotions() {
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Акций пока нет</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -158,8 +187,8 @@ export default function AdminPromotions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> Сохранить
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
+              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
             </Button>
           </DialogFooter>
         </DialogContent>

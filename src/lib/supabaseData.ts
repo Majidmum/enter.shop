@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec, Review } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review, Promotion } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -461,6 +461,79 @@ export async function updateSiteSettings(patch: Record<string, any>): Promise<Re
     .single();
   if (error) throw error;
   return (data?.data as Record<string, any>) || merged;
+}
+
+// ============================================================================
+// АКЦИИ
+// ============================================================================
+
+function rowToPromotion(row: any): Promotion {
+  return {
+    id: row.id,
+    name: row.name,
+    discount: Number(row.discount),
+    startDate: row.start_date,
+    endDate: row.end_date,
+    productIds: row.product_ids || [],
+    status: row.status,
+  };
+}
+
+/** Для админки — все акции, включая выключенные/просроченные. */
+export async function fetchPromotions(): Promise<Promotion[]> {
+  const { data, error } = await supabase.from('promotions').select('*').order('start_date', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(rowToPromotion);
+}
+
+/** Для сайта — только реально действующие сейчас акции (включена + дата в диапазоне). */
+export async function fetchActivePromotions(): Promise<Promotion[]> {
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await supabase
+    .from('promotions')
+    .select('*')
+    .eq('status', 'active')
+    .lte('start_date', today)
+    .gte('end_date', today);
+  if (error) throw error;
+  return (data || []).map(rowToPromotion);
+}
+
+export interface PromotionInput {
+  name: string;
+  discount: number;
+  startDate: string;
+  endDate: string;
+  productIds?: string[];
+  status?: 'active' | 'inactive';
+}
+
+function promotionToDbPatch(input: Partial<PromotionInput>) {
+  const patch: Record<string, unknown> = {};
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.discount !== undefined) patch.discount = input.discount;
+  if (input.startDate !== undefined) patch.start_date = input.startDate;
+  if (input.endDate !== undefined) patch.end_date = input.endDate;
+  if (input.productIds !== undefined) patch.product_ids = input.productIds;
+  if (input.status !== undefined) patch.status = input.status;
+  return patch;
+}
+
+export async function createPromotion(input: PromotionInput): Promise<Promotion> {
+  const { data, error } = await supabase.from('promotions').insert(promotionToDbPatch(input)).select().single();
+  if (error) throw error;
+  return rowToPromotion(data);
+}
+
+export async function updatePromotion(id: string, patch: Partial<PromotionInput>): Promise<Promotion> {
+  const { data, error } = await supabase.from('promotions').update(promotionToDbPatch(patch)).eq('id', id).select().single();
+  if (error) throw error;
+  return rowToPromotion(data);
+}
+
+export async function deletePromotion(id: string): Promise<void> {
+  const { error } = await supabase.from('promotions').delete().eq('id', id);
+  if (error) throw error;
 }
 
 // ============================================================================
