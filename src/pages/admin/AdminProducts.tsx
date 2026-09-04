@@ -52,7 +52,7 @@ export default function AdminProducts() {
 
   const openNew = () => {
     setEditing(null);
-    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: categories[0]?.id || '', brandId: brands[0]?.id || '' });
+    setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: categories[0]?.id || '', brandId: brands[0]?.id || '', specs: [] });
     setUploadedImages([]);
     setOpen(true);
   };
@@ -83,6 +83,7 @@ export default function AdminProducts() {
           images: uploadedImages,
           isNew: !!draft.isNew,
           isFeatured: !!draft.isFeatured,
+          specs: (draft.specs || []).filter((s) => s.label.trim() && s.value.trim()),
         });
         setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p));
         toast.success('Товар обновлён');
@@ -99,6 +100,7 @@ export default function AdminProducts() {
           images: uploadedImages,
           isNew: !!draft.isNew,
           isFeatured: !!draft.isFeatured,
+          specs: (draft.specs || []).filter((s) => s.label.trim() && s.value.trim()),
         });
         setItems((prev) => [created, ...prev]);
         toast.success('Товар добавлен');
@@ -281,6 +283,58 @@ export default function AdminProducts() {
             <div className="md:col-span-2">
               <Label>Описание</Label>
               <Textarea className="mt-1" rows={3} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <Label>Характеристики</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setDraft({ ...draft, specs: [...(draft.specs || []), { label: '', value: '' }] })}
+                >
+                  <Plus className="h-3 w-3 mr-1" /> Добавить параметр
+                </Button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {(draft.specs || []).map((spec, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <Input
+                      placeholder="Параметр (например: Процессор)"
+                      className="flex-1"
+                      value={spec.label}
+                      onChange={(e) => {
+                        const next = [...(draft.specs || [])];
+                        next[idx] = { ...next[idx], label: e.target.value };
+                        setDraft({ ...draft, specs: next });
+                      }}
+                    />
+                    <Input
+                      placeholder="Значение (например: Intel Core i5)"
+                      className="flex-1"
+                      value={spec.value}
+                      onChange={(e) => {
+                        const next = [...(draft.specs || [])];
+                        next[idx] = { ...next[idx], value: e.target.value };
+                        setDraft({ ...draft, specs: next });
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10"
+                      onClick={() => setDraft({ ...draft, specs: (draft.specs || []).filter((_, i) => i !== idx) })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {(draft.specs || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground">Характеристики не добавлены</p>
+                )}
+              </div>
             </div>
             <div className="md:col-span-2">
               <Label>Изображения товара</Label>

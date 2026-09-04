@@ -106,7 +106,7 @@ export default function ProductPage() {
         { label: product.name },
       ]} />
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="mt-5 sm:mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         {/* Gallery */}
         <div className="flex flex-col gap-3">
           <div className="aspect-square w-full rounded-2xl overflow-hidden bg-muted relative">
@@ -119,7 +119,7 @@ export default function ProductPage() {
             <div className="flex gap-2 overflow-x-auto">
               {product.images.map((img, i) => (
                 <button key={i} onClick={() => setActiveImg(i)}
-                  className={`h-16 w-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-primary' : 'border-border'}`}>
+                  className={`h-20 w-20 sm:h-16 sm:w-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-primary' : 'border-border'}`}>
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
@@ -130,9 +130,12 @@ export default function ProductPage() {
         {/* Info */}
         <div className="flex flex-col gap-4">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Бренд: <span className="text-primary font-medium">{product.brandName}</span></p>
             <h1 className="text-xl md:text-2xl font-bold text-foreground leading-tight">{product.name}</h1>
-            <p className="text-xs text-muted-foreground mt-1">SKU: {product.sku}</p>
+            <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
+              <span>Бренд: <span className="text-primary font-medium">{product.brandName}</span></span>
+              <span className="text-border">•</span>
+              <span>SKU: {product.sku}</span>
+            </p>
           </div>
 
           {/* Rating */}
@@ -172,12 +175,12 @@ export default function ProductPage() {
               <span className="text-sm text-muted-foreground">Количество:</span>
               <div className="flex items-center border border-border rounded-lg overflow-hidden">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="flex h-9 w-9 items-center justify-center hover:bg-muted transition-colors">
+                  className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center hover:bg-muted transition-colors">
                   <Minus className="h-4 w-4" />
                 </button>
                 <span className="w-10 text-center text-sm font-medium">{quantity}</span>
                 <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  className="flex h-9 w-9 items-center justify-center hover:bg-muted transition-colors">
+                  className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center hover:bg-muted transition-colors">
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
