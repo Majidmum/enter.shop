@@ -1,0 +1,57 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index 4914051..dd8c638 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -1,4 +1,4 @@
+-import { useState } from 'react';
++import { useState, useEffect } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+ import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+@@ -8,7 +8,8 @@ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
+ import { useAuthStore } from '@/store/authStore';
+ import { useTheme } from '@/components/theme-provider';
+-import { categories } from '@/lib/mockData';
++import { fetchCategories } from '@/lib/supabaseData';
++import type { Category } from '@/types';
+ 
+ const navLinks = [
+   { label: 'Каталог', href: '/catalog' },
+@@ -40,6 +41,11 @@ export default function Header() {
+   const [mobileOpen, setMobileOpen] = useState(false);
+   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+   const [catOpen, setCatOpen] = useState(false);
++  const [categories, setCategories] = useState<Category[]>([]);
++
++  useEffect(() => {
++    fetchCategories().then(setCategories);
++  }, []);
+ 
+   const cartCount = useCartStore((s) => s.itemCount());
+   const favCount = useFavoritesStore((s) => s.items.length);
+@@ -124,13 +130,17 @@ export default function Header() {
+               onMouseLeave={() => setCatOpen(false)}
+               className="absolute top-full left-0 mt-1 w-64 rounded-xl bg-card border border-border shadow-lg z-50 py-2"
+             >
+-              {categories.map((cat) => (
+-                <Link key={cat.id} to={`/category/${cat.slug}`} onClick={() => setCatOpen(false)}
+-                  className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
+-                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+-                  {cat.name}
+-                </Link>
+-              ))}
++              {categories.length > 0 ? (
++                categories.map((cat) => (
++                  <Link key={cat.id} to={`/category/${cat.slug}`} onClick={() => setCatOpen(false)}
++                    className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
++                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
++                    {cat.name}
++                  </Link>
++                ))
++              ) : (
++                <p className="px-4 py-2.5 text-sm text-muted-foreground">Категории скоро появятся</p>
++              )}
+             </div>
+           )}
+         </div>
