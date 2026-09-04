@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import PageMeta from '@/components/common/PageMeta';
 import type { Product, Review } from '@/types';
 
 export default function ProductPage() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,14 +46,14 @@ export default function ProductPage() {
   const { toggle, isFavorite } = useFavoritesStore();
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
+    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">{t('common.loading')}</div>;
   }
 
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
-        <h2 className="text-2xl font-bold mb-3">Товар не найден</h2>
-        <Link to="/catalog" className="text-primary hover:underline">Вернуться в каталог</Link>
+        <h2 className="text-2xl font-bold mb-3">{t('product.not_found_title')}</h2>
+        <Link to="/catalog" className="text-primary hover:underline">{t('product.back_to_catalog')}</Link>
       </div>
     );
   }
@@ -61,7 +63,7 @@ export default function ProductPage() {
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
-    toast.success(`${product.name} добавлен в корзину`);
+    toast.success(t('product.added_to_cart', { name: product.name }));
   };
 
   const handleBuyNow = () => {
@@ -70,9 +72,9 @@ export default function ProductPage() {
   };
 
   const handleSubmitReview = async () => {
-    if (!reviewName.trim()) { toast.error('Введите ваше имя'); return; }
-    if (reviewRating === 0) { toast.error('Поставьте оценку — нажмите на звёзды'); return; }
-    if (!reviewText.trim()) { toast.error('Напишите текст отзыва'); return; }
+    if (!reviewName.trim()) { toast.error(t('product.error_enter_name')); return; }
+    if (reviewRating === 0) { toast.error(t('product.error_set_rating')); return; }
+    if (!reviewText.trim()) { toast.error(t('product.error_write_review')); return; }
 
     setSubmittingReview(true);
     try {
@@ -83,11 +85,11 @@ export default function ProductPage() {
         rating: reviewRating,
         text: reviewText.trim(),
       });
-      toast.success('Спасибо! Отзыв отправлен на модерацию и появится после проверки.');
+      toast.success(t('product.review_success'));
       setReviewRating(0);
       setReviewText('');
     } catch (e: any) {
-      toast.error(e.message || 'Не удалось отправить отзыв');
+      toast.error(e.message || t('product.review_error_fallback'));
     } finally {
       setSubmittingReview(false);
     }
@@ -96,12 +98,12 @@ export default function ProductPage() {
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
       <PageMeta
-        title={`${product.name} — купить в Душанбе за ${product.price.toLocaleString()} сом. | ENTER.TJ`}
-        description={(product.description || `${product.name} от ${product.brandName}. Купить с доставкой по Душанбе и Таджикистану, официальная гарантия.`).slice(0, 160)}
+        title={t('product.meta_title', { name: product.name, price: product.price.toLocaleString() })}
+        description={(product.description || t('product.meta_description_fallback', { name: product.name, brand: product.brandName })).slice(0, 160)}
         ogImage={product.images[0]}
       />
       <Breadcrumb items={[
-        { label: 'Каталог', href: '/catalog' },
+        { label: t('common.catalog'), href: '/catalog' },
         { label: product.categoryName, href: `/category/${product.slug.split('-')[0]}` },
         { label: product.name },
       ]} />
@@ -132,7 +134,7 @@ export default function ProductPage() {
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-foreground leading-tight">{product.name}</h1>
             <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
-              <span>Бренд: <span className="text-primary font-medium">{product.brandName}</span></span>
+              <span>{t('product.brand_label')}: <span className="text-primary font-medium">{product.brandName}</span></span>
               <span className="text-border">•</span>
               <span>SKU: {product.sku}</span>
             </p>
@@ -146,33 +148,33 @@ export default function ProductPage() {
               ))}
             </div>
             <span className="text-sm text-primary font-medium">{product.rating}</span>
-            <span className="text-sm text-muted-foreground">({product.reviewCount} отзывов)</span>
+            <span className="text-sm text-muted-foreground">{t('product.reviews_count', { count: product.reviewCount })}</span>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
-            <span className="text-2xl md:text-3xl font-bold text-foreground">{product.price.toLocaleString()} сом.</span>
+            <span className="text-2xl md:text-3xl font-bold text-foreground">{product.price.toLocaleString()} {t('common.currency')}</span>
             {product.oldPrice && (
-              <span className="text-lg text-muted-foreground line-through">{product.oldPrice.toLocaleString()} сом.</span>
+              <span className="text-lg text-muted-foreground line-through">{product.oldPrice.toLocaleString()} {t('common.currency')}</span>
             )}
             {product.discount && (
-              <Badge className="bg-destructive/10 text-destructive">Скидка {((product.oldPrice! - product.price)).toLocaleString()} сомони</Badge>
+              <Badge className="bg-destructive/10 text-destructive">{t('product.discount_badge', { amount: (product.oldPrice! - product.price).toLocaleString() })}</Badge>
             )}
           </div>
 
           {/* Availability */}
           <div className="flex items-center gap-2">
             {product.stock > 0 ? (
-              <><Check className="h-4 w-4 text-green-600" /><span className="text-sm font-medium text-green-600">В наличии ({product.stock} шт.)</span></>
+              <><Check className="h-4 w-4 text-green-600" /><span className="text-sm font-medium text-green-600">{t('product.in_stock', { count: product.stock })}</span></>
             ) : (
-              <span className="text-sm font-medium text-destructive">Нет в наличии</span>
+              <span className="text-sm font-medium text-destructive">{t('product.out_of_stock')}</span>
             )}
           </div>
 
           {/* Quantity + Actions */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Количество:</span>
+              <span className="text-sm text-muted-foreground">{t('product.quantity_label')}</span>
               <div className="flex items-center border border-border rounded-lg overflow-hidden">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center hover:bg-muted transition-colors">
@@ -188,11 +190,11 @@ export default function ProductPage() {
 
             <div className="flex flex-col md:flex-row gap-2 md:gap-3">
               <Button onClick={handleBuyNow} className="w-full md:flex-1 bg-primary hover:bg-primary/90 text-white font-semibold" disabled={product.stock === 0}>
-                Купить сейчас
+                {t('common.buy_now')}
               </Button>
               <div className="flex gap-2 md:gap-3 md:flex-1">
                 <Button onClick={handleAddToCart} variant="outline" className="flex-1" disabled={product.stock === 0}>
-                  <ShoppingCart className="h-4 w-4 mr-1.5" /> В корзину
+                  <ShoppingCart className="h-4 w-4 mr-1.5" /> {t('common.add_to_cart')}
                 </Button>
                 <Button onClick={() => toggle(product)} variant="outline" size="icon" className={`shrink-0 ${fav ? 'border-primary text-primary' : ''}`}>
                   <Heart className={`h-4 w-4 ${fav ? 'fill-current' : ''}`} />
@@ -205,15 +207,15 @@ export default function ProductPage() {
           <div className="rounded-xl bg-muted/50 p-4 grid grid-cols-1 gap-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Truck className="h-4 w-4 text-primary shrink-0" />
-              Бесплатная доставка по Душанбе
+              {t('product.benefit_delivery')}
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Shield className="h-4 w-4 text-primary shrink-0" />
-              Официальная гарантия производителя
+              {t('product.benefit_warranty')}
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <RotateCcw className="h-4 w-4 text-primary shrink-0" />
-              Возврат в течение 14 дней
+              {t('product.benefit_return')}
             </div>
           </div>
         </div>
@@ -223,10 +225,10 @@ export default function ProductPage() {
       <div className="mt-10">
         <Tabs defaultValue="description">
           <TabsList className="w-full md:w-auto flex overflow-x-auto justify-start gap-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <TabsTrigger value="description" className="shrink-0">Описание</TabsTrigger>
-            <TabsTrigger value="specs" className="shrink-0">Характеристики</TabsTrigger>
-            <TabsTrigger value="reviews" className="shrink-0">Отзывы ({productReviews.length})</TabsTrigger>
-            <TabsTrigger value="delivery" className="shrink-0">Доставка</TabsTrigger>
+            <TabsTrigger value="description" className="shrink-0">{t('product.tab_description')}</TabsTrigger>
+            <TabsTrigger value="specs" className="shrink-0">{t('product.tab_specs')}</TabsTrigger>
+            <TabsTrigger value="reviews" className="shrink-0">{t('product.tab_reviews', { count: productReviews.length })}</TabsTrigger>
+            <TabsTrigger value="delivery" className="shrink-0">{t('product.tab_delivery')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="description" className="mt-4 prose prose-sm max-w-none">
@@ -270,16 +272,16 @@ export default function ProductPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">Отзывов пока нет. Будьте первым!</p>
+                <p className="text-muted-foreground text-sm">{t('product.no_reviews_yet')}</p>
               )}
             </div>
 
             {/* Форма добавления отзыва */}
             <div className="rounded-xl bg-card border border-border p-4 sm:p-5 mt-4">
-              <h3 className="font-semibold mb-3">Оставить отзыв</h3>
+              <h3 className="font-semibold mb-3">{t('product.leave_review')}</h3>
               <div className="flex flex-col gap-3">
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваша оценка *</label>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.your_rating')}</label>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: 5 }, (_, i) => {
                       const value = i + 1;
@@ -292,7 +294,7 @@ export default function ProductPage() {
                           onMouseEnter={() => setReviewHoverRating(value)}
                           onMouseLeave={() => setReviewHoverRating(0)}
                           className="p-0.5"
-                          aria-label={`Оценка ${value} из 5`}
+                          aria-label={t('product.rating_aria', { value })}
                         >
                           <Star className={`h-6 w-6 transition-colors ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
                         </button>
@@ -301,37 +303,37 @@ export default function ProductPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваше имя *</label>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.your_name')}</label>
                   <input
                     value={reviewName}
                     onChange={(e) => setReviewName(e.target.value)}
-                    placeholder="Например: Рустам К."
+                    placeholder={t('product.your_name_placeholder')}
                     className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Текст отзыва *</label>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.review_text_label')}</label>
                   <textarea
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
                     rows={3}
-                    placeholder="Расскажите о своём опыте использования товара..."
+                    placeholder={t('product.review_text_placeholder')}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
                   />
                 </div>
                 <Button onClick={handleSubmitReview} disabled={submittingReview} className="self-start bg-primary hover:bg-primary/90 text-white">
-                  {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
+                  {submittingReview ? t('product.submitting') : t('product.submit_review')}
                 </Button>
-                <p className="text-xs text-muted-foreground">Отзыв появится на сайте после проверки модератором.</p>
+                <p className="text-xs text-muted-foreground">{t('product.review_moderation_note')}</p>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="delivery" className="mt-4">
             <div className="rounded-xl bg-card border border-border p-4 sm:p-5 flex flex-col gap-3 text-sm text-foreground">
-              <div className="flex items-start gap-2"><Truck className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Бесплатная доставка</p><p className="text-muted-foreground">Доставка по Душанбе за 1–2 рабочих дня. Бесплатно при заказе от 500 сомони.</p></div></div>
-              <div className="flex items-start gap-2"><Check className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Самовывоз</p><p className="text-muted-foreground">Бесплатный самовывоз из нашего магазина в Душанбе.</p></div></div>
-              <div className="flex items-start gap-2"><Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Гарантия</p><p className="text-muted-foreground">Все товары включают официальную гарантию производителя 12–24 месяца.</p></div></div>
+              <div className="flex items-start gap-2"><Truck className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">{t('product.delivery_free_title')}</p><p className="text-muted-foreground">{t('product.delivery_free_desc')}</p></div></div>
+              <div className="flex items-start gap-2"><Check className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">{t('product.pickup_title')}</p><p className="text-muted-foreground">{t('product.pickup_desc')}</p></div></div>
+              <div className="flex items-start gap-2"><Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">{t('product.warranty_title')}</p><p className="text-muted-foreground">{t('product.warranty_desc')}</p></div></div>
             </div>
           </TabsContent>
         </Tabs>
@@ -340,7 +342,7 @@ export default function ProductPage() {
       {/* Similar */}
       {similar.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-xl font-bold mb-5">Похожие товары</h2>
+          <h2 className="text-xl font-bold mb-5">{t('product.similar_products')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {similar.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>

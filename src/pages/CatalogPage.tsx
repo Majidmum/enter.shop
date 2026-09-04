@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,6 +20,7 @@ const PAGE_SIZE = 12;
 type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'new';
 
 export default function CatalogPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const [products, setProducts] = useState<Product[]>([]);
@@ -89,14 +91,14 @@ export default function CatalogPage() {
     <div className="flex flex-col gap-5">
       {hasFilters && (
         <Button variant="outline" size="sm" onClick={clearFilters} className="flex items-center gap-1 text-destructive border-destructive hover:bg-destructive/5">
-          <X className="h-3.5 w-3.5" /> Сбросить фильтры
+          <X className="h-3.5 w-3.5" /> {t('catalog.reset_filters')}
         </Button>
       )}
 
       {/* Categories */}
       <div>
         <button className="flex w-full items-center justify-between font-semibold text-sm mb-2" onClick={() => setCatExpanded(!catExpanded)}>
-          Категория {catExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {t('catalog.category')} {catExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {catExpanded && (
           <div className="flex flex-col gap-2">
@@ -113,7 +115,7 @@ export default function CatalogPage() {
       {/* Brands */}
       <div>
         <button className="flex w-full items-center justify-between font-semibold text-sm mb-2" onClick={() => setBrandExpanded(!brandExpanded)}>
-          Бренд {brandExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {t('catalog.brand')} {brandExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {brandExpanded && (
           <div className="flex flex-col gap-2">
@@ -129,7 +131,7 @@ export default function CatalogPage() {
 
       {/* Price */}
       <div>
-        <p className="font-semibold text-sm mb-3">Цена (сомони)</p>
+        <p className="font-semibold text-sm mb-3">{t('catalog.price')}</p>
         <Slider
           min={0} max={10000} step={100}
           value={priceRange}
@@ -146,11 +148,11 @@ export default function CatalogPage() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <Checkbox id="instock" checked={onlyInStock} onCheckedChange={(v) => { setOnlyInStock(!!v); setPage(1); }} />
-          <Label htmlFor="instock" className="text-sm font-normal cursor-pointer">Только в наличии</Label>
+          <Label htmlFor="instock" className="text-sm font-normal cursor-pointer">{t('catalog.in_stock_only')}</Label>
         </div>
         <div className="flex items-center gap-2">
           <Checkbox id="discount" checked={onlyDiscount} onCheckedChange={(v) => { setOnlyDiscount(!!v); setPage(1); }} />
-          <Label htmlFor="discount" className="text-sm font-normal cursor-pointer">Только со скидкой</Label>
+          <Label htmlFor="discount" className="text-sm font-normal cursor-pointer">{t('catalog.discount_only')}</Label>
         </div>
       </div>
     </div>
@@ -159,12 +161,12 @@ export default function CatalogPage() {
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
       <PageMeta
-        title={searchQuery ? `Поиск: "${searchQuery}" — ENTER.TJ` : 'Каталог товаров — ноутбуки, ПК, мебель | ENTER.TJ'}
-        description="Полный каталог компьютерной техники и офисной мебели ENTER.TJ: ноутбуки, ПК, мониторы, принтеры, кресла и столы. Фильтры по цене, бренду и категории."
+        title={searchQuery ? t('catalog.meta_title_search', { query: searchQuery }) : t('catalog.meta_title')}
+        description={t('catalog.meta_description')}
       />
-      <Breadcrumb items={[{ label: 'Каталог' }]} />
+      <Breadcrumb items={[{ label: t('common.catalog') }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">
-        {searchQuery ? `Поиск: "${searchQuery}"` : 'Каталог товаров'}
+        {searchQuery ? t('catalog.search_title', { query: searchQuery }) : t('catalog.title')}
       </h1>
 
       <div className="flex gap-6">
@@ -182,42 +184,42 @@ export default function CatalogPage() {
             <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="md:hidden flex items-center gap-1.5">
-                  <SlidersHorizontal className="h-4 w-4" /> Фильтры {hasFilters && <span className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">{selCategories.length + selBrands.length}</span>}
+                  <SlidersHorizontal className="h-4 w-4" /> {t('catalog.filters')} {hasFilters && <span className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">{selCategories.length + selBrands.length}</span>}
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-4 overflow-y-auto">
-                <h3 className="font-bold text-base mb-4">Фильтры</h3>
+                <h3 className="font-bold text-base mb-4">{t('catalog.filters')}</h3>
                 {FilterContent}
               </SheetContent>
             </Sheet>
 
-            <p className="text-sm text-muted-foreground flex-1 min-w-0">{filtered.length} товаров найдено</p>
+            <p className="text-sm text-muted-foreground flex-1 min-w-0">{t('catalog.products_found', { count: filtered.length })}</p>
 
             <Select value={sort} onValueChange={(v) => { setSort(v as SortOption); setPage(1); }}>
               <SelectTrigger className="w-44 h-8 text-sm">
-                <SelectValue placeholder="Сортировка" />
+                <SelectValue placeholder={t('catalog.sort_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="featured">Популярные</SelectItem>
-                <SelectItem value="new">Сначала новые</SelectItem>
-                <SelectItem value="price-asc">Цена: по возрастанию</SelectItem>
-                <SelectItem value="price-desc">Цена: по убыванию</SelectItem>
-                <SelectItem value="rating">Лучший рейтинг</SelectItem>
+                <SelectItem value="featured">{t('catalog.sort_featured')}</SelectItem>
+                <SelectItem value="new">{t('catalog.sort_new')}</SelectItem>
+                <SelectItem value="price-asc">{t('catalog.sort_price_asc')}</SelectItem>
+                <SelectItem value="price-desc">{t('catalog.sort_price_desc')}</SelectItem>
+                <SelectItem value="rating">{t('catalog.sort_rating')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-muted-foreground">Загрузка...</div>
+            <div className="flex items-center justify-center py-20 text-muted-foreground">{t('common.loading')}</div>
           ) : paginated.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-muted-foreground text-lg">Товары не найдены</p>
-              <Button variant="outline" onClick={clearFilters} className="mt-3">Сбросить фильтры</Button>
+              <p className="text-muted-foreground text-lg">{t('catalog.not_found')}</p>
+              <Button variant="outline" onClick={clearFilters} className="mt-3">{t('catalog.reset_filters')}</Button>
             </div>
           )}
 

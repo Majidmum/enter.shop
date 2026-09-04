@@ -1,0 +1,694 @@
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+index 10f2950..d70f6b1 100644
+--- a/src/i18n/locales/ru.json
++++ b/src/i18n/locales/ru.json
+@@ -78,5 +78,85 @@
+     "reviews_title": "Отзывы покупателей",
+     "instagram_title": "Подписывайтесь на Instagram",
+     "instagram_subtitle": "Новинки, акции и полезные советы"
++  },
++  "catalog": {
++    "title": "Каталог товаров",
++    "search_title": "Поиск: \"{{query}}\"",
++    "meta_title": "Каталог товаров — ноутбуки, ПК, мебель | ENTER.TJ",
++    "meta_title_search": "Поиск: \"{{query}}\" — ENTER.TJ",
++    "meta_description": "Полный каталог компьютерной техники и офисной мебели ENTER.TJ: ноутбуки, ПК, мониторы, принтеры, кресла и столы. Фильтры по цене, бренду и категории.",
++    "reset_filters": "Сбросить фильтры",
++    "category": "Категория",
++    "brand": "Бренд",
++    "price": "Цена (сомони)",
++    "in_stock_only": "Только в наличии",
++    "discount_only": "Только со скидкой",
++    "filters": "Фильтры",
++    "products_found": "{{count}} товаров найдено",
++    "sort_placeholder": "Сортировка",
++    "sort_featured": "Популярные",
++    "sort_new": "Сначала новые",
++    "sort_price_asc": "Цена: по возрастанию",
++    "sort_price_desc": "Цена: по убыванию",
++    "sort_rating": "Лучший рейтинг",
++    "not_found": "Товары не найдены"
++  },
++  "product": {
++    "meta_title": "{{name}} — купить в Душанбе за {{price}} сом. | ENTER.TJ",
++    "meta_description_fallback": "{{name}} от {{brand}}. Купить с доставкой по Душанбе и Таджикистану, официальная гарантия.",
++    "not_found_title": "Товар не найден",
++    "back_to_catalog": "Вернуться в каталог",
++    "brand_label": "Бренд",
++    "reviews_count": "({{count}} отзывов)",
++    "discount_badge": "Скидка {{amount}} сомони",
++    "in_stock": "В наличии ({{count}} шт.)",
++    "out_of_stock": "Нет в наличии",
++    "quantity_label": "Количество:",
++    "benefit_delivery": "Бесплатная доставка по Душанбе",
++    "benefit_warranty": "Официальная гарантия производителя",
++    "benefit_return": "Возврат в течение 14 дней",
++    "tab_description": "Описание",
++    "tab_specs": "Характеристики",
++    "tab_reviews": "Отзывы ({{count}})",
++    "tab_delivery": "Доставка",
++    "no_reviews_yet": "Отзывов пока нет. Будьте первым!",
++    "leave_review": "Оставить отзыв",
++    "your_rating": "Ваша оценка *",
++    "your_name": "Ваше имя *",
++    "your_name_placeholder": "Например: Рустам К.",
++    "review_text_label": "Текст отзыва *",
++    "review_text_placeholder": "Расскажите о своём опыте использования товара...",
++    "submit_review": "Отправить отзыв",
++    "submitting": "Отправка...",
++    "review_moderation_note": "Отзыв появится на сайте после проверки модератором.",
++    "rating_aria": "Оценка {{value}} из 5",
++    "delivery_free_title": "Бесплатная доставка",
++    "delivery_free_desc": "Доставка по Душанбе за 1–2 рабочих дня. Бесплатно при заказе от 500 сомони.",
++    "pickup_title": "Самовывоз",
++    "pickup_desc": "Бесплатный самовывоз из нашего магазина в Душанбе.",
++    "warranty_title": "Гарантия",
++    "warranty_desc": "Все товары включают официальную гарантию производителя 12–24 месяца.",
++    "similar_products": "Похожие товары",
++    "added_to_cart": "{{name}} добавлен в корзину",
++    "error_enter_name": "Введите ваше имя",
++    "error_set_rating": "Поставьте оценку — нажмите на звёзды",
++    "error_write_review": "Напишите текст отзыва",
++    "review_success": "Спасибо! Отзыв отправлен на модерацию и появится после проверки.",
++    "review_error_fallback": "Не удалось отправить отзыв"
++  },
++  "cart": {
++    "meta_title": "Корзина — ENTER.TJ",
++    "meta_description": "Ваша корзина в ENTER.TJ.",
++    "title": "Корзина",
++    "title_with_count": "Корзина ({{count}} товаров)",
++    "empty_title": "Корзина пуста",
++    "empty_subtitle": "Добавьте товары, чтобы начать",
++    "go_to_catalog": "Перейти в каталог",
++    "your_order": "Ваш заказ",
++    "delivery": "Доставка",
++    "free": "Бесплатно",
++    "total": "Итого",
++    "checkout": "Оформить заказ",
++    "continue_shopping": "Продолжить покупки"
+   }
+ }
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+index 6de90cc..466cc96 100644
+--- a/src/i18n/locales/tg.json
++++ b/src/i18n/locales/tg.json
+@@ -78,5 +78,85 @@
+     "reviews_title": "Тафсирҳои харидорон",
+     "instagram_title": "Ба Instagram обуна шавед",
+     "instagram_subtitle": "Молҳои нав, тахфифҳо ва маслиҳатҳои муфид"
++  },
++  "catalog": {
++    "title": "Каталоги мол",
++    "search_title": "Ҷустуҷӯ: \"{{query}}\"",
++    "meta_title": "Каталоги мол — ноутбук, компютер, мебел | ENTER.TJ",
++    "meta_title_search": "Ҷустуҷӯ: \"{{query}}\" — ENTER.TJ",
++    "meta_description": "Каталоги пурраи техникаи компютерӣ ва мебели идории ENTER.TJ: ноутбукҳо, компютерҳо, мониторҳо, принтерҳо, курсиҳо ва мизҳо. Филтр аз рӯи нарх, бренд ва категория.",
++    "reset_filters": "Бекор кардани филтрҳо",
++    "category": "Категория",
++    "brand": "Бренд",
++    "price": "Нарх (сомонӣ)",
++    "in_stock_only": "Танҳо дар мавҷудӣ",
++    "discount_only": "Танҳо бо тахфиф",
++    "filters": "Филтрҳо",
++    "products_found": "{{count}} мол ёфт шуд",
++    "sort_placeholder": "Мураттабсозӣ",
++    "sort_featured": "Маъмул",
++    "sort_new": "Аввал навҳо",
++    "sort_price_asc": "Нарх: аз арзон",
++    "sort_price_desc": "Нарх: аз қимат",
++    "sort_rating": "Беҳтарин баҳо",
++    "not_found": "Мол ёфт нашуд"
++  },
++  "product": {
++    "meta_title": "{{name}} — дар Душанбе бо {{price}} сом. харидан | ENTER.TJ",
++    "meta_description_fallback": "{{name}} аз {{brand}}. Бо расонидан дар Душанбе ва Тоҷикистон харидан, кафолати расмӣ.",
++    "not_found_title": "Мол ёфт нашуд",
++    "back_to_catalog": "Бозгашт ба каталог",
++    "brand_label": "Бренд",
++    "reviews_count": "({{count}} тафсир)",
++    "discount_badge": "Тахфиф {{amount}} сомонӣ",
++    "in_stock": "Дар мавҷудӣ ({{count}} дона)",
++    "out_of_stock": "Дар мавҷудӣ нест",
++    "quantity_label": "Миқдор:",
++    "benefit_delivery": "Расонидани ройгон дар Душанбе",
++    "benefit_warranty": "Кафолати расмии истеҳсолкунанда",
++    "benefit_return": "Баргардонидан дар давоми 14 рӯз",
++    "tab_description": "Тавсиф",
++    "tab_specs": "Хусусиятҳо",
++    "tab_reviews": "Тафсирҳо ({{count}})",
++    "tab_delivery": "Расонидан",
++    "no_reviews_yet": "Тафсир ҳанӯз нест. Аввалин шавед!",
++    "leave_review": "Тафсир гузоштан",
++    "your_rating": "Баҳои шумо *",
++    "your_name": "Номи шумо *",
++    "your_name_placeholder": "Масалан: Рустам Қ.",
++    "review_text_label": "Матни тафсир *",
++    "review_text_placeholder": "Дар бораи таҷрибаи истифодаи мол нақл кунед...",
++    "submit_review": "Фиристодани тафсир",
++    "submitting": "Фиристода истодааст...",
++    "review_moderation_note": "Тафсир пас аз санҷиши модератор дар сайт пайдо мешавад.",
++    "rating_aria": "Баҳо {{value}} аз 5",
++    "delivery_free_title": "Расонидани ройгон",
++    "delivery_free_desc": "Расонидан дар Душанбе дар 1–2 рӯзи корӣ. Ройгон ҳангоми фармоиш аз 500 сомонӣ.",
++    "pickup_title": "Гирифтани худӣ",
++    "pickup_desc": "Гирифтани худии ройгон аз мағозаи мо дар Душанбе.",
++    "warranty_title": "Кафолат",
++    "warranty_desc": "Ҳамаи молҳо кафолати расмии истеҳсолкунандаро барои 12–24 моҳ доранд.",
++    "similar_products": "Молҳои монанд",
++    "added_to_cart": "{{name}} ба сабад илова шуд",
++    "error_enter_name": "Номи худро ворид кунед",
++    "error_set_rating": "Баҳо гузоред — ба ситораҳо пахш кунед",
++    "error_write_review": "Матни тафсирро нависед",
++    "review_success": "Ташаккур! Тафсир ба назорат фиристода шуд ва пас аз санҷиш пайдо мешавад.",
++    "review_error_fallback": "Тафсир фиристода нашуд"
++  },
++  "cart": {
++    "meta_title": "Сабад — ENTER.TJ",
++    "meta_description": "Сабади шумо дар ENTER.TJ.",
++    "title": "Сабад",
++    "title_with_count": "Сабад ({{count}} мол)",
++    "empty_title": "Сабад холист",
++    "empty_subtitle": "Барои сар кардан мол илова кунед",
++    "go_to_catalog": "Ба каталог гузаштан",
++    "your_order": "Фармоиши шумо",
++    "delivery": "Расонидан",
++    "free": "Ройгон",
++    "total": "Ҳамагӣ",
++    "checkout": "Фармоиш додан",
++    "continue_shopping": "Идомаи харид"
+   }
+ }
+diff --git a/src/pages/CartPage.tsx b/src/pages/CartPage.tsx
+index 6bc9f2e..394635c 100644
+--- a/src/pages/CartPage.tsx
++++ b/src/pages/CartPage.tsx
+@@ -1,4 +1,5 @@
+ import { Link } from 'react-router-dom';
++import { useTranslation } from 'react-i18next';
+ import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+@@ -6,18 +7,19 @@ import { useCartStore } from '@/store/cartStore';
+ import PageMeta from '@/components/common/PageMeta';
+ 
+ export default function CartPage() {
++  const { t } = useTranslation();
+   const { items, removeItem, updateQuantity, total, itemCount } = useCartStore();
+ 
+   if (items.length === 0) {
+     return (
+       <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+-        <PageMeta title="Корзина — ENTER.TJ" description="Ваша корзина в ENTER.TJ." noIndex />
+-        <Breadcrumb items={[{ label: 'Корзина' }]} />
++        <PageMeta title={t('cart.meta_title')} description={t('cart.meta_description')} noIndex />
++        <Breadcrumb items={[{ label: t('cart.title') }]} />
+         <div className="flex flex-col items-center justify-center py-24 gap-4">
+           <ShoppingCart className="h-16 w-16 text-muted" />
+-          <h2 className="text-xl font-bold text-foreground">Корзина пуста</h2>
+-          <p className="text-muted-foreground text-sm">Добавьте товары, чтобы начать</p>
+-          <Link to="/catalog"><Button className="bg-primary hover:bg-primary/90 text-white mt-2">Перейти в каталог</Button></Link>
++          <h2 className="text-xl font-bold text-foreground">{t('cart.empty_title')}</h2>
++          <p className="text-muted-foreground text-sm">{t('cart.empty_subtitle')}</p>
++          <Link to="/catalog"><Button className="bg-primary hover:bg-primary/90 text-white mt-2">{t('cart.go_to_catalog')}</Button></Link>
+         </div>
+       </div>
+     );
+@@ -25,9 +27,9 @@ export default function CartPage() {
+ 
+   return (
+     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+-      <PageMeta title="Корзина — ENTER.TJ" description="Ваша корзина в ENTER.TJ." noIndex />
+-      <Breadcrumb items={[{ label: 'Корзина' }]} />
+-      <h1 className="text-2xl font-bold mt-4 mb-6">Корзина ({itemCount()} товаров)</h1>
++      <PageMeta title={t('cart.meta_title')} description={t('cart.meta_description')} noIndex />
++      <Breadcrumb items={[{ label: t('cart.title') }]} />
++      <h1 className="text-2xl font-bold mt-4 mb-6">{t('cart.title_with_count', { count: itemCount() })}</h1>
+ 
+       <div className="flex flex-col lg:flex-row gap-6">
+         {/* Items */}
+@@ -44,7 +46,7 @@ export default function CartPage() {
+                   <p className="text-xs text-muted-foreground">{product.brandName}</p>
+                   <h3 className="font-semibold text-sm line-clamp-2 hover:text-primary transition-colors">{product.name}</h3>
+                 </Link>
+-                <p className="text-base font-bold text-foreground mt-auto">{product.price.toLocaleString()} сом.</p>
++                <p className="text-base font-bold text-foreground mt-auto">{product.price.toLocaleString()} {t('common.currency')}</p>
+               </div>
+               <div className="flex flex-col items-end justify-between gap-2 shrink-0">
+                 <button onClick={() => removeItem(product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+@@ -61,7 +63,7 @@ export default function CartPage() {
+                     <Plus className="h-3.5 w-3.5" />
+                   </button>
+                 </div>
+-                <p className="text-sm font-bold">{(product.price * quantity).toLocaleString()} сом.</p>
++                <p className="text-sm font-bold">{(product.price * quantity).toLocaleString()} {t('common.currency')}</p>
+               </div>
+             </div>
+           ))}
+@@ -70,7 +72,7 @@ export default function CartPage() {
+         {/* Summary */}
+         <div className="w-full lg:w-72 shrink-0">
+           <div className="rounded-xl bg-card border border-border p-5 card-shadow sticky top-24">
+-            <h3 className="font-bold text-base mb-4">Ваш заказ</h3>
++            <h3 className="font-bold text-base mb-4">{t('cart.your_order')}</h3>
+             <div className="flex flex-col gap-3 text-sm border-b border-border pb-4 mb-4">
+               {items.map(({ product, quantity }) => (
+                 <div key={product.id} className="flex justify-between gap-2">
+@@ -80,20 +82,20 @@ export default function CartPage() {
+               ))}
+             </div>
+             <div className="flex justify-between text-sm mb-2">
+-              <span className="text-muted-foreground">Доставка</span>
+-              <span className="text-green-600 font-medium">Бесплатно</span>
++              <span className="text-muted-foreground">{t('cart.delivery')}</span>
++              <span className="text-green-600 font-medium">{t('cart.free')}</span>
+             </div>
+             <div className="flex justify-between font-bold text-base">
+-              <span>Итого</span>
+-              <span>{total().toLocaleString()} сом.</span>
++              <span>{t('cart.total')}</span>
++              <span>{total().toLocaleString()} {t('common.currency')}</span>
+             </div>
+             <Link to="/checkout">
+               <Button className="w-full mt-5 bg-primary hover:bg-primary/90 text-white font-semibold">
+-                Оформить заказ <ArrowRight className="h-4 w-4 ml-1" />
++                {t('cart.checkout')} <ArrowRight className="h-4 w-4 ml-1" />
+               </Button>
+             </Link>
+             <Link to="/catalog">
+-              <Button variant="outline" className="w-full mt-2 text-sm">Продолжить покупки</Button>
++              <Button variant="outline" className="w-full mt-2 text-sm">{t('cart.continue_shopping')}</Button>
+             </Link>
+           </div>
+         </div>
+diff --git a/src/pages/CatalogPage.tsx b/src/pages/CatalogPage.tsx
+index c0e4813..04c517e 100644
+--- a/src/pages/CatalogPage.tsx
++++ b/src/pages/CatalogPage.tsx
+@@ -1,5 +1,6 @@
+ import { useState, useMemo, useEffect } from 'react';
+ import { useSearchParams } from 'react-router-dom';
++import { useTranslation } from 'react-i18next';
+ import { SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Checkbox } from '@/components/ui/checkbox';
+@@ -19,6 +20,7 @@ const PAGE_SIZE = 12;
+ type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'new';
+ 
+ export default function CatalogPage() {
++  const { t } = useTranslation();
+   const [searchParams] = useSearchParams();
+   const searchQuery = searchParams.get('search') || '';
+   const [products, setProducts] = useState<Product[]>([]);
+@@ -89,14 +91,14 @@ export default function CatalogPage() {
+     <div className="flex flex-col gap-5">
+       {hasFilters && (
+         <Button variant="outline" size="sm" onClick={clearFilters} className="flex items-center gap-1 text-destructive border-destructive hover:bg-destructive/5">
+-          <X className="h-3.5 w-3.5" /> Сбросить фильтры
++          <X className="h-3.5 w-3.5" /> {t('catalog.reset_filters')}
+         </Button>
+       )}
+ 
+       {/* Categories */}
+       <div>
+         <button className="flex w-full items-center justify-between font-semibold text-sm mb-2" onClick={() => setCatExpanded(!catExpanded)}>
+-          Категория {catExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
++          {t('catalog.category')} {catExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+         </button>
+         {catExpanded && (
+           <div className="flex flex-col gap-2">
+@@ -113,7 +115,7 @@ export default function CatalogPage() {
+       {/* Brands */}
+       <div>
+         <button className="flex w-full items-center justify-between font-semibold text-sm mb-2" onClick={() => setBrandExpanded(!brandExpanded)}>
+-          Бренд {brandExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
++          {t('catalog.brand')} {brandExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+         </button>
+         {brandExpanded && (
+           <div className="flex flex-col gap-2">
+@@ -129,7 +131,7 @@ export default function CatalogPage() {
+ 
+       {/* Price */}
+       <div>
+-        <p className="font-semibold text-sm mb-3">Цена (сомони)</p>
++        <p className="font-semibold text-sm mb-3">{t('catalog.price')}</p>
+         <Slider
+           min={0} max={10000} step={100}
+           value={priceRange}
+@@ -146,11 +148,11 @@ export default function CatalogPage() {
+       <div className="flex flex-col gap-2">
+         <div className="flex items-center gap-2">
+           <Checkbox id="instock" checked={onlyInStock} onCheckedChange={(v) => { setOnlyInStock(!!v); setPage(1); }} />
+-          <Label htmlFor="instock" className="text-sm font-normal cursor-pointer">Только в наличии</Label>
++          <Label htmlFor="instock" className="text-sm font-normal cursor-pointer">{t('catalog.in_stock_only')}</Label>
+         </div>
+         <div className="flex items-center gap-2">
+           <Checkbox id="discount" checked={onlyDiscount} onCheckedChange={(v) => { setOnlyDiscount(!!v); setPage(1); }} />
+-          <Label htmlFor="discount" className="text-sm font-normal cursor-pointer">Только со скидкой</Label>
++          <Label htmlFor="discount" className="text-sm font-normal cursor-pointer">{t('catalog.discount_only')}</Label>
+         </div>
+       </div>
+     </div>
+@@ -159,12 +161,12 @@ export default function CatalogPage() {
+   return (
+     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+       <PageMeta
+-        title={searchQuery ? `Поиск: "${searchQuery}" — ENTER.TJ` : 'Каталог товаров — ноутбуки, ПК, мебель | ENTER.TJ'}
+-        description="Полный каталог компьютерной техники и офисной мебели ENTER.TJ: ноутбуки, ПК, мониторы, принтеры, кресла и столы. Фильтры по цене, бренду и категории."
++        title={searchQuery ? t('catalog.meta_title_search', { query: searchQuery }) : t('catalog.meta_title')}
++        description={t('catalog.meta_description')}
+       />
+-      <Breadcrumb items={[{ label: 'Каталог' }]} />
++      <Breadcrumb items={[{ label: t('common.catalog') }]} />
+       <h1 className="text-2xl font-bold mt-4 mb-6">
+-        {searchQuery ? `Поиск: "${searchQuery}"` : 'Каталог товаров'}
++        {searchQuery ? t('catalog.search_title', { query: searchQuery }) : t('catalog.title')}
+       </h1>
+ 
+       <div className="flex gap-6">
+@@ -182,42 +184,42 @@ export default function CatalogPage() {
+             <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+               <SheetTrigger asChild>
+                 <Button variant="outline" size="sm" className="md:hidden flex items-center gap-1.5">
+-                  <SlidersHorizontal className="h-4 w-4" /> Фильтры {hasFilters && <span className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">{selCategories.length + selBrands.length}</span>}
++                  <SlidersHorizontal className="h-4 w-4" /> {t('catalog.filters')} {hasFilters && <span className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">{selCategories.length + selBrands.length}</span>}
+                 </Button>
+               </SheetTrigger>
+               <SheetContent side="left" className="w-72 p-4 overflow-y-auto">
+-                <h3 className="font-bold text-base mb-4">Фильтры</h3>
++                <h3 className="font-bold text-base mb-4">{t('catalog.filters')}</h3>
+                 {FilterContent}
+               </SheetContent>
+             </Sheet>
+ 
+-            <p className="text-sm text-muted-foreground flex-1 min-w-0">{filtered.length} товаров найдено</p>
++            <p className="text-sm text-muted-foreground flex-1 min-w-0">{t('catalog.products_found', { count: filtered.length })}</p>
+ 
+             <Select value={sort} onValueChange={(v) => { setSort(v as SortOption); setPage(1); }}>
+               <SelectTrigger className="w-44 h-8 text-sm">
+-                <SelectValue placeholder="Сортировка" />
++                <SelectValue placeholder={t('catalog.sort_placeholder')} />
+               </SelectTrigger>
+               <SelectContent>
+-                <SelectItem value="featured">Популярные</SelectItem>
+-                <SelectItem value="new">Сначала новые</SelectItem>
+-                <SelectItem value="price-asc">Цена: по возрастанию</SelectItem>
+-                <SelectItem value="price-desc">Цена: по убыванию</SelectItem>
+-                <SelectItem value="rating">Лучший рейтинг</SelectItem>
++                <SelectItem value="featured">{t('catalog.sort_featured')}</SelectItem>
++                <SelectItem value="new">{t('catalog.sort_new')}</SelectItem>
++                <SelectItem value="price-asc">{t('catalog.sort_price_asc')}</SelectItem>
++                <SelectItem value="price-desc">{t('catalog.sort_price_desc')}</SelectItem>
++                <SelectItem value="rating">{t('catalog.sort_rating')}</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
+ 
+           {/* Grid */}
+           {loading ? (
+-            <div className="flex items-center justify-center py-20 text-muted-foreground">Загрузка...</div>
++            <div className="flex items-center justify-center py-20 text-muted-foreground">{t('common.loading')}</div>
+           ) : paginated.length > 0 ? (
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+               {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
+             </div>
+           ) : (
+             <div className="flex flex-col items-center justify-center py-20 text-center">
+-              <p className="text-muted-foreground text-lg">Товары не найдены</p>
+-              <Button variant="outline" onClick={clearFilters} className="mt-3">Сбросить фильтры</Button>
++              <p className="text-muted-foreground text-lg">{t('catalog.not_found')}</p>
++              <Button variant="outline" onClick={clearFilters} className="mt-3">{t('catalog.reset_filters')}</Button>
+             </div>
+           )}
+ 
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index 56c71cd..8d14c4e 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -1,5 +1,6 @@
+ import { useState, useEffect } from 'react';
+ import { useParams, Link } from 'react-router-dom';
++import { useTranslation } from 'react-i18next';
+ import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw } from 'lucide-react';
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ import { Button } from '@/components/ui/button';
+@@ -15,6 +16,7 @@ import PageMeta from '@/components/common/PageMeta';
+ import type { Product, Review } from '@/types';
+ 
+ export default function ProductPage() {
++  const { t } = useTranslation();
+   const { slug } = useParams<{ slug: string }>();
+   const [products, setProducts] = useState<Product[]>([]);
+   const [loading, setLoading] = useState(true);
+@@ -44,14 +46,14 @@ export default function ProductPage() {
+   const { toggle, isFavorite } = useFavoritesStore();
+ 
+   if (loading) {
+-    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
++    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">{t('common.loading')}</div>;
+   }
+ 
+   if (!product) {
+     return (
+       <div className="container mx-auto px-4 py-20 text-center">
+-        <h2 className="text-2xl font-bold mb-3">Товар не найден</h2>
+-        <Link to="/catalog" className="text-primary hover:underline">Вернуться в каталог</Link>
++        <h2 className="text-2xl font-bold mb-3">{t('product.not_found_title')}</h2>
++        <Link to="/catalog" className="text-primary hover:underline">{t('product.back_to_catalog')}</Link>
+       </div>
+     );
+   }
+@@ -61,7 +63,7 @@ export default function ProductPage() {
+ 
+   const handleAddToCart = () => {
+     addToCart(product, quantity);
+-    toast.success(`${product.name} добавлен в корзину`);
++    toast.success(t('product.added_to_cart', { name: product.name }));
+   };
+ 
+   const handleBuyNow = () => {
+@@ -70,9 +72,9 @@ export default function ProductPage() {
+   };
+ 
+   const handleSubmitReview = async () => {
+-    if (!reviewName.trim()) { toast.error('Введите ваше имя'); return; }
+-    if (reviewRating === 0) { toast.error('Поставьте оценку — нажмите на звёзды'); return; }
+-    if (!reviewText.trim()) { toast.error('Напишите текст отзыва'); return; }
++    if (!reviewName.trim()) { toast.error(t('product.error_enter_name')); return; }
++    if (reviewRating === 0) { toast.error(t('product.error_set_rating')); return; }
++    if (!reviewText.trim()) { toast.error(t('product.error_write_review')); return; }
+ 
+     setSubmittingReview(true);
+     try {
+@@ -83,11 +85,11 @@ export default function ProductPage() {
+         rating: reviewRating,
+         text: reviewText.trim(),
+       });
+-      toast.success('Спасибо! Отзыв отправлен на модерацию и появится после проверки.');
++      toast.success(t('product.review_success'));
+       setReviewRating(0);
+       setReviewText('');
+     } catch (e: any) {
+-      toast.error(e.message || 'Не удалось отправить отзыв');
++      toast.error(e.message || t('product.review_error_fallback'));
+     } finally {
+       setSubmittingReview(false);
+     }
+@@ -96,12 +98,12 @@ export default function ProductPage() {
+   return (
+     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+       <PageMeta
+-        title={`${product.name} — купить в Душанбе за ${product.price.toLocaleString()} сом. | ENTER.TJ`}
+-        description={(product.description || `${product.name} от ${product.brandName}. Купить с доставкой по Душанбе и Таджикистану, официальная гарантия.`).slice(0, 160)}
++        title={t('product.meta_title', { name: product.name, price: product.price.toLocaleString() })}
++        description={(product.description || t('product.meta_description_fallback', { name: product.name, brand: product.brandName })).slice(0, 160)}
+         ogImage={product.images[0]}
+       />
+       <Breadcrumb items={[
+-        { label: 'Каталог', href: '/catalog' },
++        { label: t('common.catalog'), href: '/catalog' },
+         { label: product.categoryName, href: `/category/${product.slug.split('-')[0]}` },
+         { label: product.name },
+       ]} />
+@@ -132,7 +134,7 @@ export default function ProductPage() {
+           <div>
+             <h1 className="text-xl md:text-2xl font-bold text-foreground leading-tight">{product.name}</h1>
+             <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
+-              <span>Бренд: <span className="text-primary font-medium">{product.brandName}</span></span>
++              <span>{t('product.brand_label')}: <span className="text-primary font-medium">{product.brandName}</span></span>
+               <span className="text-border">•</span>
+               <span>SKU: {product.sku}</span>
+             </p>
+@@ -146,33 +148,33 @@ export default function ProductPage() {
+               ))}
+             </div>
+             <span className="text-sm text-primary font-medium">{product.rating}</span>
+-            <span className="text-sm text-muted-foreground">({product.reviewCount} отзывов)</span>
++            <span className="text-sm text-muted-foreground">{t('product.reviews_count', { count: product.reviewCount })}</span>
+           </div>
+ 
+           {/* Price */}
+           <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
+-            <span className="text-2xl md:text-3xl font-bold text-foreground">{product.price.toLocaleString()} сом.</span>
++            <span className="text-2xl md:text-3xl font-bold text-foreground">{product.price.toLocaleString()} {t('common.currency')}</span>
+             {product.oldPrice && (
+-              <span className="text-lg text-muted-foreground line-through">{product.oldPrice.toLocaleString()} сом.</span>
++              <span className="text-lg text-muted-foreground line-through">{product.oldPrice.toLocaleString()} {t('common.currency')}</span>
+             )}
+             {product.discount && (
+-              <Badge className="bg-destructive/10 text-destructive">Скидка {((product.oldPrice! - product.price)).toLocaleString()} сомони</Badge>
++              <Badge className="bg-destructive/10 text-destructive">{t('product.discount_badge', { amount: (product.oldPrice! - product.price).toLocaleString() })}</Badge>
+             )}
+           </div>
+ 
+           {/* Availability */}
+           <div className="flex items-center gap-2">
+             {product.stock > 0 ? (
+-              <><Check className="h-4 w-4 text-green-600" /><span className="text-sm font-medium text-green-600">В наличии ({product.stock} шт.)</span></>
++              <><Check className="h-4 w-4 text-green-600" /><span className="text-sm font-medium text-green-600">{t('product.in_stock', { count: product.stock })}</span></>
+             ) : (
+-              <span className="text-sm font-medium text-destructive">Нет в наличии</span>
++              <span className="text-sm font-medium text-destructive">{t('product.out_of_stock')}</span>
+             )}
+           </div>
+ 
+           {/* Quantity + Actions */}
+           <div className="flex flex-col gap-3">
+             <div className="flex items-center gap-3">
+-              <span className="text-sm text-muted-foreground">Количество:</span>
++              <span className="text-sm text-muted-foreground">{t('product.quantity_label')}</span>
+               <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                   className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center hover:bg-muted transition-colors">
+@@ -188,11 +190,11 @@ export default function ProductPage() {
+ 
+             <div className="flex flex-col md:flex-row gap-2 md:gap-3">
+               <Button onClick={handleBuyNow} className="w-full md:flex-1 bg-primary hover:bg-primary/90 text-white font-semibold" disabled={product.stock === 0}>
+-                Купить сейчас
++                {t('common.buy_now')}
+               </Button>
+               <div className="flex gap-2 md:gap-3 md:flex-1">
+                 <Button onClick={handleAddToCart} variant="outline" className="flex-1" disabled={product.stock === 0}>
+-                  <ShoppingCart className="h-4 w-4 mr-1.5" /> В корзину
++                  <ShoppingCart className="h-4 w-4 mr-1.5" /> {t('common.add_to_cart')}
+                 </Button>
+                 <Button onClick={() => toggle(product)} variant="outline" size="icon" className={`shrink-0 ${fav ? 'border-primary text-primary' : ''}`}>
+                   <Heart className={`h-4 w-4 ${fav ? 'fill-current' : ''}`} />
+@@ -205,15 +207,15 @@ export default function ProductPage() {
+           <div className="rounded-xl bg-muted/50 p-4 grid grid-cols-1 gap-2 text-sm">
+             <div className="flex items-center gap-2 text-muted-foreground">
+               <Truck className="h-4 w-4 text-primary shrink-0" />
+-              Бесплатная доставка по Душанбе
++              {t('product.benefit_delivery')}
+             </div>
+             <div className="flex items-center gap-2 text-muted-foreground">
+               <Shield className="h-4 w-4 text-primary shrink-0" />
+-              Официальная гарантия производителя
++              {t('product.benefit_warranty')}
+             </div>
+             <div className="flex items-center gap-2 text-muted-foreground">
+               <RotateCcw className="h-4 w-4 text-primary shrink-0" />
+-              Возврат в течение 14 дней
++              {t('product.benefit_return')}
+             </div>
+           </div>
+         </div>
+@@ -223,10 +225,10 @@ export default function ProductPage() {
+       <div className="mt-10">
+         <Tabs defaultValue="description">
+           <TabsList className="w-full md:w-auto flex overflow-x-auto justify-start gap-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+-            <TabsTrigger value="description" className="shrink-0">Описание</TabsTrigger>
+-            <TabsTrigger value="specs" className="shrink-0">Характеристики</TabsTrigger>
+-            <TabsTrigger value="reviews" className="shrink-0">Отзывы ({productReviews.length})</TabsTrigger>
+-            <TabsTrigger value="delivery" className="shrink-0">Доставка</TabsTrigger>
++            <TabsTrigger value="description" className="shrink-0">{t('product.tab_description')}</TabsTrigger>
++            <TabsTrigger value="specs" className="shrink-0">{t('product.tab_specs')}</TabsTrigger>
++            <TabsTrigger value="reviews" className="shrink-0">{t('product.tab_reviews', { count: productReviews.length })}</TabsTrigger>
++            <TabsTrigger value="delivery" className="shrink-0">{t('product.tab_delivery')}</TabsTrigger>
+           </TabsList>
+ 
+           <TabsContent value="description" className="mt-4 prose prose-sm max-w-none">
+@@ -270,16 +272,16 @@ export default function ProductPage() {
+                   ))}
+                 </div>
+               ) : (
+-                <p className="text-muted-foreground text-sm">Отзывов пока нет. Будьте первым!</p>
++                <p className="text-muted-foreground text-sm">{t('product.no_reviews_yet')}</p>
+               )}
+             </div>
+ 
+             {/* Форма добавления отзыва */}
+             <div className="rounded-xl bg-card border border-border p-4 sm:p-5 mt-4">
+-              <h3 className="font-semibold mb-3">Оставить отзыв</h3>
++              <h3 className="font-semibold mb-3">{t('product.leave_review')}</h3>
+               <div className="flex flex-col gap-3">
+                 <div>
+-                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваша оценка *</label>
++                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.your_rating')}</label>
+                   <div className="flex items-center gap-1">
+                     {Array.from({ length: 5 }, (_, i) => {
+                       const value = i + 1;
+@@ -292,7 +294,7 @@ export default function ProductPage() {
+                           onMouseEnter={() => setReviewHoverRating(value)}
+                           onMouseLeave={() => setReviewHoverRating(0)}
+                           className="p-0.5"
+-                          aria-label={`Оценка ${value} из 5`}
++                          aria-label={t('product.rating_aria', { value })}
+                         >
+                           <Star className={`h-6 w-6 transition-colors ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
+                         </button>
+@@ -301,37 +303,37 @@ export default function ProductPage() {
+                   </div>
+                 </div>
+                 <div>
+-                  <label className="text-sm text-muted-foreground mb-1.5 block">Ваше имя *</label>
++                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.your_name')}</label>
+                   <input
+                     value={reviewName}
+                     onChange={(e) => setReviewName(e.target.value)}
+-                    placeholder="Например: Рустам К."
++                    placeholder={t('product.your_name_placeholder')}
+                     className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm"
+                   />
+                 </div>
+                 <div>
+-                  <label className="text-sm text-muted-foreground mb-1.5 block">Текст отзыва *</label>
++                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.review_text_label')}</label>
+                   <textarea
+                     value={reviewText}
+                     onChange={(e) => setReviewText(e.target.value)}
+                     rows={3}
+-                    placeholder="Расскажите о своём опыте использования товара..."
++                    placeholder={t('product.review_text_placeholder')}
+                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
+                   />
+                 </div>
+                 <Button onClick={handleSubmitReview} disabled={submittingReview} className="self-start bg-primary hover:bg-primary/90 text-white">
+-                  {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
++                  {submittingReview ? t('product.submitting') : t('product.submit_review')}
+                 </Button>
+-                <p className="text-xs text-muted-foreground">Отзыв появится на сайте после проверки модератором.</p>
++                <p className="text-xs text-muted-foreground">{t('product.review_moderation_note')}</p>
+               </div>
+             </div>
+           </TabsContent>
+ 
+           <TabsContent value="delivery" className="mt-4">
+             <div className="rounded-xl bg-card border border-border p-4 sm:p-5 flex flex-col gap-3 text-sm text-foreground">
+-              <div className="flex items-start gap-2"><Truck className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Бесплатная доставка</p><p className="text-muted-foreground">Доставка по Душанбе за 1–2 рабочих дня. Бесплатно при заказе от 500 сомони.</p></div></div>
+-              <div className="flex items-start gap-2"><Check className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Самовывоз</p><p className="text-muted-foreground">Бесплатный самовывоз из нашего магазина в Душанбе.</p></div></div>
+-              <div className="flex items-start gap-2"><Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">Гарантия</p><p className="text-muted-foreground">Все товары включают официальную гарантию производителя 12–24 месяца.</p></div></div>
++              <div className="flex items-start gap-2"><Truck className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">{t('product.delivery_free_title')}</p><p className="text-muted-foreground">{t('product.delivery_free_desc')}</p></div></div>
++              <div className="flex items-start gap-2"><Check className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">{t('product.pickup_title')}</p><p className="text-muted-foreground">{t('product.pickup_desc')}</p></div></div>
++              <div className="flex items-start gap-2"><Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" /><div><p className="font-semibold">{t('product.warranty_title')}</p><p className="text-muted-foreground">{t('product.warranty_desc')}</p></div></div>
+             </div>
+           </TabsContent>
+         </Tabs>
+@@ -340,7 +342,7 @@ export default function ProductPage() {
+       {/* Similar */}
+       {similar.length > 0 && (
+         <div className="mt-12">
+-          <h2 className="text-xl font-bold mb-5">Похожие товары</h2>
++          <h2 className="text-xl font-bold mb-5">{t('product.similar_products')}</h2>
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+             {similar.map((p) => <ProductCard key={p.id} product={p} />)}
+           </div>
