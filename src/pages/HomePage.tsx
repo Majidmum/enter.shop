@@ -8,6 +8,7 @@ import { getBanners } from '@/lib/getStorageData';
 import { fetchProducts, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
 import Reveal from '@/components/common/Reveal';
+import OfficeStoryScene from '@/components/common/OfficeStoryScene';
 import type { Product, Brand, Review } from '@/types';
 
 export default function HomePage() {
@@ -189,6 +190,11 @@ export default function HomePage() {
             ))}
           </Reveal>
         </div>
+      </section>
+
+      {/* Office Story — анимированная сцена рабочего дня */}
+      <section className="container mx-auto px-4 py-10">
+        <OfficeStoryScene />
       </section>
 
       {/* Why choose us */}

@@ -1,0 +1,147 @@
+import { useEffect, useRef } from 'react';
+import { createTimeline, animate, stagger } from 'animejs';
+import { Armchair, Laptop, GlassWater, UserRound, Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+/**
+ * Анимированная мини-сцена "рабочий день в офисе":
+ * персонаж идёт кресло → компьютер → кулер → оставляет отзыв о ENTER.TJ.
+ * Вся панель плавно перетекает цветом (как в референсе с Chroma Juice) —
+ * один бесконечный hue-rotate на фоне-обёртке красит сразу все элементы сцены.
+ */
+export default function OfficeStoryScene() {
+  const { t } = useTranslation();
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const avatarRef = useRef<HTMLDivElement>(null);
+  const chairRef = useRef<HTMLDivElement>(null);
+  const laptopRef = useRef<HTMLDivElement>(null);
+  const coolerRef = useRef<HTMLDivElement>(null);
+  const reviewRef = useRef<HTMLDivElement>(null);
+  const starsRef = useRef<HTMLDivElement>(null);
+  const hueRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Бесконечное перетекание цвета всей панели — тот самый приём "хамелеона".
+    if (hueRef.current) {
+      animate(hueRef.current, {
+        filter: 'hue-rotate(360deg)',
+        duration: 8000,
+        loop: true,
+        easing: 'linear',
+      });
+    }
+
+    if (!avatarRef.current || !reviewRef.current) return;
+    const avatarEl = avatarRef.current;
+    const reviewEl = reviewRef.current;
+    const starEls = starsRef.current ? Array.from(starsRef.current.children) as HTMLElement[] : [];
+
+    const stationScale = (el: HTMLElement | null) => {
+      if (!el) return;
+      animate(el, {
+        scale: [1, 1.15, 1],
+        duration: 600,
+        easing: 'easeOutQuad',
+      });
+    };
+
+    const tl = createTimeline({ loop: true, loopDelay: 800 });
+
+    tl
+      // Старт у кресла
+      .add(avatarEl, { left: '6%' }, 0)
+      .add({ duration: 900 }, 0)
+      .call(() => stationScale(chairRef.current))
+      // Идёт к компьютеру
+      .add(avatarEl, { left: '35%', duration: 700, easing: 'easeInOutQuad' })
+      .call(() => stationScale(laptopRef.current))
+      .add({ duration: 1400 }, '+=0')
+      // Идёт к кулеру
+      .add(avatarEl, { left: '64%', duration: 700, easing: 'easeInOutQuad' })
+      .call(() => stationScale(coolerRef.current))
+      .add({ duration: 1200 }, '+=0')
+      // Идёт к отзыву
+      .add(avatarEl, { left: '88%', duration: 700, easing: 'easeInOutQuad' })
+      .add(reviewEl, {
+        opacity: [0, 1],
+        translateY: [16, 0],
+        scale: [0.9, 1],
+        duration: 500,
+        easing: 'easeOutBack',
+      })
+      .add(
+        starEls,
+        {
+          opacity: [0, 1],
+          scale: [0, 1],
+          duration: 300,
+          delay: stagger(100),
+          easing: 'easeOutBack',
+        },
+        '-=200'
+      )
+      .add({ duration: 1600 }, '+=0')
+      // Скрыть карточку отзыва перед повтором цикла
+      .add(reviewEl, { opacity: [1, 0], translateY: [0, 16], duration: 400 })
+      .add(avatarEl, { left: '6%', duration: 1 });
+
+    return () => {
+      tl.pause();
+    };
+  }, []);
+
+  return (
+    <div ref={hueRef} className="relative rounded-2xl overflow-hidden" style={{ filter: 'hue-rotate(0deg)' }}>
+      <div className="bg-gradient-to-br from-blue-500 via-violet-500 to-fuchsia-500 px-4 sm:px-8 py-10 sm:py-14">
+        <div ref={sceneRef} className="relative h-40 sm:h-48 max-w-3xl mx-auto">
+          {/* Дорожка */}
+          <div className="absolute left-0 right-0 bottom-8 h-0.5 bg-white/20 rounded-full" />
+
+          {/* Станция: кресло */}
+          <div ref={chairRef} className="absolute bottom-10 flex flex-col items-center gap-2" style={{ left: '6%', transform: 'translateX(-50%)' }}>
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20">
+              <Armchair className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+            </div>
+          </div>
+
+          {/* Станция: компьютер */}
+          <div ref={laptopRef} className="absolute bottom-10 flex flex-col items-center gap-2" style={{ left: '35%', transform: 'translateX(-50%)' }}>
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20">
+              <Laptop className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+            </div>
+          </div>
+
+          {/* Станция: кулер */}
+          <div ref={coolerRef} className="absolute bottom-10 flex flex-col items-center gap-2" style={{ left: '64%', transform: 'translateX(-50%)' }}>
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20">
+              <GlassWater className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+            </div>
+          </div>
+
+          {/* Персонаж */}
+          <div
+            ref={avatarRef}
+            className="absolute bottom-7 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white shadow-lg"
+            style={{ left: '6%', transform: 'translateX(-50%)' }}
+          >
+            <UserRound className="h-5 w-5 sm:h-6 sm:w-6 text-violet-600" />
+          </div>
+
+          {/* Карточка отзыва (появляется в конце цикла) */}
+          <div
+            ref={reviewRef}
+            className="absolute right-0 bottom-16 sm:bottom-20 w-40 sm:w-48 rounded-xl bg-white p-3 shadow-xl opacity-0"
+          >
+            <div ref={starsRef} className="flex gap-0.5 mb-1.5">
+              {Array.from({ length: 5 }, (_, i) => (
+                <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 opacity-0" />
+              ))}
+            </div>
+            <p className="text-xs font-semibold text-secondary leading-snug">{t('home.story_review_text')}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">ENTER<span className="text-primary">.TJ</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
