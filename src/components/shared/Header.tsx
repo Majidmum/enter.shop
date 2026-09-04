@@ -103,8 +103,8 @@ export default function Header() {
         </Sheet>
 
         {/* Logo */}
-        <Link to="/" className="flex items-center shrink-0 min-w-0">
-          <img src="/enter-logo-white-bg.png" alt="ENTER.TJ" className="h-8 md:h-10 w-auto max-w-[110px] md:max-w-none object-contain" />
+        <Link to="/" className="flex items-center justify-center shrink-0 min-w-0">
+          <img src="/logoenter.png" alt="ENTER.TJ" className="h-8 md:h-24 w-auto max-w-[110px] md:pt-2 md:max-w-none object-contain" />
         </Link>
 
         {/* Catalog dropdown desktop */}
