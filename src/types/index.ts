@@ -53,6 +53,8 @@ export interface Review {
   text: string;
   date: string;
   status: 'pending' | 'approved' | 'rejected';
+  images: string[];
+  likes: number;
 }
 
 export type OrderStatus =

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw, Upload, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/shared/ProductCard';
+import ReviewCard from '@/components/shared/ReviewCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { fetchProducts, fetchApprovedReviews, createReview } from '@/lib/supabaseData';
 import { useAuthStore } from '@/store/authStore';
@@ -27,6 +28,7 @@ export default function ProductPage() {
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewHoverRating, setReviewHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
   const user = useAuthStore((s) => s.user);
 
@@ -84,10 +86,12 @@ export default function ProductPage() {
         authorName: reviewName.trim(),
         rating: reviewRating,
         text: reviewText.trim(),
+        images: reviewImages,
       });
       toast.success(t('product.review_success'));
       setReviewRating(0);
       setReviewText('');
+      setReviewImages([]);
     } catch (e: any) {
       toast.error(e.message || t('product.review_error_fallback'));
     } finally {
@@ -257,18 +261,7 @@ export default function ProductPage() {
               {productReviews.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {productReviews.map((r) => (
-                    <div key={r.id} className="border-b border-border pb-4 last:border-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <Star key={i} className={`h-3.5 w-3.5 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
-                          ))}
-                        </div>
-                        <span className="font-semibold text-sm">{r.authorName}</span>
-                        <span className="text-xs text-muted-foreground ml-auto">{r.date}</span>
-                      </div>
-                      <p className="text-sm text-foreground">{r.text}</p>
-                    </div>
+                    <ReviewCard key={r.id} review={r} />
                   ))}
                 </div>
               ) : (
@@ -320,6 +313,44 @@ export default function ProductPage() {
                     placeholder={t('product.review_text_placeholder')}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
                   />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.add_photos')}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {reviewImages.map((img, i) => (
+                      <div key={i} className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden border border-border group">
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setReviewImages((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="h-16 w-16 shrink-0 rounded-lg border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          Array.from(e.target.files || []).forEach((file) => {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const result = event.target?.result;
+                              if (typeof result === 'string') setReviewImages((prev) => [...prev, result]);
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{t('product.photos_optional')}</p>
                 </div>
                 <Button onClick={handleSubmitReview} disabled={submittingReview} className="self-start bg-primary hover:bg-primary/90 text-white">
                   {submittingReview ? t('product.submitting') : t('product.submit_review')}

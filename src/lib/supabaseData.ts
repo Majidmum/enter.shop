@@ -234,6 +234,8 @@ function rowToReview(row: any): Review {
     text: row.text || '',
     date: row.created_at ? String(row.created_at).split('T')[0] : '',
     status: row.status,
+    images: row.images || [],
+    likes: row.likes || 0,
   };
 }
 
@@ -272,14 +274,17 @@ export async function createReview(input: {
   authorName: string;
   rating: number;
   text: string;
+  images?: string[];
 }): Promise<Review> {
   const id = crypto.randomUUID();
+  const images = input.images || [];
   const { error } = await supabase.from('reviews').insert({
     id,
     product_id: input.productId,
     author_name: input.authorName,
     rating: input.rating,
     text: input.text,
+    images,
     status: 'pending',
   });
   if (error) throw error;
@@ -292,7 +297,16 @@ export async function createReview(input: {
     text: input.text,
     date: new Date().toISOString().split('T')[0],
     status: 'pending',
+    images,
+    likes: 0,
   };
+}
+
+/** Лайк отзыва (доступно всем посетителям сайта, включая гостей). Возвращает новое число лайков. */
+export async function likeReview(id: string): Promise<number> {
+  const { data, error } = await supabase.rpc('increment_review_likes', { review_id: id });
+  if (error) throw error;
+  return data as number;
 }
 
 /** Админ одобряет/отклоняет отзыв. */

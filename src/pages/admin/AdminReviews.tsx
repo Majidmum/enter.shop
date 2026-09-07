@@ -153,6 +153,20 @@ export default function AdminReviews() {
                 )}
 
                 <p className="text-sm text-muted-foreground leading-relaxed">{r.text}</p>
+
+                {r.images.length > 0 && (
+                  <div className="flex gap-2 mt-2">
+                    {r.images.map((img, i) => (
+                      <a key={i} href={img} target="_blank" rel="noreferrer" className="h-14 w-14 rounded-lg overflow-hidden border border-border shrink-0">
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {r.likes > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">❤️ {r.likes}</p>
+                )}
               </div>
               <div className="flex items-center gap-2 shrink-0 flex-wrap">
                 <Badge className={`text-xs ${STATUS_BADGE[r.status]}`}>

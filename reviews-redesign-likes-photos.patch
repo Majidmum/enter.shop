@@ -1,0 +1,364 @@
+diff --git a/src/components/shared/ReviewCard.tsx b/src/components/shared/ReviewCard.tsx
+new file mode 100644
+index 0000000..8383fc8
+--- /dev/null
++++ b/src/components/shared/ReviewCard.tsx
+@@ -0,0 +1,130 @@
++import { useState } from 'react';
++import { useTranslation } from 'react-i18next';
++import { Star, Heart, X } from 'lucide-react';
++import { likeReview } from '@/lib/supabaseData';
++import type { Review } from '@/types';
++
++const AVATAR_COLORS = [
++  'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500',
++  'bg-rose-500', 'bg-cyan-500', 'bg-orange-500', 'bg-fuchsia-500',
++];
++
++function avatarColor(name: string) {
++  let hash = 0;
++  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
++  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
++}
++
++const TEXT_LIMIT = 180;
++const LIKED_KEY_PREFIX = 'liked_review_';
++
++export default function ReviewCard({ review }: { review: Review }) {
++  const { t } = useTranslation();
++  const [expanded, setExpanded] = useState(false);
++  const [likes, setLikes] = useState(review.likes);
++  const [liked, setLiked] = useState(() => {
++    if (typeof window === 'undefined') return false;
++    return localStorage.getItem(LIKED_KEY_PREFIX + review.id) === '1';
++  });
++  const [likeBusy, setLikeBusy] = useState(false);
++  const [lightbox, setLightbox] = useState<string | null>(null);
++
++  const isLong = review.text.length > TEXT_LIMIT;
++  const displayText = expanded || !isLong ? review.text : review.text.slice(0, TEXT_LIMIT).trimEnd() + '…';
++
++  const handleLike = async () => {
++    if (liked || likeBusy) return;
++    setLikeBusy(true);
++    setLiked(true);
++    setLikes((n) => n + 1);
++    localStorage.setItem(LIKED_KEY_PREFIX + review.id, '1');
++    try {
++      const newCount = await likeReview(review.id);
++      setLikes(newCount);
++    } catch {
++      // Не удалось — откатываем оптимистичное обновление
++      setLiked(false);
++      setLikes((n) => Math.max(0, n - 1));
++      localStorage.removeItem(LIKED_KEY_PREFIX + review.id);
++    } finally {
++      setLikeBusy(false);
++    }
++  };
++
++  return (
++    <div className="border-b border-border pb-4 last:border-0">
++      <div className="flex items-start gap-3">
++        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-sm font-bold ${avatarColor(review.authorName)}`}>
++          {review.authorName.trim().charAt(0).toUpperCase() || '?'}
++        </div>
++        <div className="flex-1 min-w-0">
++          <div className="flex items-center gap-2 flex-wrap mb-0.5">
++            <span className="font-semibold text-sm">{review.authorName}</span>
++            <span className="text-xs text-muted-foreground">{review.date}</span>
++          </div>
++          <div className="flex gap-0.5 mb-1.5">
++            {Array.from({ length: 5 }, (_, i) => (
++              <Star key={i} className={`h-3.5 w-3.5 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
++            ))}
++          </div>
++
++          <p className="text-sm text-foreground whitespace-pre-line">
++            {displayText}
++            {isLong && (
++              <button
++                type="button"
++                onClick={() => setExpanded((v) => !v)}
++                className="text-primary text-sm font-medium ml-1 hover:underline"
++              >
++                {expanded ? t('product.show_less') : t('product.show_more')}
++              </button>
++            )}
++          </p>
++
++          {review.images.length > 0 && (
++            <div className="flex gap-2 mt-2 overflow-x-auto">
++              {review.images.map((img, i) => (
++                <button
++                  key={i}
++                  type="button"
++                  onClick={() => setLightbox(img)}
++                  className="h-16 w-16 shrink-0 rounded-lg overflow-hidden border border-border"
++                >
++                  <img src={img} alt="" className="w-full h-full object-cover" />
++                </button>
++              ))}
++            </div>
++          )}
++
++          <button
++            type="button"
++            onClick={handleLike}
++            disabled={liked || likeBusy}
++            className={`flex items-center gap-1.5 mt-2.5 text-xs font-medium transition-colors ${
++              liked ? 'text-primary' : 'text-muted-foreground hover:text-primary'
++            } ${liked ? 'cursor-default' : 'cursor-pointer'}`}
++          >
++            <Heart className={`h-4 w-4 ${liked ? 'fill-primary' : ''}`} />
++            {likes > 0 ? likes : t('product.like')}
++          </button>
++        </div>
++      </div>
++
++      {lightbox && (
++        <div
++          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
++          onClick={() => setLightbox(null)}
++        >
++          <button
++            type="button"
++            onClick={() => setLightbox(null)}
++            className="absolute top-4 right-4 text-white/80 hover:text-white"
++          >
++            <X className="h-6 w-6" />
++          </button>
++          <img src={lightbox} alt="" className="max-w-full max-h-full rounded-lg" onClick={(e) => e.stopPropagation()} />
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+index d70f6b1..883a450 100644
+--- a/src/i18n/locales/ru.json
++++ b/src/i18n/locales/ru.json
+@@ -142,7 +142,12 @@
+     "error_set_rating": "Поставьте оценку — нажмите на звёзды",
+     "error_write_review": "Напишите текст отзыва",
+     "review_success": "Спасибо! Отзыв отправлен на модерацию и появится после проверки.",
+-    "review_error_fallback": "Не удалось отправить отзыв"
++    "review_error_fallback": "Не удалось отправить отзыв",
++    "show_more": "Показать полностью",
++    "show_less": "Скрыть",
++    "like": "Нравится",
++    "add_photos": "Добавить фото",
++    "photos_optional": "Необязательно, можно приложить фото товара"
+   },
+   "cart": {
+     "meta_title": "Корзина — ENTER.TJ",
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+index 466cc96..12f1ecf 100644
+--- a/src/i18n/locales/tg.json
++++ b/src/i18n/locales/tg.json
+@@ -142,7 +142,12 @@
+     "error_set_rating": "Баҳо гузоред — ба ситораҳо пахш кунед",
+     "error_write_review": "Матни тафсирро нависед",
+     "review_success": "Ташаккур! Тафсир ба назорат фиристода шуд ва пас аз санҷиш пайдо мешавад.",
+-    "review_error_fallback": "Тафсир фиристода нашуд"
++    "review_error_fallback": "Тафсир фиристода нашуд",
++    "show_more": "Пурра нишон додан",
++    "show_less": "Пинҳон кардан",
++    "like": "Маъқул аст",
++    "add_photos": "Илова кардани сурат",
++    "photos_optional": "Ихтиёрӣ, метавонед суратҳои молро замима кунед"
+   },
+   "cart": {
+     "meta_title": "Сабад — ENTER.TJ",
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index 05827cf..d0c1e85 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -234,6 +234,8 @@ function rowToReview(row: any): Review {
+     text: row.text || '',
+     date: row.created_at ? String(row.created_at).split('T')[0] : '',
+     status: row.status,
++    images: row.images || [],
++    likes: row.likes || 0,
+   };
+ }
+ 
+@@ -272,14 +274,17 @@ export async function createReview(input: {
+   authorName: string;
+   rating: number;
+   text: string;
++  images?: string[];
+ }): Promise<Review> {
+   const id = crypto.randomUUID();
++  const images = input.images || [];
+   const { error } = await supabase.from('reviews').insert({
+     id,
+     product_id: input.productId,
+     author_name: input.authorName,
+     rating: input.rating,
+     text: input.text,
++    images,
+     status: 'pending',
+   });
+   if (error) throw error;
+@@ -292,9 +297,18 @@ export async function createReview(input: {
+     text: input.text,
+     date: new Date().toISOString().split('T')[0],
+     status: 'pending',
++    images,
++    likes: 0,
+   };
+ }
+ 
++/** Лайк отзыва (доступно всем посетителям сайта, включая гостей). Возвращает новое число лайков. */
++export async function likeReview(id: string): Promise<number> {
++  const { data, error } = await supabase.rpc('increment_review_likes', { review_id: id });
++  if (error) throw error;
++  return data as number;
++}
++
+ /** Админ одобряет/отклоняет отзыв. */
+ export async function updateReviewStatus(
+   id: string,
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index 8d14c4e..5b36edd 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -1,11 +1,12 @@
+ import { useState, useEffect } from 'react';
+ import { useParams, Link } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+-import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw } from 'lucide-react';
++import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw, Upload, X } from 'lucide-react';
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ import { Button } from '@/components/ui/button';
+ import { Badge } from '@/components/ui/badge';
+ import ProductCard from '@/components/shared/ProductCard';
++import ReviewCard from '@/components/shared/ReviewCard';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+ import { fetchProducts, fetchApprovedReviews, createReview } from '@/lib/supabaseData';
+ import { useAuthStore } from '@/store/authStore';
+@@ -27,6 +28,7 @@ export default function ProductPage() {
+   const [reviewRating, setReviewRating] = useState(0);
+   const [reviewHoverRating, setReviewHoverRating] = useState(0);
+   const [reviewText, setReviewText] = useState('');
++  const [reviewImages, setReviewImages] = useState<string[]>([]);
+   const [submittingReview, setSubmittingReview] = useState(false);
+   const user = useAuthStore((s) => s.user);
+ 
+@@ -84,10 +86,12 @@ export default function ProductPage() {
+         authorName: reviewName.trim(),
+         rating: reviewRating,
+         text: reviewText.trim(),
++        images: reviewImages,
+       });
+       toast.success(t('product.review_success'));
+       setReviewRating(0);
+       setReviewText('');
++      setReviewImages([]);
+     } catch (e: any) {
+       toast.error(e.message || t('product.review_error_fallback'));
+     } finally {
+@@ -257,18 +261,7 @@ export default function ProductPage() {
+               {productReviews.length > 0 ? (
+                 <div className="flex flex-col gap-4">
+                   {productReviews.map((r) => (
+-                    <div key={r.id} className="border-b border-border pb-4 last:border-0">
+-                      <div className="flex items-center gap-2 mb-1">
+-                        <div className="flex gap-0.5">
+-                          {Array.from({ length: 5 }, (_, i) => (
+-                            <Star key={i} className={`h-3.5 w-3.5 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
+-                          ))}
+-                        </div>
+-                        <span className="font-semibold text-sm">{r.authorName}</span>
+-                        <span className="text-xs text-muted-foreground ml-auto">{r.date}</span>
+-                      </div>
+-                      <p className="text-sm text-foreground">{r.text}</p>
+-                    </div>
++                    <ReviewCard key={r.id} review={r} />
+                   ))}
+                 </div>
+               ) : (
+@@ -321,6 +314,44 @@ export default function ProductPage() {
+                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
+                   />
+                 </div>
++                <div>
++                  <label className="text-sm text-muted-foreground mb-1.5 block">{t('product.add_photos')}</label>
++                  <div className="flex flex-wrap gap-2">
++                    {reviewImages.map((img, i) => (
++                      <div key={i} className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden border border-border group">
++                        <img src={img} alt="" className="w-full h-full object-cover" />
++                        <button
++                          type="button"
++                          onClick={() => setReviewImages((prev) => prev.filter((_, idx) => idx !== i))}
++                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
++                        >
++                          <X className="h-3 w-3" />
++                        </button>
++                      </div>
++                    ))}
++                    <label className="h-16 w-16 shrink-0 rounded-lg border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
++                      <Upload className="h-5 w-5 text-muted-foreground" />
++                      <input
++                        type="file"
++                        accept="image/*"
++                        multiple
++                        className="hidden"
++                        onChange={(e) => {
++                          Array.from(e.target.files || []).forEach((file) => {
++                            const reader = new FileReader();
++                            reader.onload = (event) => {
++                              const result = event.target?.result;
++                              if (typeof result === 'string') setReviewImages((prev) => [...prev, result]);
++                            };
++                            reader.readAsDataURL(file);
++                          });
++                          e.target.value = '';
++                        }}
++                      />
++                    </label>
++                  </div>
++                  <p className="text-xs text-muted-foreground mt-1">{t('product.photos_optional')}</p>
++                </div>
+                 <Button onClick={handleSubmitReview} disabled={submittingReview} className="self-start bg-primary hover:bg-primary/90 text-white">
+                   {submittingReview ? t('product.submitting') : t('product.submit_review')}
+                 </Button>
+diff --git a/src/pages/admin/AdminReviews.tsx b/src/pages/admin/AdminReviews.tsx
+index ac3dd79..971a6b7 100644
+--- a/src/pages/admin/AdminReviews.tsx
++++ b/src/pages/admin/AdminReviews.tsx
+@@ -153,6 +153,20 @@ export default function AdminReviews() {
+                 )}
+ 
+                 <p className="text-sm text-muted-foreground leading-relaxed">{r.text}</p>
++
++                {r.images.length > 0 && (
++                  <div className="flex gap-2 mt-2">
++                    {r.images.map((img, i) => (
++                      <a key={i} href={img} target="_blank" rel="noreferrer" className="h-14 w-14 rounded-lg overflow-hidden border border-border shrink-0">
++                        <img src={img} alt="" className="w-full h-full object-cover" />
++                      </a>
++                    ))}
++                  </div>
++                )}
++
++                {r.likes > 0 && (
++                  <p className="text-xs text-muted-foreground mt-2">❤️ {r.likes}</p>
++                )}
+               </div>
+               <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                 <Badge className={`text-xs ${STATUS_BADGE[r.status]}`}>
+diff --git a/src/types/index.ts b/src/types/index.ts
+index 73bb759..e205e6c 100644
+--- a/src/types/index.ts
++++ b/src/types/index.ts
+@@ -53,6 +53,8 @@ export interface Review {
+   text: string;
+   date: string;
+   status: 'pending' | 'approved' | 'rejected';
++  images: string[];
++  likes: number;
+ }
+ 
+ export type OrderStatus =
