@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RotateCcw, Upload, X } from 'lucide-react';
@@ -15,11 +15,6 @@ import { useFavoritesStore } from '@/store/favoritesStore';
 import { toast } from 'sonner';
 import PageMeta from '@/components/common/PageMeta';
 import type { Product, Review } from '@/types';
-
-// Ленивая загрузка: Three.js/R3F/GSAP — тяжёлые библиотеки (~4 МБ),
-// подгружаются только при реальном заходе на страницу товара,
-// а не при каждом визите на сайт.
-const Product3DShowcase = lazy(() => import('@/components/common/Product3DShowcase'));
 
 export default function ProductPage() {
   const { t } = useTranslation();
@@ -229,15 +224,6 @@ export default function ProductPage() {
           </div>
         </div>
       </div>
-
-      {/* 3D-витрина товара со scroll-анимацией */}
-      {product.images[0] && (
-        <div className="-mx-4 mt-10">
-          <Suspense fallback={<div className="h-[60vh] bg-secondary animate-pulse" />}>
-            <Product3DShowcase product={product} onBuyNow={handleBuyNow} />
-          </Suspense>
-        </div>
-      )}
 
       {/* Tabs */}
       <div className="mt-10">

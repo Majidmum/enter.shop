@@ -1,4 +1,4 @@
-import type { Brand, Category, Product, Order, Customer, Promotion, Banner } from '@/types';
+import type { Brand, Category, Product, Review, Order, Customer, Promotion, Banner } from '@/types';
 
 export const categories: Category[] = [
   { id: 'c1', name: 'Laptops', slug: 'laptops', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80', productCount: 8 },
@@ -556,6 +556,19 @@ export const products: Product[] = [
     ],
     rating: 4.6, reviewCount: 18, stock: 9, status: 'active', isNew: true,
   },
+];
+
+export const reviews: Review[] = [
+  { id: 'r1', productId: 'p1', productName: 'Acer Aspire A6270', authorName: 'Rustam K.', rating: 5, text: 'Excellent laptop for the price. Fast, quiet, great battery life. Highly recommend!', date: '2025-07-15', status: 'approved' },
+  { id: 'r2', productId: 'p5', productName: 'HP Victus 15', authorName: 'Dilnoza M.', rating: 5, text: 'Perfect gaming laptop! Runs all games smoothly, great display, good cooling.', date: '2025-07-20', status: 'approved' },
+  { id: 'r3', productId: 'p13', productName: 'Ergonomic Chair Pro', authorName: 'Firdavs B.', rating: 4, text: 'Good chair, comfortable for long hours. Assembly was easy. Delivery was fast!', date: '2025-07-22', status: 'approved' },
+  { id: 'r4', productId: 'p17', productName: 'Logitech MX Master 3', authorName: 'Zulfiya T.', rating: 5, text: 'The best mouse I have ever used. Ergonomic, fast scrolling, long battery life.', date: '2025-07-25', status: 'approved' },
+  { id: 'r5', productId: 'p12', productName: 'Epson EcoTank L3210', authorName: 'Akbar A.', rating: 5, text: 'Amazing printer! Very economical ink costs. Fast printing, good quality.', date: '2025-08-01', status: 'approved' },
+  { id: 'r6', productId: 'p7', productName: 'ASUS Vivobook 15', authorName: 'Malika S.', rating: 4, text: 'Nice laptop, great screen. A bit warm under load but overall very satisfied.', date: '2025-08-03', status: 'approved' },
+  { id: 'r7', productId: 'p15', productName: 'Height-Adjustable Desk', authorName: 'Bobur N.', rating: 5, text: 'Love this desk! So convenient to switch between sitting and standing throughout the day.', date: '2025-08-05', status: 'approved' },
+  { id: 'r8', productId: 'p9', productName: 'Samsung 27" Curved Monitor', authorName: 'Sarvar I.', rating: 4, text: 'Beautiful curved monitor, colors are vivid and sharp. Excellent for both work and gaming.', date: '2025-08-07', status: 'approved' },
+  { id: 'r9', productId: 'p20', productName: 'ASUS ZenBook 14', authorName: 'Nasiba R.', rating: 5, text: 'Ultra-thin and premium feel. OLED display is stunning. Very fast and light.', date: '2025-08-08', status: 'pending' },
+  { id: 'r10', productId: 'p27', productName: 'USB-C Hub 7-in-1', authorName: 'Timur D.', rating: 4, text: 'Works perfectly with MacBook. All ports functional. Compact and well-built.', date: '2025-08-09', status: 'approved' },
 ];
 
 export const customers: Customer[] = [
