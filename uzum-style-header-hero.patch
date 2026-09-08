@@ -1,0 +1,244 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index b4b984d..56ce8fc 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -1,7 +1,7 @@
+ import { useState, useEffect } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages } from 'lucide-react';
++import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2 } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+@@ -217,10 +217,11 @@ export default function Header() {
+           <ThemeToggle />
+ 
+           <Link to="/favorites">
+-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
+-              <Heart className="h-5 w-5" />
++            <Button variant="ghost" className="relative h-9 gap-1.5 px-2 lg:px-3">
++              <Heart className="h-5 w-5 shrink-0" />
++              <span className="hidden lg:inline text-sm font-medium">{t('common.favorites')}</span>
+               {favCount > 0 && (
+-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
++                <span className="absolute -top-0.5 left-4 lg:static lg:ml-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
+                   {favCount}
+                 </span>
+               )}
+@@ -228,10 +229,11 @@ export default function Header() {
+           </Link>
+ 
+           <Link to="/cart">
+-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
+-              <ShoppingCart className="h-5 w-5" />
++            <Button variant="ghost" className="relative h-9 gap-1.5 px-2 lg:px-3">
++              <ShoppingCart className="h-5 w-5 shrink-0" />
++              <span className="hidden lg:inline text-sm font-medium">{t('common.cart')}</span>
+               {cartCount > 0 && (
+-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
++                <span className="absolute -top-0.5 left-4 lg:static lg:ml-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
+                   {cartCount > 99 ? '99+' : cartCount}
+                 </span>
+               )}
+@@ -239,13 +241,53 @@ export default function Header() {
+           </Link>
+ 
+           <Link to={!isAuthenticated ? '/login' : user?.role === 'admin' ? '/admin' : '/account'}>
+-            <Button variant="ghost" size="icon" className="h-9 w-9">
+-              <User className="h-5 w-5" />
++            <Button variant="ghost" className="h-9 gap-1.5 px-2 lg:px-3">
++              <User className="h-5 w-5 shrink-0" />
++              <span className="hidden lg:inline text-sm font-medium">
++                {!isAuthenticated ? t('common.login') : t('common.profile')}
++              </span>
+             </Button>
+           </Link>
+         </div>
+       </div>
+ 
++      {/* Category pills row (desktop) — по образцу Uzum: цветные плашки + категории в одной ленте */}
++      <div className="hidden md:block border-t border-border">
++        <div className="container mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
++          <Link
++            to="/sale"
++            className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold whitespace-nowrap"
++          >
++            <Tag className="h-4 w-4" />
++            {t('header.nav_sale')}
++          </Link>
++          <Link
++            to="/office"
++            className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-sm font-semibold whitespace-nowrap"
++          >
++            <Building2 className="h-4 w-4" />
++            {t('header.nav_office')}
++          </Link>
++          <div className="h-5 w-px bg-border shrink-0 mx-1" />
++          {categories.slice(0, 10).map((cat) => (
++            <Link
++              key={cat.id}
++              to={`/category/${cat.slug}`}
++              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
++            >
++              <span className="h-6 w-6 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
++                {cat.image ? (
++                  <img src={cat.image} alt="" className="h-full w-full object-cover" />
++                ) : (
++                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
++                )}
++              </span>
++              {cat.name}
++            </Link>
++          ))}
++        </div>
++      </div>
++
+       {/* Mobile expandable search row */}
+       {mobileSearchOpen && (
+         <div className="md:hidden border-t border-border px-4 py-2.5 bg-card">
+@@ -267,10 +309,10 @@ export default function Header() {
+         </div>
+       )}
+ 
+-      {/* Secondary nav (desktop) */}
+-      <div className="hidden md:block border-t border-border bg-background/80 backdrop-blur-sm">
++      {/* Secondary nav — остальные страницы, доступны через бургер-меню на мобильном и футер */}
++      <div className="hidden lg:block border-t border-border bg-background/80 backdrop-blur-sm">
+         <div className="container mx-auto px-4 h-9 flex items-center gap-6">
+-          {navLinks.slice(1).map((link) => (
++          {navLinks.slice(3).map((link) => (
+             <Link key={link.href} to={link.href}
+               className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+               {link.label}
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+index 883a450..78ed7be 100644
+--- a/src/i18n/locales/ru.json
++++ b/src/i18n/locales/ru.json
+@@ -77,7 +77,11 @@
+     "why_choose_us": "Почему выбирают ENTER.TJ",
+     "reviews_title": "Отзывы покупателей",
+     "instagram_title": "Подписывайтесь на Instagram",
+-    "instagram_subtitle": "Новинки, акции и полезные советы"
++    "instagram_subtitle": "Новинки, акции и полезные советы",
++    "tile_computers": "Компьютеры и ноутбуки",
++    "tile_office": "Офис под ключ",
++    "tile_sale": "Акции и скидки",
++    "tile_new": "Новинки"
+   },
+   "catalog": {
+     "title": "Каталог товаров",
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+index 12f1ecf..06f74cb 100644
+--- a/src/i18n/locales/tg.json
++++ b/src/i18n/locales/tg.json
+@@ -77,7 +77,11 @@
+     "why_choose_us": "Чаро ENTER.TJ-ро интихоб мекунанд",
+     "reviews_title": "Тафсирҳои харидорон",
+     "instagram_title": "Ба Instagram обуна шавед",
+-    "instagram_subtitle": "Молҳои нав, тахфифҳо ва маслиҳатҳои муфид"
++    "instagram_subtitle": "Молҳои нав, тахфифҳо ва маслиҳатҳои муфид",
++    "tile_computers": "Компютер ва ноутбукҳо",
++    "tile_office": "Ҷиҳозонии дафтар",
++    "tile_sale": "Тахфифҳо",
++    "tile_new": "Молҳои нав"
+   },
+   "catalog": {
+     "title": "Каталоги мол",
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index bf808de..74cf88a 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -1,7 +1,7 @@
+ import { useState, useEffect } from 'react';
+ import { Link } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+-import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles } from 'lucide-react';
++import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import ProductCard from '@/components/shared/ProductCard';
+ import { getBanners } from '@/lib/getStorageData';
+@@ -55,31 +55,35 @@ export default function HomePage() {
+         title={t('home.meta_title')}
+         description={t('home.meta_description')}
+       />
+-      {/* Hero Banner */}
+-      <section className="relative w-full overflow-hidden bg-secondary">
+-        <div className="relative min-h-[320px] md:min-h-[480px]">
++      {/* Hero Banner — контейнерный, закруглённый, фото слева / текст справа */}
++      <section className="container mx-auto px-4 pt-4 md:pt-6">
++        <div className="relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
+           {activeBanners.map((banner, i) => (
+             <div
+               key={banner.id}
+               className={`absolute inset-0 transition-opacity duration-700 ${i === bannerIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+             >
+-              <img src={banner.image} alt={banner.title} className="w-full h-full object-cover opacity-30" />
+-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 gap-4">
+-                <h1 className="text-2xl md:text-5xl font-bold text-white text-balance leading-tight max-w-3xl">
+-                  {banner.title}
+-                </h1>
+-                <p className="text-sm md:text-lg text-white/80 max-w-xl">{banner.subtitle}</p>
+-                <div className="flex flex-wrap gap-3 justify-center">
+-                  <Link to={banner.buttonLink}>
+-                    <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold">
+-                      {banner.buttonText}
+-                    </Button>
+-                  </Link>
+-                  <Link to="/sale">
+-                    <Button variant="ghost" className="border border-white/60 text-white hover:bg-white/10 px-6">
+-                      {t('home.banner_sale_button')}
+-                    </Button>
+-                  </Link>
++              <div className="grid grid-cols-1 md:grid-cols-2 h-full">
++                <div className="hidden md:block relative h-full">
++                  <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
++                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-secondary/40" />
++                </div>
++                <div className="relative flex flex-col justify-center gap-3 sm:gap-4 px-5 sm:px-8 md:px-10 py-8 md:py-0">
++                  {/* Фон-фото на мобильном — приглушённое, за текстом */}
++                  <img src={banner.image} alt="" className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20" />
++                  <div className="relative flex flex-col gap-3 sm:gap-4">
++                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
++                      {banner.title}
++                    </h1>
++                    <p className="text-sm sm:text-base text-white/80 max-w-md">{banner.subtitle}</p>
++                    <div className="flex flex-wrap gap-3">
++                      <Link to={banner.buttonLink}>
++                        <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold rounded-full">
++                          {banner.buttonText} <ArrowRight className="h-4 w-4 ml-1" />
++                        </Button>
++                      </Link>
++                    </div>
++                  </div>
+                 </div>
+               </div>
+             </div>
+@@ -102,6 +106,27 @@ export default function HomePage() {
+             </>
+           )}
+         </div>
++
++        {/* Плитки быстрых ссылок под баннером (по образцу Uzum) */}
++        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
++          {[
++            { icon: Laptop, label: t('home.tile_computers'), href: '/catalog' },
++            { icon: Building2, label: t('home.tile_office'), href: '/office' },
++            { icon: Tag, label: t('home.tile_sale'), href: '/sale' },
++            { icon: Sparkles, label: t('home.tile_new'), href: '/catalog?filter=new' },
++          ].map((tile) => (
++            <Link
++              key={tile.href}
++              to={tile.href}
++              className="flex items-center gap-3 rounded-xl bg-muted hover:bg-muted/70 transition-colors px-4 py-3.5"
++            >
++              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
++                <tile.icon className="h-5 w-5 text-primary" />
++              </span>
++              <span className="text-sm font-medium text-foreground leading-tight">{tile.label}</span>
++            </Link>
++          ))}
++        </div>
+       </section>
+ 
+       {/* Popular Products (по рейтингу) */}

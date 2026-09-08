@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
 import { getBanners } from '@/lib/getStorageData';
@@ -55,31 +55,35 @@ export default function HomePage() {
         title={t('home.meta_title')}
         description={t('home.meta_description')}
       />
-      {/* Hero Banner */}
-      <section className="relative w-full overflow-hidden bg-secondary">
-        <div className="relative min-h-[320px] md:min-h-[480px]">
+      {/* Hero Banner — контейнерный, закруглённый, фото слева / текст справа */}
+      <section className="container mx-auto px-4 pt-4 md:pt-6">
+        <div className="relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
           {activeBanners.map((banner, i) => (
             <div
               key={banner.id}
               className={`absolute inset-0 transition-opacity duration-700 ${i === bannerIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
             >
-              <img src={banner.image} alt={banner.title} className="w-full h-full object-cover opacity-30" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 gap-4">
-                <h1 className="text-2xl md:text-5xl font-bold text-white text-balance leading-tight max-w-3xl">
-                  {banner.title}
-                </h1>
-                <p className="text-sm md:text-lg text-white/80 max-w-xl">{banner.subtitle}</p>
-                <div className="flex flex-wrap gap-3 justify-center">
-                  <Link to={banner.buttonLink}>
-                    <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold">
-                      {banner.buttonText}
-                    </Button>
-                  </Link>
-                  <Link to="/sale">
-                    <Button variant="ghost" className="border border-white/60 text-white hover:bg-white/10 px-6">
-                      {t('home.banner_sale_button')}
-                    </Button>
-                  </Link>
+              <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+                <div className="hidden md:block relative h-full">
+                  <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-secondary/40" />
+                </div>
+                <div className="relative flex flex-col justify-center gap-3 sm:gap-4 px-5 sm:px-8 md:px-10 py-8 md:py-0">
+                  {/* Фон-фото на мобильном — приглушённое, за текстом */}
+                  <img src={banner.image} alt="" className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20" />
+                  <div className="relative flex flex-col gap-3 sm:gap-4">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
+                      {banner.title}
+                    </h1>
+                    <p className="text-sm sm:text-base text-white/80 max-w-md">{banner.subtitle}</p>
+                    <div className="flex flex-wrap gap-3">
+                      <Link to={banner.buttonLink}>
+                        <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold rounded-full">
+                          {banner.buttonText} <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -101,6 +105,27 @@ export default function HomePage() {
               </div>
             </>
           )}
+        </div>
+
+        {/* Плитки быстрых ссылок под баннером (по образцу Uzum) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          {[
+            { icon: Laptop, label: t('home.tile_computers'), href: '/catalog' },
+            { icon: Building2, label: t('home.tile_office'), href: '/office' },
+            { icon: Tag, label: t('home.tile_sale'), href: '/sale' },
+            { icon: Sparkles, label: t('home.tile_new'), href: '/catalog?filter=new' },
+          ].map((tile) => (
+            <Link
+              key={tile.href}
+              to={tile.href}
+              className="flex items-center gap-3 rounded-xl bg-muted hover:bg-muted/70 transition-colors px-4 py-3.5"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <tile.icon className="h-5 w-5 text-primary" />
+              </span>
+              <span className="text-sm font-medium text-foreground leading-tight">{tile.label}</span>
+            </Link>
+          ))}
         </div>
       </section>
 

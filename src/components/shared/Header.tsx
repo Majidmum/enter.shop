@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -217,10 +217,11 @@ export default function Header() {
           <ThemeToggle />
 
           <Link to="/favorites">
-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <Heart className="h-5 w-5" />
+            <Button variant="ghost" className="relative h-9 gap-1.5 px-2 lg:px-3">
+              <Heart className="h-5 w-5 shrink-0" />
+              <span className="hidden lg:inline text-sm font-medium">{t('common.favorites')}</span>
               {favCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
+                <span className="absolute -top-0.5 left-4 lg:static lg:ml-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
                   {favCount}
                 </span>
               )}
@@ -228,10 +229,11 @@ export default function Header() {
           </Link>
 
           <Link to="/cart">
-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <ShoppingCart className="h-5 w-5" />
+            <Button variant="ghost" className="relative h-9 gap-1.5 px-2 lg:px-3">
+              <ShoppingCart className="h-5 w-5 shrink-0" />
+              <span className="hidden lg:inline text-sm font-medium">{t('common.cart')}</span>
               {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
+                <span className="absolute -top-0.5 left-4 lg:static lg:ml-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
@@ -239,10 +241,50 @@ export default function Header() {
           </Link>
 
           <Link to={!isAuthenticated ? '/login' : user?.role === 'admin' ? '/admin' : '/account'}>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <User className="h-5 w-5" />
+            <Button variant="ghost" className="h-9 gap-1.5 px-2 lg:px-3">
+              <User className="h-5 w-5 shrink-0" />
+              <span className="hidden lg:inline text-sm font-medium">
+                {!isAuthenticated ? t('common.login') : t('common.profile')}
+              </span>
             </Button>
           </Link>
+        </div>
+      </div>
+
+      {/* Category pills row (desktop) — по образцу Uzum: цветные плашки + категории в одной ленте */}
+      <div className="hidden md:block border-t border-border">
+        <div className="container mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <Link
+            to="/sale"
+            className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold whitespace-nowrap"
+          >
+            <Tag className="h-4 w-4" />
+            {t('header.nav_sale')}
+          </Link>
+          <Link
+            to="/office"
+            className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-sm font-semibold whitespace-nowrap"
+          >
+            <Building2 className="h-4 w-4" />
+            {t('header.nav_office')}
+          </Link>
+          <div className="h-5 w-px bg-border shrink-0 mx-1" />
+          {categories.slice(0, 10).map((cat) => (
+            <Link
+              key={cat.id}
+              to={`/category/${cat.slug}`}
+              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
+            >
+              <span className="h-6 w-6 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+                {cat.image ? (
+                  <img src={cat.image} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                )}
+              </span>
+              {cat.name}
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -267,10 +309,10 @@ export default function Header() {
         </div>
       )}
 
-      {/* Secondary nav (desktop) */}
-      <div className="hidden md:block border-t border-border bg-background/80 backdrop-blur-sm">
+      {/* Secondary nav — остальные страницы, доступны через бургер-меню на мобильном и футер */}
+      <div className="hidden lg:block border-t border-border bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-9 flex items-center gap-6">
-          {navLinks.slice(1).map((link) => (
+          {navLinks.slice(3).map((link) => (
             <Link key={link.href} to={link.href}
               className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
               {link.label}
