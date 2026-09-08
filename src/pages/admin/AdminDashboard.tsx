@@ -1,37 +1,60 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ShoppingBag, Users, Package, TrendingUp, ArrowUpRight, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { useOrdersStore } from '@/store/ordersStore';
-import { fetchProducts } from '@/lib/supabaseData';
-import { customers } from '@/lib/mockData';
+import { fetchProducts, fetchCustomers } from '@/lib/supabaseData';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
-import type { Product } from '@/types';
+import type { Product, Customer } from '@/types';
 
-const salesData = [
-  { month: 'Jan', revenue: 42000, orders: 28 },
-  { month: 'Feb', revenue: 38000, orders: 24 },
-  { month: 'Mar', revenue: 56000, orders: 37 },
-  { month: 'Apr', revenue: 61000, orders: 41 },
-  { month: 'May', revenue: 48000, orders: 32 },
-  { month: 'Jun', revenue: 72000, orders: 48 },
-  { month: 'Jul', revenue: 83000, orders: 55 },
-  { month: 'Aug', revenue: 91000, orders: 61 },
-];
+const MONTH_NAMES = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
-  useEffect(() => { fetchProducts().then(setProducts); }, []);
-  const topProducts = products.filter((p) => p.isFeatured).slice(0, 5);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+    fetchProducts().then(setProducts);
+    fetchCustomers().then(setCustomers).catch(() => setCustomers([]));
+  }, []);
+
+  const topProducts = useMemo(
+    () => [...products].sort((a, b) => (b.rating - a.rating) || (b.reviewCount - a.reviewCount)).slice(0, 5),
+    [products]
+  );
+
   const orders = useOrdersStore((s) => s.orders);
   const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
   const newOrders = orders.filter((o) => o.status === 'new').length;
 
+  // Реальная разбивка заказов по месяцам — вместо зашитых цифр.
+  // ВАЖНО: заказы пока хранятся только в этом браузере (localStorage),
+  // не в общей базе — см. пояснение под графиком.
+  const salesData = useMemo(() => {
+    const byMonth = new Map<string, { revenue: number; orders: number; sortKey: string; month: string }>();
+    orders.forEach((o) => {
+      const d = new Date(o.date);
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+      const existing = byMonth.get(key);
+      if (existing) {
+        existing.revenue += o.total;
+        existing.orders += 1;
+      } else {
+        byMonth.set(key, { revenue: o.total, orders: 1, sortKey: key, month: MONTH_NAMES[d.getMonth()] });
+      }
+    });
+    return Array.from(byMonth.values()).sort((a, b) => a.sortKey.localeCompare(b.sortKey)).slice(-8);
+  }, [orders]);
+
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const newCustomersThisWeek = customers.filter((c) => new Date(c.registeredAt).getTime() >= weekAgo).length;
+
   const stats = [
-    { label: 'Выручка', value: `${totalRevenue.toLocaleString()} сом.`, icon: TrendingUp, delta: '+12%', color: 'text-green-600' },
+    { label: 'Выручка', value: `${totalRevenue.toLocaleString()} сом.`, icon: TrendingUp, delta: 'За всё время', color: 'text-green-600' },
     { label: 'Заказы', value: orders.length, icon: ShoppingBag, delta: `${newOrders} новых`, color: 'text-blue-600' },
     { label: 'Товары', value: products.length, icon: Package, delta: 'В каталоге', color: 'text-purple-600' },
-    { label: 'Клиенты', value: customers.length, icon: Users, delta: '+3 на этой неделе', color: 'text-orange-600' },
+    { label: 'Клиенты', value: customers.length, icon: Users, delta: `+${newCustomersThisWeek} на этой неделе`, color: 'text-orange-600' },
   ];
 
   const recentOrders = orders.slice(0, 8);
@@ -60,48 +83,63 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-4">
         {/* Revenue chart */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 card-shadow">
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-1">
             <h2 className="font-bold">Выручка по месяцам</h2>
             <span className="text-xs text-muted-foreground">сом.</span>
           </div>
-          <div className="w-full min-w-0 overflow-hidden" style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(220 78% 48%)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(220 78% 48%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={55} />
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }}
-                  formatter={(value: number) => [`${value.toLocaleString()} сом.`, 'Выручка']}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="hsl(220 78% 48%)" fill="url(#colorRevenue)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            По заказам, оформленным в этом браузере — общая база заказов пока не подключена
+          </p>
+          {salesData.length === 0 ? (
+            <div className="flex items-center justify-center text-sm text-muted-foreground" style={{ height: 220 }}>
+              Пока нет данных о заказах
+            </div>
+          ) : (
+            <div className="w-full min-w-0 overflow-hidden" style={{ height: 220 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(220 78% 48%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(220 78% 48%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={55} />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }}
+                    formatter={(value: number) => [`${value.toLocaleString()} сом.`, 'Выручка']}
+                  />
+                  <Area type="monotone" dataKey="revenue" stroke="hsl(220 78% 48%)" fill="url(#colorRevenue)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Orders chart */}
         <div className="bg-card border border-border rounded-xl p-5 card-shadow">
           <h2 className="font-bold mb-5">Заказы по месяцам</h2>
-          <div className="w-full min-w-0 overflow-hidden" style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }}
-                />
-                <Bar dataKey="orders" fill="hsl(199 89% 48%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {salesData.length === 0 ? (
+            <div className="flex items-center justify-center text-sm text-muted-foreground" style={{ height: 220 }}>
+              Нет данных
+            </div>
+          ) : (
+            <div className="w-full min-w-0 overflow-hidden" style={{ height: 220 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }}
+                  />
+                  <Bar dataKey="orders" fill="hsl(199 89% 48%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
 
