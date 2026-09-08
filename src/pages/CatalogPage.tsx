@@ -11,6 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
+import { ProductGridSkeleton } from '@/components/shared/Skeletons';
 import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
 import type { Product, Category, Brand } from '@/types';
@@ -211,7 +212,7 @@ export default function CatalogPage() {
 
           {/* Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-muted-foreground">{t('common.loading')}</div>
+            <ProductGridSkeleton count={12} />
           ) : paginated.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {paginated.map((p) => <ProductCard key={p.id} product={p} />)}

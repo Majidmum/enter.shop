@@ -8,6 +8,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { Badge } from '@/components/ui/badge';
 import { fetchProducts, fetchActivePromotions } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
+import { ProductGridSkeleton } from '@/components/shared/Skeletons';
 import type { Product, Promotion } from '@/types';
 
 const PAGE_SIZE = 12;
@@ -15,11 +16,12 @@ const PAGE_SIZE = 12;
 export default function SalePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('discount');
 
   useEffect(() => {
-    fetchProducts().then(setProducts);
+    fetchProducts().then(setProducts).finally(() => setLoading(false));
     fetchActivePromotions().then(setActivePromotions);
   }, []);
 
@@ -99,9 +101,13 @@ export default function SalePage() {
           </Select>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
+        {loading ? (
+          <ProductGridSkeleton count={12} />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
 
         {totalPages > 1 && (
           <div className="mt-8">

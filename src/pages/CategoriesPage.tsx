@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import CategoryCard from '@/components/shared/CategoryCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import PageMeta from '@/components/common/PageMeta';
+import { CategoryGridSkeleton } from '@/components/shared/Skeletons';
 import { fetchCategories } from '@/lib/supabaseData';
 import type { Category } from '@/types';
 
@@ -22,7 +23,7 @@ export default function CategoriesPage() {
       <Breadcrumb items={[{ label: 'Категории' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">Все категории</h1>
       {loading ? (
-        <div className="py-16 text-center text-muted-foreground">Загрузка...</div>
+        <CategoryGridSkeleton count={10} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {categories.map((cat) => (

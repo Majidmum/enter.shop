@@ -11,6 +11,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
 import { toast } from 'sonner';
 import { sendContactFormToTelegram } from '@/lib/telegram';
 import { fetchActiveOfficePackages, type OfficePackage } from '@/lib/supabaseData';
+import { PackageCardSkeleton } from '@/components/shared/Skeletons';
 import PageMeta from '@/components/common/PageMeta';
 
 const schema = z.object({
@@ -145,7 +146,9 @@ const onSubmit = async (data: FormData) => {
         <p className="text-muted-foreground text-center mb-10">Выберите подходящее решение или запросите индивидуальную конфигурацию</p>
 
         {packagesLoading ? (
-          <div className="py-16 text-center text-muted-foreground">Загрузка...</div>
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {Array.from({ length: 3 }).map((_, i) => <PackageCardSkeleton key={i} />)}
+          </div>
         ) : packages.length === 0 ? (
           <div className="py-16 text-center text-muted-foreground">Пакеты скоро появятся — свяжитесь с нами напрямую.</div>
         ) : (

@@ -14,6 +14,7 @@ import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { toast } from 'sonner';
 import PageMeta from '@/components/common/PageMeta';
+import { ProductDetailSkeleton } from '@/components/shared/Skeletons';
 import type { Product, Review } from '@/types';
 
 export default function ProductPage() {
@@ -48,7 +49,11 @@ export default function ProductPage() {
   const { toggle, isFavorite } = useFavoritesStore();
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">{t('common.loading')}</div>;
+    return (
+      <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+        <ProductDetailSkeleton />
+      </div>
+    );
   }
 
   if (!product) {

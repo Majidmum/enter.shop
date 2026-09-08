@@ -7,6 +7,7 @@ import ProductCard from '@/components/shared/ProductCard';
 import { getBanners } from '@/lib/getStorageData';
 import { fetchProducts, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
+import { ProductGridSkeleton } from '@/components/shared/Skeletons';
 import type { Product, Brand, Review } from '@/types';
 
 export default function HomePage() {
@@ -14,11 +15,13 @@ export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const banners = getBanners();
 
   useEffect(() => {
     Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews()])
-      .then(([p, b, r]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); });
+      .then(([p, b, r]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); })
+      .finally(() => setProductsLoading(false));
   }, []);
 
   const [bannerIdx, setBannerIdx] = useState(0);
@@ -142,9 +145,13 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="text-sm text-muted-foreground mb-6">{t('home.popular_products_subtitle')}</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
+          {productsLoading ? (
+            <ProductGridSkeleton count={4} className="lg:grid-cols-4" />
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          )}
         </div>
       </section>
 
@@ -179,7 +186,9 @@ export default function HomePage() {
             {t('common.view_all')} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        {newProducts.length > 0 ? (
+        {productsLoading ? (
+          <ProductGridSkeleton count={4} className="lg:grid-cols-4" />
+        ) : newProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>

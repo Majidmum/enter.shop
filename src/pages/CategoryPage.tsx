@@ -7,6 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
+import { ProductGridSkeleton } from '@/components/shared/Skeletons';
 import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
 import type { Product, Category, Brand } from '@/types';
@@ -49,7 +50,11 @@ export default function CategoryPage() {
   const paginated = categoryProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
+    return (
+      <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+        <ProductGridSkeleton count={12} />
+      </div>
+    );
   }
 
   if (!category) {

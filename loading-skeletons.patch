@@ -1,0 +1,316 @@
+diff --git a/src/components/shared/Skeletons.tsx b/src/components/shared/Skeletons.tsx
+new file mode 100644
+index 0000000..b101830
+--- /dev/null
++++ b/src/components/shared/Skeletons.tsx
+@@ -0,0 +1,97 @@
++import { Skeleton } from '@/components/ui/skeleton';
++
++/** Заглушка на месте карточки товара — повторяет форму ProductCard.tsx */
++export function ProductCardSkeleton() {
++  return (
++    <div className="flex flex-col rounded-lg bg-card border border-border overflow-hidden">
++      <Skeleton className="aspect-square w-full rounded-none" />
++      <div className="flex flex-col gap-1.5 p-2">
++        <Skeleton className="h-3.5 w-full" />
++        <Skeleton className="h-3.5 w-2/3" />
++        <Skeleton className="h-4 w-1/2 mt-0.5" />
++        <Skeleton className="h-3 w-1/3" />
++        <Skeleton className="h-7 w-full mt-1" />
++      </div>
++    </div>
++  );
++}
++
++/** Сетка из N заглушек товаров — вместо текста "Загрузка..." */
++export function ProductGridSkeleton({ count = 8, className = '' }: { count?: number; className?: string }) {
++  return (
++    <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}>
++      {Array.from({ length: count }).map((_, i) => (
++        <ProductCardSkeleton key={i} />
++      ))}
++    </div>
++  );
++}
++
++/** Заглушка на месте карточки категории — повторяет форму CategoryCard.tsx */
++export function CategoryCardSkeleton() {
++  return (
++    <div className="flex flex-col rounded-xl overflow-hidden bg-card border border-border">
++      <Skeleton className="aspect-[4/3] w-full rounded-none" />
++      <div className="p-3 flex flex-col gap-1.5">
++        <Skeleton className="h-4 w-3/4" />
++        <Skeleton className="h-3 w-1/2" />
++      </div>
++    </div>
++  );
++}
++
++export function CategoryGridSkeleton({ count = 8 }: { count?: number }) {
++  return (
++    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
++      {Array.from({ length: count }).map((_, i) => (
++        <CategoryCardSkeleton key={i} />
++      ))}
++    </div>
++  );
++}
++
++/** Заглушка на месте карточки пакета "Офис под ключ" */
++export function PackageCardSkeleton() {
++  return (
++    <div className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden p-6 gap-3">
++      <Skeleton className="h-11 w-11 rounded-xl" />
++      <Skeleton className="h-6 w-2/3" />
++      <Skeleton className="h-4 w-1/2" />
++      <Skeleton className="h-8 w-1/3 mt-1" />
++      <div className="flex flex-col gap-2 mt-2">
++        <Skeleton className="h-4 w-full" />
++        <Skeleton className="h-4 w-full" />
++        <Skeleton className="h-4 w-4/5" />
++      </div>
++      <Skeleton className="h-10 w-full mt-4 rounded-lg" />
++    </div>
++  );
++}
++
++/** Заглушка на месте детальной страницы товара — галерея + инфо-блок */
++export function ProductDetailSkeleton() {
++  return (
++    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
++      <div className="flex flex-col gap-3">
++        <Skeleton className="aspect-square w-full rounded-2xl" />
++        <div className="flex gap-2">
++          {Array.from({ length: 4 }).map((_, i) => (
++            <Skeleton key={i} className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg shrink-0" />
++          ))}
++        </div>
++      </div>
++      <div className="flex flex-col gap-4">
++        <Skeleton className="h-6 w-4/5" />
++        <Skeleton className="h-4 w-1/3" />
++        <Skeleton className="h-5 w-2/5" />
++        <Skeleton className="h-9 w-1/2" />
++        <Skeleton className="h-4 w-1/4" />
++        <Skeleton className="h-24 w-full rounded-xl" />
++        <div className="flex gap-3">
++          <Skeleton className="h-10 flex-1 rounded-lg" />
++          <Skeleton className="h-10 flex-1 rounded-lg" />
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/pages/CatalogPage.tsx b/src/pages/CatalogPage.tsx
+index 04c517e..b39af10 100644
+--- a/src/pages/CatalogPage.tsx
++++ b/src/pages/CatalogPage.tsx
+@@ -11,6 +11,7 @@ import { Slider } from '@/components/ui/slider';
+ import ProductCard from '@/components/shared/ProductCard';
+ import Pagination from '@/components/shared/Pagination';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
++import { ProductGridSkeleton } from '@/components/shared/Skeletons';
+ import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+ import PageMeta from '@/components/common/PageMeta';
+ import type { Product, Category, Brand } from '@/types';
+@@ -211,7 +212,7 @@ export default function CatalogPage() {
+ 
+           {/* Grid */}
+           {loading ? (
+-            <div className="flex items-center justify-center py-20 text-muted-foreground">{t('common.loading')}</div>
++            <ProductGridSkeleton count={12} />
+           ) : paginated.length > 0 ? (
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+               {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
+diff --git a/src/pages/CategoriesPage.tsx b/src/pages/CategoriesPage.tsx
+index 7d15db3..2cea07f 100644
+--- a/src/pages/CategoriesPage.tsx
++++ b/src/pages/CategoriesPage.tsx
+@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
+ import CategoryCard from '@/components/shared/CategoryCard';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+ import PageMeta from '@/components/common/PageMeta';
++import { CategoryGridSkeleton } from '@/components/shared/Skeletons';
+ import { fetchCategories } from '@/lib/supabaseData';
+ import type { Category } from '@/types';
+ 
+@@ -22,7 +23,7 @@ export default function CategoriesPage() {
+       <Breadcrumb items={[{ label: 'Категории' }]} />
+       <h1 className="text-2xl font-bold mt-4 mb-6">Все категории</h1>
+       {loading ? (
+-        <div className="py-16 text-center text-muted-foreground">Загрузка...</div>
++        <CategoryGridSkeleton count={10} />
+       ) : (
+         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+           {categories.map((cat) => (
+diff --git a/src/pages/CategoryPage.tsx b/src/pages/CategoryPage.tsx
+index b6e8af2..6e23c2a 100644
+--- a/src/pages/CategoryPage.tsx
++++ b/src/pages/CategoryPage.tsx
+@@ -7,6 +7,7 @@ import { Slider } from '@/components/ui/slider';
+ import ProductCard from '@/components/shared/ProductCard';
+ import Pagination from '@/components/shared/Pagination';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
++import { ProductGridSkeleton } from '@/components/shared/Skeletons';
+ import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+ import PageMeta from '@/components/common/PageMeta';
+ import type { Product, Category, Brand } from '@/types';
+@@ -49,7 +50,11 @@ export default function CategoryPage() {
+   const paginated = categoryProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+ 
+   if (loading) {
+-    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Загрузка...</div>;
++    return (
++      <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
++        <ProductGridSkeleton count={12} />
++      </div>
++    );
+   }
+ 
+   if (!category) {
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index e64531d..0d67ae5 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -7,6 +7,7 @@ import ProductCard from '@/components/shared/ProductCard';
+ import { getBanners } from '@/lib/getStorageData';
+ import { fetchProducts, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
+ import PageMeta from '@/components/common/PageMeta';
++import { ProductGridSkeleton } from '@/components/shared/Skeletons';
+ import type { Product, Brand, Review } from '@/types';
+ 
+ export default function HomePage() {
+@@ -14,11 +15,13 @@ export default function HomePage() {
+   const [products, setProducts] = useState<Product[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
+   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
++  const [productsLoading, setProductsLoading] = useState(true);
+   const banners = getBanners();
+ 
+   useEffect(() => {
+     Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews()])
+-      .then(([p, b, r]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); });
++      .then(([p, b, r]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); })
++      .finally(() => setProductsLoading(false));
+   }, []);
+ 
+   const [bannerIdx, setBannerIdx] = useState(0);
+@@ -142,9 +145,13 @@ export default function HomePage() {
+             </Link>
+           </div>
+           <p className="text-sm text-muted-foreground mb-6">{t('home.popular_products_subtitle')}</p>
+-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+-            {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+-          </div>
++          {productsLoading ? (
++            <ProductGridSkeleton count={4} className="lg:grid-cols-4" />
++          ) : (
++            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
++              {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
++            </div>
++          )}
+         </div>
+       </section>
+ 
+@@ -179,7 +186,9 @@ export default function HomePage() {
+             {t('common.view_all')} <ArrowRight className="h-4 w-4" />
+           </Link>
+         </div>
+-        {newProducts.length > 0 ? (
++        {productsLoading ? (
++          <ProductGridSkeleton count={4} className="lg:grid-cols-4" />
++        ) : newProducts.length > 0 ? (
+           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+             {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+           </div>
+diff --git a/src/pages/OfficePage.tsx b/src/pages/OfficePage.tsx
+index 255096f..c8c0b5e 100644
+--- a/src/pages/OfficePage.tsx
++++ b/src/pages/OfficePage.tsx
+@@ -11,6 +11,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
+ import { toast } from 'sonner';
+ import { sendContactFormToTelegram } from '@/lib/telegram';
+ import { fetchActiveOfficePackages, type OfficePackage } from '@/lib/supabaseData';
++import { PackageCardSkeleton } from '@/components/shared/Skeletons';
+ import PageMeta from '@/components/common/PageMeta';
+ 
+ const schema = z.object({
+@@ -145,7 +146,9 @@ const onSubmit = async (data: FormData) => {
+         <p className="text-muted-foreground text-center mb-10">Выберите подходящее решение или запросите индивидуальную конфигурацию</p>
+ 
+         {packagesLoading ? (
+-          <div className="py-16 text-center text-muted-foreground">Загрузка...</div>
++          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
++            {Array.from({ length: 3 }).map((_, i) => <PackageCardSkeleton key={i} />)}
++          </div>
+         ) : packages.length === 0 ? (
+           <div className="py-16 text-center text-muted-foreground">Пакеты скоро появятся — свяжитесь с нами напрямую.</div>
+         ) : (
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index 5b36edd..4245615 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -14,6 +14,7 @@ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
+ import { toast } from 'sonner';
+ import PageMeta from '@/components/common/PageMeta';
++import { ProductDetailSkeleton } from '@/components/shared/Skeletons';
+ import type { Product, Review } from '@/types';
+ 
+ export default function ProductPage() {
+@@ -48,7 +49,11 @@ export default function ProductPage() {
+   const { toggle, isFavorite } = useFavoritesStore();
+ 
+   if (loading) {
+-    return <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">{t('common.loading')}</div>;
++    return (
++      <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
++        <ProductDetailSkeleton />
++      </div>
++    );
+   }
+ 
+   if (!product) {
+diff --git a/src/pages/SalePage.tsx b/src/pages/SalePage.tsx
+index c1f393c..ba6f497 100644
+--- a/src/pages/SalePage.tsx
++++ b/src/pages/SalePage.tsx
+@@ -8,6 +8,7 @@ import Breadcrumb from '@/components/shared/Breadcrumb';
+ import { Badge } from '@/components/ui/badge';
+ import { fetchProducts, fetchActivePromotions } from '@/lib/supabaseData';
+ import PageMeta from '@/components/common/PageMeta';
++import { ProductGridSkeleton } from '@/components/shared/Skeletons';
+ import type { Product, Promotion } from '@/types';
+ 
+ const PAGE_SIZE = 12;
+@@ -15,11 +16,12 @@ const PAGE_SIZE = 12;
+ export default function SalePage() {
+   const [products, setProducts] = useState<Product[]>([]);
+   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
++  const [loading, setLoading] = useState(true);
+   const [page, setPage] = useState(1);
+   const [sort, setSort] = useState('discount');
+ 
+   useEffect(() => {
+-    fetchProducts().then(setProducts);
++    fetchProducts().then(setProducts).finally(() => setLoading(false));
+     fetchActivePromotions().then(setActivePromotions);
+   }, []);
+ 
+@@ -99,9 +101,13 @@ export default function SalePage() {
+           </Select>
+         </div>
+ 
+-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+-          {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
+-        </div>
++        {loading ? (
++          <ProductGridSkeleton count={12} />
++        ) : (
++          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
++            {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
++          </div>
++        )}
+ 
+         {totalPages > 1 && (
+           <div className="mt-8">
