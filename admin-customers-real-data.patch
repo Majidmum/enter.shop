@@ -1,0 +1,114 @@
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index d0c1e85..6cec31e 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -1,5 +1,5 @@
+ import { supabase } from '@/db/supabase';
+-import type { Product, Category, Brand, ProductSpec, Review, Promotion } from '@/types';
++import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer } from '@/types';
+ 
+ // ============================================================================
+ // КАТЕГОРИИ
+@@ -550,6 +550,37 @@ export async function deletePromotion(id: string): Promise<void> {
+   if (error) throw error;
+ }
+ 
++// ============================================================================
++// КЛИЕНТЫ (только для админки — реальные зарегистрированные пользователи)
++// ============================================================================
++
++function rowToCustomer(row: any): Customer {
++  return {
++    id: row.id,
++    name: row.name || '—',
++    phone: row.phone || '',
++    email: row.email || '',
++    registeredAt: row.registered_at ? String(row.registered_at).split('T')[0] : '',
++    orderCount: Number(row.order_count) || 0,
++    totalSpent: Number(row.total_spent) || 0,
++  };
++}
++
++/**
++ * Реальные зарегистрированные клиенты (представление customers_view в Supabase).
++ * ВАЖНО: orderCount/totalSpent сейчас всегда 0 — заказы пока хранятся только
++ * в браузере покупателя (Zustand/localStorage), а не в таблице public.orders.
++ * Это отдельная задача — перенос оформления заказа на Supabase.
++ */
++export async function fetchCustomers(): Promise<Customer[]> {
++  const { data, error } = await supabase
++    .from('customers_view')
++    .select('*')
++    .order('registered_at', { ascending: false });
++  if (error) throw error;
++  return (data || []).map(rowToCustomer);
++}
++
+ // ============================================================================
+ // УТИЛИТЫ
+ // ============================================================================
+diff --git a/src/pages/admin/AdminCustomers.tsx b/src/pages/admin/AdminCustomers.tsx
+index cd83f61..2833ae9 100644
+--- a/src/pages/admin/AdminCustomers.tsx
++++ b/src/pages/admin/AdminCustomers.tsx
+@@ -1,17 +1,25 @@
+-import { useState } from 'react';
++import { useState, useEffect } from 'react';
+ import { Search, Eye } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Badge } from '@/components/ui/badge';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+-import { customers } from '@/lib/mockData';
++import { fetchCustomers } from '@/lib/supabaseData';
+ import { useOrdersStore } from '@/store/ordersStore';
+ import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
++import type { Customer } from '@/types';
++import { toast } from 'sonner';
+ 
+ export default function AdminCustomers() {
+   const { orders } = useOrdersStore();
++  const [customers, setCustomers] = useState<Customer[]>([]);
++  const [loading, setLoading] = useState(true);
+   const [search, setSearch] = useState('');
+-  const [viewing, setViewing] = useState<typeof customers[0] | null>(null);
++  const [viewing, setViewing] = useState<Customer | null>(null);
++
++  useEffect(() => {
++    fetchCustomers().then(setCustomers).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
++  }, []);
+ 
+   const filtered = customers.filter((c) =>
+     c.name.toLowerCase().includes(search.toLowerCase()) ||
+@@ -53,7 +61,7 @@ export default function AdminCustomers() {
+                       <p className="text-xs text-muted-foreground">{c.email}</p>
+                     </div>
+                   </td>
+-                  <td className="px-4 py-3 text-muted-foreground">{c.phone}</td>
++                  <td className="px-4 py-3 text-muted-foreground">{c.phone || '—'}</td>
+                   <td className="px-4 py-3 text-muted-foreground">{c.registeredAt}</td>
+                   <td className="px-4 py-3">
+                     <Badge className="bg-primary/10 text-primary">{c.orderCount}</Badge>
+@@ -69,9 +77,12 @@ export default function AdminCustomers() {
+             </tbody>
+           </table>
+         </div>
+-        {filtered.length === 0 && (
++        {!loading && filtered.length === 0 && (
+           <div className="py-12 text-center text-muted-foreground text-sm">Клиенты не найдены</div>
+         )}
++        {loading && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
++        )}
+       </div>
+ 
+       {/* Customer detail */}
+@@ -85,7 +96,7 @@ export default function AdminCustomers() {
+               <div className="grid grid-cols-2 gap-3 text-sm">
+                 {[
+                   { label: 'Email', value: viewing.email },
+-                  { label: 'Телефон', value: viewing.phone },
++                  { label: 'Телефон', value: viewing.phone || '—' },
+                   { label: 'Регистрация', value: viewing.registeredAt },
+                   { label: 'Потрачено', value: `${viewing.totalSpent.toLocaleString()} сом.` },
+                 ].map(({ label, value }) => (

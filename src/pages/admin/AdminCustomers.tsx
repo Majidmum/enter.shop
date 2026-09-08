@@ -1,17 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { customers } from '@/lib/mockData';
+import { fetchCustomers } from '@/lib/supabaseData';
 import { useOrdersStore } from '@/store/ordersStore';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
+import type { Customer } from '@/types';
+import { toast } from 'sonner';
 
 export default function AdminCustomers() {
   const { orders } = useOrdersStore();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [viewing, setViewing] = useState<typeof customers[0] | null>(null);
+  const [viewing, setViewing] = useState<Customer | null>(null);
+
+  useEffect(() => {
+    fetchCustomers().then(setCustomers).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+  }, []);
 
   const filtered = customers.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -53,7 +61,7 @@ export default function AdminCustomers() {
                       <p className="text-xs text-muted-foreground">{c.email}</p>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{c.phone}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{c.phone || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.registeredAt}</td>
                   <td className="px-4 py-3">
                     <Badge className="bg-primary/10 text-primary">{c.orderCount}</Badge>
@@ -69,8 +77,11 @@ export default function AdminCustomers() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Клиенты не найдены</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
 
@@ -85,7 +96,7 @@ export default function AdminCustomers() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {[
                   { label: 'Email', value: viewing.email },
-                  { label: 'Телефон', value: viewing.phone },
+                  { label: 'Телефон', value: viewing.phone || '—' },
                   { label: 'Регистрация', value: viewing.registeredAt },
                   { label: 'Потрачено', value: `${viewing.totalSpent.toLocaleString()} сом.` },
                 ].map(({ label, value }) => (

@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec, Review, Promotion } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -548,6 +548,37 @@ export async function updatePromotion(id: string, patch: Partial<PromotionInput>
 export async function deletePromotion(id: string): Promise<void> {
   const { error } = await supabase.from('promotions').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ============================================================================
+// КЛИЕНТЫ (только для админки — реальные зарегистрированные пользователи)
+// ============================================================================
+
+function rowToCustomer(row: any): Customer {
+  return {
+    id: row.id,
+    name: row.name || '—',
+    phone: row.phone || '',
+    email: row.email || '',
+    registeredAt: row.registered_at ? String(row.registered_at).split('T')[0] : '',
+    orderCount: Number(row.order_count) || 0,
+    totalSpent: Number(row.total_spent) || 0,
+  };
+}
+
+/**
+ * Реальные зарегистрированные клиенты (представление customers_view в Supabase).
+ * ВАЖНО: orderCount/totalSpent сейчас всегда 0 — заказы пока хранятся только
+ * в браузере покупателя (Zustand/localStorage), а не в таблице public.orders.
+ * Это отдельная задача — перенос оформления заказа на Supabase.
+ */
+export async function fetchCustomers(): Promise<Customer[]> {
+  const { data, error } = await supabase
+    .from('customers_view')
+    .select('*')
+    .order('registered_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(rowToCustomer);
 }
 
 // ============================================================================
