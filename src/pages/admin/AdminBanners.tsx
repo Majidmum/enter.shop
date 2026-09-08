@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, ArrowUp, ArrowDown, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -7,71 +7,102 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { banners as initialBanners } from '@/lib/mockData';
+import { fetchBanners, createBanner, updateBanner, deleteBanner } from '@/lib/supabaseData';
 import type { Banner } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminBanners() {
-  const [items, setItems] = useState<Banner[]>(() => {
-    if (typeof window === 'undefined') return [...initialBanners].sort((a, b) => a.order - b.order);
-    const saved = localStorage.getItem('admin_banners');
-    return saved ? JSON.parse(saved).sort((a, b) => a.order - b.order) : [...initialBanners].sort((a, b) => a.order - b.order);
-  });
+  const [items, setItems] = useState<Banner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Banner | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Banner>>({});
 
-  useEffect(() => {
-    localStorage.setItem('admin_banners', JSON.stringify(items));
-  }, [items]);
+  const load = () => {
+    setLoading(true);
+    fetchBanners().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
 
   const openNew = () => {
     setEditing(null);
-    setDraft({ title: '', subtitle: '', buttonText: 'Learn More', buttonLink: '/', order: items.length + 1, status: 'active' });
+    setDraft({ title: '', subtitle: '', buttonText: 'Подробнее', buttonLink: '/', order: items.length + 1, status: 'active', image: '' });
     setOpen(true);
   };
   const openEdit = (b: Banner) => { setEditing(b); setDraft({ ...b }); setOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!draft.title) { toast.error('Введите заголовок баннера'); return; }
-    if (editing) {
-      setItems((prev) => prev.map((b) => b.id === editing.id ? { ...b, ...draft } as Banner : b));
-      toast.success('Баннер обновлён');
-    } else {
-      const newBanner: Banner = {
-        id: `banner_${Date.now()}`,
-        title: draft.title || '',
-        subtitle: draft.subtitle || '',
-        buttonText: draft.buttonText || 'Подробнее',
-        buttonLink: draft.buttonLink || '/',
-        image: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=80',
-        order: items.length + 1,
-        status: (draft.status as 'active' | 'inactive') || 'active',
-      };
-      setItems((prev) => [...prev, newBanner]);
-      toast.success('Баннер создан');
+    if (!draft.image) { toast.error('Загрузите изображение баннера'); return; }
+
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await updateBanner(editing.id, {
+          title: draft.title,
+          subtitle: draft.subtitle,
+          buttonText: draft.buttonText,
+          buttonLink: draft.buttonLink,
+          image: draft.image,
+          status: draft.status as 'active' | 'inactive',
+        });
+        setItems((prev) => prev.map((b) => b.id === editing.id ? updated : b));
+        toast.success('Баннер обновлён');
+      } else {
+        const created = await createBanner({
+          title: draft.title,
+          subtitle: draft.subtitle || '',
+          buttonText: draft.buttonText || 'Подробнее',
+          buttonLink: draft.buttonLink || '/',
+          image: draft.image,
+          order: items.length + 1,
+          status: (draft.status as 'active' | 'inactive') || 'active',
+        });
+        setItems((prev) => [...prev, created]);
+        toast.success('Баннер создан');
+      }
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось сохранить баннер');
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
-    setItems((prev) => prev.filter((b) => b.id !== deleteId));
-    setDeleteId(null);
-    toast.success('Баннер удалён');
+    try {
+      await deleteBanner(deleteId);
+      setItems((prev) => prev.filter((b) => b.id !== deleteId));
+      toast.success('Баннер удалён');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить баннер');
+    } finally {
+      setDeleteId(null);
+    }
   };
 
-  const moveItem = (id: string, dir: 'up' | 'down') => {
-    setItems((prev) => {
-      const idx = prev.findIndex((b) => b.id === id);
-      if (dir === 'up' && idx === 0) return prev;
-      if (dir === 'down' && idx === prev.length - 1) return prev;
-      const next = [...prev];
-      const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
-      [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
-      return next.map((b, i) => ({ ...b, order: i + 1 }));
-    });
+  const moveItem = async (id: string, dir: 'up' | 'down') => {
+    const idx = items.findIndex((b) => b.id === id);
+    if (dir === 'up' && idx === 0) return;
+    if (dir === 'down' && idx === items.length - 1) return;
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    const next = [...items];
+    [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+    const reordered = next.map((b, i) => ({ ...b, order: i + 1 }));
+    setItems(reordered);
+    try {
+      await Promise.all([
+        updateBanner(reordered[idx].id, { order: reordered[idx].order }),
+        updateBanner(reordered[swapIdx].id, { order: reordered[swapIdx].order }),
+      ]);
+    } catch (e: any) {
+      toast.error('Не удалось сохранить порядок');
+      load();
+    }
   };
 
   return (
@@ -111,7 +142,7 @@ export default function AdminBanners() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="h-10 w-20 rounded-lg overflow-hidden bg-muted shrink-0">
-                      <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
+                      {b.image && <img src={b.image} alt={b.title} className="w-full h-full object-cover" />}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -142,12 +173,57 @@ export default function AdminBanners() {
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Баннеров пока нет</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? 'Редактировать баннер' : 'Добавить баннер'}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
+            <div>
+              <Label>Изображение баннера *</Label>
+              <div className="mt-1 border-2 border-dashed border-border rounded-lg p-3 bg-muted/30">
+                {draft.image ? (
+                  <div className="relative w-full h-32">
+                    <img src={draft.image} alt="" className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => setDraft({ ...draft, image: '' })}
+                      className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="block cursor-pointer">
+                    <div className="flex flex-col items-center justify-center gap-1 py-6">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Нажмите, чтобы загрузить фото</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const result = event.target?.result;
+                          if (typeof result === 'string') setDraft((prev) => ({ ...prev, image: result }));
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
             <div>
               <Label>Заголовок *</Label>
               <Input className="mt-1" value={draft.title || ''} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
@@ -179,8 +255,8 @@ export default function AdminBanners() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-              <Check className="h-4 w-4 mr-1.5" /> Сохранить
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
+              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
             </Button>
           </DialogFooter>
         </DialogContent>

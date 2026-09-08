@@ -1,0 +1,460 @@
+diff --git a/src/lib/getStorageData.ts b/src/lib/getStorageData.ts
+deleted file mode 100644
+index 6ab66f5..0000000
+--- a/src/lib/getStorageData.ts
++++ /dev/null
+@@ -1,12 +0,0 @@
+-import { banners as mockBanners } from './mockData';
+-import type { Banner } from '@/types';
+-
+-/**
+- * Получить баннеры из localStorage или вернуть данные по умолчанию.
+- * (Товары/категории/бренды теперь берутся из Supabase — см. src/lib/supabaseData.ts)
+- */
+-export function getBanners(): Banner[] {
+-  if (typeof window === 'undefined') return mockBanners;
+-  const saved = localStorage.getItem('admin_banners');
+-  return saved ? JSON.parse(saved) : mockBanners;
+-}
+diff --git a/src/lib/mockData.ts b/src/lib/mockData.ts
+index 0f8b31a..61afa14 100644
+--- a/src/lib/mockData.ts
++++ b/src/lib/mockData.ts
+@@ -1,4 +1,4 @@
+-import type { Brand, Category, Product, Review, Order, Customer, Promotion, Banner } from '@/types';
++import type { Brand, Category, Product, Order } from '@/types';
+ 
+ export const categories: Category[] = [
+   { id: 'c1', name: 'Laptops', slug: 'laptops', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80', productCount: 8 },
+@@ -558,31 +558,6 @@ export const products: Product[] = [
+   },
+ ];
+ 
+-export const reviews: Review[] = [
+-  { id: 'r1', productId: 'p1', productName: 'Acer Aspire A6270', authorName: 'Rustam K.', rating: 5, text: 'Excellent laptop for the price. Fast, quiet, great battery life. Highly recommend!', date: '2025-07-15', status: 'approved' },
+-  { id: 'r2', productId: 'p5', productName: 'HP Victus 15', authorName: 'Dilnoza M.', rating: 5, text: 'Perfect gaming laptop! Runs all games smoothly, great display, good cooling.', date: '2025-07-20', status: 'approved' },
+-  { id: 'r3', productId: 'p13', productName: 'Ergonomic Chair Pro', authorName: 'Firdavs B.', rating: 4, text: 'Good chair, comfortable for long hours. Assembly was easy. Delivery was fast!', date: '2025-07-22', status: 'approved' },
+-  { id: 'r4', productId: 'p17', productName: 'Logitech MX Master 3', authorName: 'Zulfiya T.', rating: 5, text: 'The best mouse I have ever used. Ergonomic, fast scrolling, long battery life.', date: '2025-07-25', status: 'approved' },
+-  { id: 'r5', productId: 'p12', productName: 'Epson EcoTank L3210', authorName: 'Akbar A.', rating: 5, text: 'Amazing printer! Very economical ink costs. Fast printing, good quality.', date: '2025-08-01', status: 'approved' },
+-  { id: 'r6', productId: 'p7', productName: 'ASUS Vivobook 15', authorName: 'Malika S.', rating: 4, text: 'Nice laptop, great screen. A bit warm under load but overall very satisfied.', date: '2025-08-03', status: 'approved' },
+-  { id: 'r7', productId: 'p15', productName: 'Height-Adjustable Desk', authorName: 'Bobur N.', rating: 5, text: 'Love this desk! So convenient to switch between sitting and standing throughout the day.', date: '2025-08-05', status: 'approved' },
+-  { id: 'r8', productId: 'p9', productName: 'Samsung 27" Curved Monitor', authorName: 'Sarvar I.', rating: 4, text: 'Beautiful curved monitor, colors are vivid and sharp. Excellent for both work and gaming.', date: '2025-08-07', status: 'approved' },
+-  { id: 'r9', productId: 'p20', productName: 'ASUS ZenBook 14', authorName: 'Nasiba R.', rating: 5, text: 'Ultra-thin and premium feel. OLED display is stunning. Very fast and light.', date: '2025-08-08', status: 'pending' },
+-  { id: 'r10', productId: 'p27', productName: 'USB-C Hub 7-in-1', authorName: 'Timur D.', rating: 4, text: 'Works perfectly with MacBook. All ports functional. Compact and well-built.', date: '2025-08-09', status: 'approved' },
+-];
+-
+-export const customers: Customer[] = [
+-  { id: 'cu1', name: 'Rustam Karimov', phone: '+992 901 234567', email: 'rustam.k@mail.com', registeredAt: '2025-03-01', orderCount: 3, totalSpent: 14970 },
+-  { id: 'cu2', name: 'Dilnoza Mirzayeva', phone: '+992 918 345678', email: 'dilnoza.m@mail.com', registeredAt: '2025-04-15', orderCount: 2, totalSpent: 12890 },
+-  { id: 'cu3', name: 'Firdavs Bobojonov', phone: '+992 920 456789', email: 'firdavs.b@mail.com', registeredAt: '2025-05-10', orderCount: 4, totalSpent: 9160 },
+-  { id: 'cu4', name: 'Zulfiya Toshmatova', phone: '+992 935 567890', email: 'zulfiya.t@mail.com', registeredAt: '2025-05-20', orderCount: 1, totalSpent: 590 },
+-  { id: 'cu5', name: 'Akbar Alijonov', phone: '+992 907 678901', email: 'akbar.a@mail.com', registeredAt: '2025-06-01', orderCount: 2, totalSpent: 4290 },
+-  { id: 'cu6', name: 'Malika Sodiqova', phone: '+992 919 789012', email: 'malika.s@mail.com', registeredAt: '2025-06-10', orderCount: 1, totalSpent: 4490 },
+-  { id: 'cu7', name: 'Bobur Nazarov', phone: '+992 934 890123', email: 'bobur.n@mail.com', registeredAt: '2025-06-20', orderCount: 2, totalSpent: 4380 },
+-  { id: 'cu8', name: 'Sarvar Ismoilov', phone: '+992 906 901234', email: 'sarvar.i@mail.com', registeredAt: '2025-07-01', orderCount: 1, totalSpent: 2290 },
+-  { id: 'cu9', name: 'Nasiba Rahimova', phone: '+992 911 012345', email: 'nasiba.r@mail.com', registeredAt: '2025-07-15', orderCount: 1, totalSpent: 6290 },
+-  { id: 'cu10', name: 'Timur Dusmatov', phone: '+992 928 123456', email: 'timur.d@mail.com', registeredAt: '2025-07-25', orderCount: 1, totalSpent: 390 },
+-];
+ 
+ export const orders: Order[] = [
+   {
+@@ -736,34 +711,6 @@ export const orders: Order[] = [
+   },
+ ];
+ 
+-export const promotions: Promotion[] = [
+-  { id: 'pr1', name: 'Summer Sale', discount: 10, startDate: '2025-08-01', endDate: '2025-08-31', productIds: ['p1', 'p5', 'p8', 'p6'], status: 'active' },
+-  { id: 'pr2', name: 'Monitor Deals', discount: 12, startDate: '2025-08-01', endDate: '2025-08-25', productIds: ['p2', 'p9', 'p19'], status: 'active' },
+-  { id: 'pr3', name: 'Office Comfort', discount: 16, startDate: '2025-07-20', endDate: '2025-08-20', productIds: ['p13', 'p14', 'p26'], status: 'active' },
+-  { id: 'pr4', name: 'Printer Week', discount: 13, startDate: '2025-08-05', endDate: '2025-08-15', productIds: ['p11', 'p12', 'p30'], status: 'active' },
+-  { id: 'pr5', name: 'Accessories Flash', discount: 20, startDate: '2025-08-08', endDate: '2025-08-12', productIds: ['p27', 'p28'], status: 'active' },
+-];
+-
+-export const banners: Banner[] = [
+-  {
+-    id: 'bn1', title: 'Computer Tech & Office Solutions', subtitle: 'Equipment, furniture and accessories for home and business',
+-    buttonText: 'Go to Catalog', buttonLink: '/catalog',
+-    image: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=1200&q=80',
+-    order: 1, status: 'active',
+-  },
+-  {
+-    id: 'bn2', title: 'Summer Sale — Up to 20% Off', subtitle: 'Great prices on laptops, monitors and office chairs',
+-    buttonText: 'View Deals', buttonLink: '/sale',
+-    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200&q=80',
+-    order: 2, status: 'active',
+-  },
+-  {
+-    id: 'bn3', title: 'Office Turnkey Solution', subtitle: 'We will equip your office with everything you need',
+-    buttonText: 'Learn More', buttonLink: '/office',
+-    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80',
+-    order: 3, status: 'active',
+-  },
+-];
+ 
+ export const getSaleChartData = () => [
+   { month: 'Feb', sales: 12400, orders: 8 },
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index 6cec31e..6fbe1a0 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -1,5 +1,5 @@
+ import { supabase } from '@/db/supabase';
+-import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer } from '@/types';
++import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner } from '@/types';
+ 
+ // ============================================================================
+ // КАТЕГОРИИ
+@@ -581,6 +581,80 @@ export async function fetchCustomers(): Promise<Customer[]> {
+   return (data || []).map(rowToCustomer);
+ }
+ 
++// ============================================================================
++// БАННЕРЫ
++// ============================================================================
++
++function rowToBanner(row: any): Banner {
++  return {
++    id: row.id,
++    title: row.title,
++    subtitle: row.subtitle || '',
++    buttonText: row.button_text || '',
++    buttonLink: row.button_link || '/',
++    image: row.image || '',
++    order: row.sort_order,
++    status: row.status,
++  };
++}
++
++/** Для админки — все баннеры, включая выключенные. */
++export async function fetchBanners(): Promise<Banner[]> {
++  const { data, error } = await supabase.from('banners').select('*').order('sort_order', { ascending: true });
++  if (error) throw error;
++  return (data || []).map(rowToBanner);
++}
++
++/** Для сайта — только включённые баннеры. */
++export async function fetchActiveBanners(): Promise<Banner[]> {
++  const { data, error } = await supabase
++    .from('banners')
++    .select('*')
++    .eq('status', 'active')
++    .order('sort_order', { ascending: true });
++  if (error) throw error;
++  return (data || []).map(rowToBanner);
++}
++
++export interface BannerInput {
++  title: string;
++  subtitle?: string;
++  buttonText?: string;
++  buttonLink?: string;
++  image?: string;
++  order?: number;
++  status?: 'active' | 'inactive';
++}
++
++function bannerToDbPatch(input: Partial<BannerInput>) {
++  const patch: Record<string, unknown> = {};
++  if (input.title !== undefined) patch.title = input.title;
++  if (input.subtitle !== undefined) patch.subtitle = input.subtitle;
++  if (input.buttonText !== undefined) patch.button_text = input.buttonText;
++  if (input.buttonLink !== undefined) patch.button_link = input.buttonLink;
++  if (input.image !== undefined) patch.image = input.image;
++  if (input.order !== undefined) patch.sort_order = input.order;
++  if (input.status !== undefined) patch.status = input.status;
++  return patch;
++}
++
++export async function createBanner(input: BannerInput): Promise<Banner> {
++  const { data, error } = await supabase.from('banners').insert(bannerToDbPatch(input)).select().single();
++  if (error) throw error;
++  return rowToBanner(data);
++}
++
++export async function updateBanner(id: string, patch: Partial<BannerInput>): Promise<Banner> {
++  const { data, error } = await supabase.from('banners').update(bannerToDbPatch(patch)).eq('id', id).select().single();
++  if (error) throw error;
++  return rowToBanner(data);
++}
++
++export async function deleteBanner(id: string): Promise<void> {
++  const { error } = await supabase.from('banners').delete().eq('id', id);
++  if (error) throw error;
++}
++
+ // ============================================================================
+ // УТИЛИТЫ
+ // ============================================================================
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 3f4a567..71dc545 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
+ import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import ProductCard from '@/components/shared/ProductCard';
+-import { getBanners } from '@/lib/getStorageData';
+-import { fetchProducts, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
++import { fetchProducts, fetchBrands, fetchApprovedReviews, fetchActiveBanners } from '@/lib/supabaseData';
+ import PageMeta from '@/components/common/PageMeta';
+ import { ProductGridSkeleton } from '@/components/shared/Skeletons';
+-import type { Product, Brand, Review } from '@/types';
++import type { Product, Brand, Review, Banner } from '@/types';
+ 
+ export default function HomePage() {
+   const { t } = useTranslation();
+@@ -16,16 +15,15 @@ export default function HomePage() {
+   const [brands, setBrands] = useState<Brand[]>([]);
+   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
+   const [productsLoading, setProductsLoading] = useState(true);
+-  const banners = getBanners();
++  const [activeBanners, setActiveBanners] = useState<Banner[]>([]);
+ 
+   useEffect(() => {
+-    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews()])
+-      .then(([p, b, r]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); })
++    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews(), fetchActiveBanners()])
++      .then(([p, b, r, banners]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); setActiveBanners(banners); })
+       .finally(() => setProductsLoading(false));
+   }, []);
+ 
+   const [bannerIdx, setBannerIdx] = useState(0);
+-  const activeBanners = banners.filter((b) => b.status === 'active');
+ 
+   // "Популярные товары" — на основе реальной оценки и количества отзывов,
+   // а не ручного флажка. Чем выше рейтинг и чем больше отзывов — тем выше в списке.
+diff --git a/src/pages/admin/AdminBanners.tsx b/src/pages/admin/AdminBanners.tsx
+index 3f6e9b3..b1133c5 100644
+--- a/src/pages/admin/AdminBanners.tsx
++++ b/src/pages/admin/AdminBanners.tsx
+@@ -1,5 +1,5 @@
+ import { useState, useEffect } from 'react';
+-import { Plus, Pencil, Trash2, Check, ArrowUp, ArrowDown } from 'lucide-react';
++import { Plus, Pencil, Trash2, Check, ArrowUp, ArrowDown, Upload, X } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Badge } from '@/components/ui/badge';
+@@ -7,71 +7,102 @@ import { Label } from '@/components/ui/label';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+-import { banners as initialBanners } from '@/lib/mockData';
++import { fetchBanners, createBanner, updateBanner, deleteBanner } from '@/lib/supabaseData';
+ import type { Banner } from '@/types';
+ import { toast } from 'sonner';
+ 
+ export default function AdminBanners() {
+-  const [items, setItems] = useState<Banner[]>(() => {
+-    if (typeof window === 'undefined') return [...initialBanners].sort((a, b) => a.order - b.order);
+-    const saved = localStorage.getItem('admin_banners');
+-    return saved ? JSON.parse(saved).sort((a, b) => a.order - b.order) : [...initialBanners].sort((a, b) => a.order - b.order);
+-  });
++  const [items, setItems] = useState<Banner[]>([]);
++  const [loading, setLoading] = useState(true);
++  const [saving, setSaving] = useState(false);
+   const [open, setOpen] = useState(false);
+   const [editing, setEditing] = useState<Banner | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
+   const [draft, setDraft] = useState<Partial<Banner>>({});
+ 
+-  useEffect(() => {
+-    localStorage.setItem('admin_banners', JSON.stringify(items));
+-  }, [items]);
++  const load = () => {
++    setLoading(true);
++    fetchBanners().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
++  };
++
++  useEffect(load, []);
+ 
+   const openNew = () => {
+     setEditing(null);
+-    setDraft({ title: '', subtitle: '', buttonText: 'Learn More', buttonLink: '/', order: items.length + 1, status: 'active' });
++    setDraft({ title: '', subtitle: '', buttonText: 'Подробнее', buttonLink: '/', order: items.length + 1, status: 'active', image: '' });
+     setOpen(true);
+   };
+   const openEdit = (b: Banner) => { setEditing(b); setDraft({ ...b }); setOpen(true); };
+ 
+-  const handleSave = () => {
++  const handleSave = async () => {
+     if (!draft.title) { toast.error('Введите заголовок баннера'); return; }
+-    if (editing) {
+-      setItems((prev) => prev.map((b) => b.id === editing.id ? { ...b, ...draft } as Banner : b));
+-      toast.success('Баннер обновлён');
+-    } else {
+-      const newBanner: Banner = {
+-        id: `banner_${Date.now()}`,
+-        title: draft.title || '',
+-        subtitle: draft.subtitle || '',
+-        buttonText: draft.buttonText || 'Подробнее',
+-        buttonLink: draft.buttonLink || '/',
+-        image: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=80',
+-        order: items.length + 1,
+-        status: (draft.status as 'active' | 'inactive') || 'active',
+-      };
+-      setItems((prev) => [...prev, newBanner]);
+-      toast.success('Баннер создан');
++    if (!draft.image) { toast.error('Загрузите изображение баннера'); return; }
++
++    setSaving(true);
++    try {
++      if (editing) {
++        const updated = await updateBanner(editing.id, {
++          title: draft.title,
++          subtitle: draft.subtitle,
++          buttonText: draft.buttonText,
++          buttonLink: draft.buttonLink,
++          image: draft.image,
++          status: draft.status as 'active' | 'inactive',
++        });
++        setItems((prev) => prev.map((b) => b.id === editing.id ? updated : b));
++        toast.success('Баннер обновлён');
++      } else {
++        const created = await createBanner({
++          title: draft.title,
++          subtitle: draft.subtitle || '',
++          buttonText: draft.buttonText || 'Подробнее',
++          buttonLink: draft.buttonLink || '/',
++          image: draft.image,
++          order: items.length + 1,
++          status: (draft.status as 'active' | 'inactive') || 'active',
++        });
++        setItems((prev) => [...prev, created]);
++        toast.success('Баннер создан');
++      }
++      setOpen(false);
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось сохранить баннер');
++    } finally {
++      setSaving(false);
+     }
+-    setOpen(false);
+   };
+ 
+-  const handleDelete = () => {
++  const handleDelete = async () => {
+     if (!deleteId) return;
+-    setItems((prev) => prev.filter((b) => b.id !== deleteId));
+-    setDeleteId(null);
+-    toast.success('Баннер удалён');
++    try {
++      await deleteBanner(deleteId);
++      setItems((prev) => prev.filter((b) => b.id !== deleteId));
++      toast.success('Баннер удалён');
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить баннер');
++    } finally {
++      setDeleteId(null);
++    }
+   };
+ 
+-  const moveItem = (id: string, dir: 'up' | 'down') => {
+-    setItems((prev) => {
+-      const idx = prev.findIndex((b) => b.id === id);
+-      if (dir === 'up' && idx === 0) return prev;
+-      if (dir === 'down' && idx === prev.length - 1) return prev;
+-      const next = [...prev];
+-      const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+-      [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+-      return next.map((b, i) => ({ ...b, order: i + 1 }));
+-    });
++  const moveItem = async (id: string, dir: 'up' | 'down') => {
++    const idx = items.findIndex((b) => b.id === id);
++    if (dir === 'up' && idx === 0) return;
++    if (dir === 'down' && idx === items.length - 1) return;
++    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
++    const next = [...items];
++    [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
++    const reordered = next.map((b, i) => ({ ...b, order: i + 1 }));
++    setItems(reordered);
++    try {
++      await Promise.all([
++        updateBanner(reordered[idx].id, { order: reordered[idx].order }),
++        updateBanner(reordered[swapIdx].id, { order: reordered[swapIdx].order }),
++      ]);
++    } catch (e: any) {
++      toast.error('Не удалось сохранить порядок');
++      load();
++    }
+   };
+ 
+   return (
+@@ -111,7 +142,7 @@ export default function AdminBanners() {
+                   </td>
+                   <td className="px-4 py-3">
+                     <div className="h-10 w-20 rounded-lg overflow-hidden bg-muted shrink-0">
+-                      <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
++                      {b.image && <img src={b.image} alt={b.title} className="w-full h-full object-cover" />}
+                     </div>
+                   </td>
+                   <td className="px-4 py-3">
+@@ -142,12 +173,57 @@ export default function AdminBanners() {
+             </tbody>
+           </table>
+         </div>
++        {!loading && items.length === 0 && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Баннеров пока нет</div>
++        )}
++        {loading && (
++          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
++        )}
+       </div>
+ 
+       <Dialog open={open} onOpenChange={setOpen}>
+-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
+           <DialogHeader><DialogTitle>{editing ? 'Редактировать баннер' : 'Добавить баннер'}</DialogTitle></DialogHeader>
+           <div className="flex flex-col gap-3 py-2">
++            <div>
++              <Label>Изображение баннера *</Label>
++              <div className="mt-1 border-2 border-dashed border-border rounded-lg p-3 bg-muted/30">
++                {draft.image ? (
++                  <div className="relative w-full h-32">
++                    <img src={draft.image} alt="" className="w-full h-full object-cover rounded-lg" />
++                    <button
++                      type="button"
++                      onClick={() => setDraft({ ...draft, image: '' })}
++                      className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1"
++                    >
++                      <X className="h-3 w-3" />
++                    </button>
++                  </div>
++                ) : (
++                  <label className="block cursor-pointer">
++                    <div className="flex flex-col items-center justify-center gap-1 py-6">
++                      <Upload className="h-6 w-6 text-muted-foreground" />
++                      <span className="text-sm text-muted-foreground">Нажмите, чтобы загрузить фото</span>
++                    </div>
++                    <input
++                      type="file"
++                      accept="image/*"
++                      className="hidden"
++                      onChange={(e) => {
++                        const file = e.target.files?.[0];
++                        if (!file) return;
++                        const reader = new FileReader();
++                        reader.onload = (event) => {
++                          const result = event.target?.result;
++                          if (typeof result === 'string') setDraft((prev) => ({ ...prev, image: result }));
++                        };
++                        reader.readAsDataURL(file);
++                      }}
++                    />
++                  </label>
++                )}
++              </div>
++            </div>
+             <div>
+               <Label>Заголовок *</Label>
+               <Input className="mt-1" value={draft.title || ''} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+@@ -179,8 +255,8 @@ export default function AdminBanners() {
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
+-            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
+-              <Check className="h-4 w-4 mr-1.5" /> Сохранить
++            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-white">
++              <Check className="h-4 w-4 mr-1.5" /> {saving ? 'Сохранение...' : 'Сохранить'}
+             </Button>
+           </DialogFooter>
+         </DialogContent>

@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { User, ShoppingBag, Heart, MapPin, Settings, LogOut, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { useAuthStore } from '@/store/authStore';
-import { useOrdersStore } from '@/store/ordersStore';
+import { fetchOrders } from '@/lib/supabaseData';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
+import type { Order } from '@/types';
 import PageMeta from '@/components/common/PageMeta';
 
 type Tab = 'profile' | 'orders' | 'favorites' | 'addresses' | 'settings';
@@ -22,11 +23,17 @@ const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState<Tab>('orders');
   const { user, isAuthenticated, logout } = useAuthStore();
-  const orders = useOrdersStore((s) => s.orders);
+  // RLS сам ограничивает результат только заказами этого пользователя —
+  // фильтровать на клиенте не нужно.
+  const [myOrders, setMyOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchOrders().then(setMyOrders).catch(() => setMyOrders([])).finally(() => setOrdersLoading(false));
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-  const myOrders = orders.filter((o) => o.customerId === user?.id || o.customerEmail === user?.email);
 
   return (
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
@@ -83,7 +90,9 @@ export default function AccountPage() {
               <div className="p-4 border-b border-border">
                 <h2 className="font-bold text-base">Мои заказы</h2>
               </div>
-              {myOrders.length > 0 ? (
+              {ordersLoading ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
+              ) : myOrders.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm whitespace-nowrap">
                     <thead>

@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, Order, OrderStatus } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -579,6 +579,194 @@ export async function fetchCustomers(): Promise<Customer[]> {
     .order('registered_at', { ascending: false });
   if (error) throw error;
   return (data || []).map(rowToCustomer);
+}
+
+// ============================================================================
+// БАННЕРЫ
+// ============================================================================
+
+function rowToBanner(row: any): Banner {
+  return {
+    id: row.id,
+    title: row.title,
+    subtitle: row.subtitle || '',
+    buttonText: row.button_text || '',
+    buttonLink: row.button_link || '/',
+    image: row.image || '',
+    order: row.sort_order,
+    status: row.status,
+  };
+}
+
+/** Для админки — все баннеры, включая выключенные. */
+export async function fetchBanners(): Promise<Banner[]> {
+  const { data, error } = await supabase.from('banners').select('*').order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(rowToBanner);
+}
+
+/** Для сайта — только включённые баннеры. */
+export async function fetchActiveBanners(): Promise<Banner[]> {
+  const { data, error } = await supabase
+    .from('banners')
+    .select('*')
+    .eq('status', 'active')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(rowToBanner);
+}
+
+export interface BannerInput {
+  title: string;
+  subtitle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  image?: string;
+  order?: number;
+  status?: 'active' | 'inactive';
+}
+
+function bannerToDbPatch(input: Partial<BannerInput>) {
+  const patch: Record<string, unknown> = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.subtitle !== undefined) patch.subtitle = input.subtitle;
+  if (input.buttonText !== undefined) patch.button_text = input.buttonText;
+  if (input.buttonLink !== undefined) patch.button_link = input.buttonLink;
+  if (input.image !== undefined) patch.image = input.image;
+  if (input.order !== undefined) patch.sort_order = input.order;
+  if (input.status !== undefined) patch.status = input.status;
+  return patch;
+}
+
+export async function createBanner(input: BannerInput): Promise<Banner> {
+  const { data, error } = await supabase.from('banners').insert(bannerToDbPatch(input)).select().single();
+  if (error) throw error;
+  return rowToBanner(data);
+}
+
+export async function updateBanner(id: string, patch: Partial<BannerInput>): Promise<Banner> {
+  const { data, error } = await supabase.from('banners').update(bannerToDbPatch(patch)).eq('id', id).select().single();
+  if (error) throw error;
+  return rowToBanner(data);
+}
+
+export async function deleteBanner(id: string): Promise<void> {
+  const { error } = await supabase.from('banners').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ============================================================================
+// ЗАКАЗЫ
+// ============================================================================
+
+function rowToOrder(row: any): Order {
+  return {
+    id: row.id,
+    orderNumber: row.order_number,
+    customerId: row.customer_id || '',
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    customerEmail: row.customer_email || '',
+    items: (row.order_items || []).map((item: any) => ({
+      productId: item.product_id || '',
+      productName: item.product_name,
+      productImage: item.product_image || '',
+      price: Number(item.price),
+      quantity: item.quantity,
+    })),
+    total: Number(row.total),
+    deliveryMethod: row.delivery_method,
+    paymentMethod: row.payment_method,
+    address: row.address || undefined,
+    district: row.district || undefined,
+    comment: row.comment || undefined,
+    status: row.status,
+    date: row.created_at ? String(row.created_at).split('T')[0] : '',
+  };
+}
+
+/**
+ * Заказы — одна функция для админа и покупателя.
+ * RLS сам ограничивает результат: админ видит все заказы,
+ * обычный пользователь — только свои (customer_id = auth.uid()).
+ */
+export async function fetchOrders(): Promise<Order[]> {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(rowToOrder);
+}
+
+export interface CreateOrderInput {
+  customerId?: string | null;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  items: { productId: string; productName: string; productImage: string; price: number; quantity: number }[];
+  total: number;
+  deliveryMethod: 'delivery' | 'pickup';
+  paymentMethod: 'cash' | 'transfer' | 'online';
+  address?: string;
+  district?: string;
+  comment?: string;
+}
+
+/** Оформление заказа доступно всем — и гостям, и вошедшим (гостевой чекаут). */
+export async function createOrder(input: CreateOrderInput): Promise<Order> {
+  const { data, error } = await supabase.rpc('create_order', {
+    p_customer_id: input.customerId || null,
+    p_customer_name: input.customerName,
+    p_customer_phone: input.customerPhone,
+    p_customer_email: input.customerEmail || null,
+    p_total: input.total,
+    p_delivery_method: input.deliveryMethod,
+    p_payment_method: input.paymentMethod,
+    p_address: input.address || null,
+    p_district: input.district || null,
+    p_comment: input.comment || null,
+    p_items: input.items.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      productImage: item.productImage,
+      price: item.price,
+      quantity: item.quantity,
+    })),
+  });
+  if (error) throw error;
+
+  // RPC возвращает только id и order_number (по той же причине, что и лайки
+  // отзывов — гость не может SELECT свой только что созданный заказ).
+  // Остальные поля формируем локально из того, что мы сами передали.
+  return {
+    id: data.id,
+    orderNumber: data.order_number,
+    customerId: input.customerId || '',
+    customerName: input.customerName,
+    customerPhone: input.customerPhone,
+    customerEmail: input.customerEmail || '',
+    items: input.items,
+    total: input.total,
+    deliveryMethod: input.deliveryMethod,
+    paymentMethod: input.paymentMethod,
+    address: input.address,
+    district: input.district,
+    comment: input.comment,
+    status: 'new',
+    date: new Date().toISOString().split('T')[0],
+  };
+}
+
+export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status })
+    .eq('id', id)
+    .select('*, order_items(*)')
+    .single();
+  if (error) throw error;
+  return rowToOrder(data);
 }
 
 // ============================================================================

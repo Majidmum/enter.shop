@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
-import { getBanners } from '@/lib/getStorageData';
-import { fetchProducts, fetchBrands, fetchApprovedReviews } from '@/lib/supabaseData';
+import { fetchProducts, fetchBrands, fetchApprovedReviews, fetchActiveBanners } from '@/lib/supabaseData';
 import PageMeta from '@/components/common/PageMeta';
 import { ProductGridSkeleton } from '@/components/shared/Skeletons';
-import type { Product, Brand, Review } from '@/types';
+import type { Product, Brand, Review, Banner } from '@/types';
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -16,16 +15,15 @@ export default function HomePage() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
-  const banners = getBanners();
+  const [activeBanners, setActiveBanners] = useState<Banner[]>([]);
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews()])
-      .then(([p, b, r]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); })
+    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews(), fetchActiveBanners()])
+      .then(([p, b, r, banners]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); setActiveBanners(banners); })
       .finally(() => setProductsLoading(false));
   }, []);
 
   const [bannerIdx, setBannerIdx] = useState(0);
-  const activeBanners = banners.filter((b) => b.status === 'active');
 
   // "Популярные товары" — на основе реальной оценки и количества отзывов,
   // а не ручного флажка. Чем выше рейтинг и чем больше отзывов — тем выше в списке.

@@ -1,21 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Eye, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useOrdersStore } from '@/store/ordersStore';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type OrderStatus } from '@/types';
+import { fetchOrders, updateOrderStatus } from '@/lib/supabaseData';
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type Order, type OrderStatus } from '@/types';
 import { toast } from 'sonner';
 
 const STATUS_OPTIONS: OrderStatus[] = ['new', 'confirmed', 'assembling', 'ready', 'delivering', 'delivered', 'cancelled'];
 
 export default function AdminOrders() {
-  const { orders, updateStatus } = useOrdersStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [viewing, setViewing] = useState<typeof orders[0] | null>(null);
+  const [viewing, setViewing] = useState<Order | null>(null);
+
+  useEffect(() => {
+    fetchOrders().then(setOrders).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+  }, []);
 
   const filtered = orders.filter((o) => {
     const matchSearch = o.orderNumber.toLowerCase().includes(search.toLowerCase())
@@ -25,9 +30,14 @@ export default function AdminOrders() {
     return matchSearch && matchStatus;
   });
 
-  const handleStatus = (orderId: string, status: OrderStatus) => {
-    updateStatus(orderId, status);
-    toast.success('Статус заказа обновлён');
+  const handleStatus = async (orderId: string, status: OrderStatus) => {
+    try {
+      const updated = await updateOrderStatus(orderId, status);
+      setOrders((prev) => prev.map((o) => o.id === orderId ? updated : o));
+      toast.success('Статус заказа обновлён');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить статус');
+    }
   };
 
   return (
@@ -106,8 +116,11 @@ export default function AdminOrders() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Заказы не найдены</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
 

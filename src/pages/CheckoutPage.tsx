@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,8 +11,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { useCartStore } from '@/store/cartStore';
-import { useOrdersStore } from '@/store/ordersStore';
 import { useAuthStore } from '@/store/authStore';
+import { createOrder } from '@/lib/supabaseData';
 import { sendOrderToTelegram } from '@/lib/telegram';
 import { toast } from 'sonner';
 import PageMeta from '@/components/common/PageMeta';
@@ -32,8 +33,8 @@ const schema = z.object({
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCartStore();
-  const addOrder = useOrdersStore((s) => s.addOrder);
   const { user, isAuthenticated } = useAuthStore();
+  const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<CheckoutForm>({
     resolver: zodResolver(schema),
@@ -58,37 +59,44 @@ export default function CheckoutPage() {
   }
 
   const onSubmit = async (data: CheckoutForm) => {
-    const order = addOrder({
-      customerId: user?.id || 'guest',
-      customerName: `${data.firstName} ${data.lastName}`,
-      customerPhone: data.phone,
-      customerEmail: user?.email || '',
-      items: items.map(({ product, quantity }) => ({
-        productId: product.id,
-        productName: product.name,
-        productImage: product.images[0],
-        price: product.price,
-        quantity,
-      })),
-      total: total(),
-      deliveryMethod: data.deliveryMethod,
-      paymentMethod: data.paymentMethod,
-      address: data.address,
-      district: data.district,
-      comment: data.comment,
-    });
+    setSubmitting(true);
+    try {
+      const order = await createOrder({
+        customerId: isAuthenticated ? user?.id : null,
+        customerName: `${data.firstName} ${data.lastName}`,
+        customerPhone: data.phone,
+        customerEmail: user?.email || '',
+        items: items.map(({ product, quantity }) => ({
+          productId: product.id,
+          productName: product.name,
+          productImage: product.images[0],
+          price: product.price,
+          quantity,
+        })),
+        total: total(),
+        deliveryMethod: data.deliveryMethod,
+        paymentMethod: data.paymentMethod,
+        address: data.address,
+        district: data.district,
+        comment: data.comment,
+      });
 
-    // Заказ уже создан — сообщаем клиенту об успехе в любом случае.
-    // Отправка в Telegram — это только уведомление менеджеру, а не часть
-    // самого заказа, поэтому её сбой не должен выглядеть как "заказ не оформлен".
-    const notified = await sendOrderToTelegram(order);
+      // Заказ уже создан — сообщаем клиенту об успехе в любом случае.
+      // Отправка в Telegram — это только уведомление менеджеру, а не часть
+      // самого заказа, поэтому её сбой не должен выглядеть как "заказ не оформлен".
+      const notified = await sendOrderToTelegram(order);
 
-    clearCart();
-    toast.success(`Заказ ${order.orderNumber} успешно оформлен!`);
-    if (!notified) {
-      toast.error('Не удалось уведомить менеджера автоматически — на всякий случай позвоните нам, чтобы подтвердить заказ.');
+      clearCart();
+      toast.success(`Заказ ${order.orderNumber} успешно оформлен!`);
+      if (!notified) {
+        toast.error('Не удалось уведомить менеджера автоматически — на всякий случай позвоните нам, чтобы подтвердить заказ.');
+      }
+      navigate('/account');
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось оформить заказ. Попробуйте ещё раз или позвоните нам.');
+    } finally {
+      setSubmitting(false);
     }
-    navigate('/account');
   };
 
   return (
@@ -244,8 +252,8 @@ export default function CheckoutPage() {
                 <span>Итого</span>
                 <span>{total().toLocaleString()} сом.</span>
               </div>
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
-                Подтвердить заказ
+              <Button type="submit" disabled={submitting} className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
+                {submitting ? 'Оформляем...' : 'Подтвердить заказ'}
               </Button>
               {!isAuthenticated && (
                 <p className="text-xs text-muted-foreground text-center mt-3">

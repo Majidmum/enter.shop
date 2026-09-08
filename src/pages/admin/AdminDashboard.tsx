@@ -2,10 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { ShoppingBag, Users, Package, TrendingUp, ArrowUpRight, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
-import { useOrdersStore } from '@/store/ordersStore';
-import { fetchProducts, fetchCustomers } from '@/lib/supabaseData';
+import { fetchProducts, fetchCustomers, fetchOrders } from '@/lib/supabaseData';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
-import type { Product, Customer } from '@/types';
+import type { Product, Customer, Order } from '@/types';
 
 const MONTH_NAMES = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 
@@ -13,9 +12,12 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
+  const [orders, setOrders] = useState<Order[]>([]);
+
   useEffect(() => {
     fetchProducts().then(setProducts);
     fetchCustomers().then(setCustomers).catch(() => setCustomers([]));
+    fetchOrders().then(setOrders).catch(() => setOrders([]));
   }, []);
 
   const topProducts = useMemo(
@@ -23,7 +25,6 @@ export default function AdminDashboard() {
     [products]
   );
 
-  const orders = useOrdersStore((s) => s.orders);
   const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
   const newOrders = orders.filter((o) => o.status === 'new').length;
 
@@ -83,13 +84,10 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-4">
         {/* Revenue chart */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 card-shadow">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold">Выручка по месяцам</h2>
             <span className="text-xs text-muted-foreground">сом.</span>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">
-            По заказам, оформленным в этом браузере — общая база заказов пока не подключена
-          </p>
           {salesData.length === 0 ? (
             <div className="flex items-center justify-center text-sm text-muted-foreground" style={{ height: 220 }}>
               Пока нет данных о заказах

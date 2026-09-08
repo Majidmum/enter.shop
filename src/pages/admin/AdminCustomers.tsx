@@ -4,21 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { fetchCustomers } from '@/lib/supabaseData';
-import { useOrdersStore } from '@/store/ordersStore';
+import { fetchCustomers, fetchOrders } from '@/lib/supabaseData';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/types';
-import type { Customer } from '@/types';
+import type { Customer, Order } from '@/types';
 import { toast } from 'sonner';
 
 export default function AdminCustomers() {
-  const { orders } = useOrdersStore();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<Customer | null>(null);
 
   useEffect(() => {
     fetchCustomers().then(setCustomers).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+    fetchOrders().then(setOrders).catch(() => setOrders([]));
   }, []);
 
   const filtered = customers.filter((c) =>
