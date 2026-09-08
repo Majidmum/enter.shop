@@ -68,12 +68,24 @@ export default function HomePage() {
             >
               <div className="grid grid-cols-1 md:grid-cols-2 h-full">
                 <div className="hidden md:block relative h-full">
-                  <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
+                  <img
+                    src={banner.image}
+                    alt={banner.title}
+                    className="w-full h-full object-cover"
+                    fetchPriority={i === 0 ? 'high' : 'low'}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent to-secondary/40" />
                 </div>
                 <div className="relative flex flex-col justify-center gap-3 sm:gap-4 px-5 sm:px-8 md:px-10 py-8 md:py-0">
                   {/* Фон-фото на мобильном — приглушённое, за текстом */}
-                  <img src={banner.image} alt="" className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20" />
+                  <img
+                    src={banner.image}
+                    alt=""
+                    className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20"
+                    fetchPriority={i === 0 ? 'high' : 'low'}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                  />
                   <div className="relative flex flex-col gap-3 sm:gap-4">
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
                       {banner.title}

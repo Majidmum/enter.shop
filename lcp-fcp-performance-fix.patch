@@ -1,0 +1,64 @@
+diff --git a/index.html b/index.html
+index 1f5c131..c1fb77e 100644
+--- a/index.html
++++ b/index.html
+@@ -9,6 +9,14 @@
+     <meta property="og:title" content="ENTER.TJ — Компьютерная техника и офисная мебель в Душанбе" />
+     <meta property="og:description" content="Ноутбуки, ПК, мониторы, принтеры, офисная мебель с доставкой по Душанбе и Таджикистану." />
+     <meta property="og:type" content="website" />
++
++    <!-- Шрифт Inter: preconnect + обычная ссылка вместо @import в CSS —
++         @import блокирует рендеринг страницы, пока не скачается и не
++         распарсится файл шрифта. Так браузер начинает загрузку раньше
++         и параллельно с остальным контентом. -->
++    <link rel="preconnect" href="https://fonts.googleapis.com" />
++    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+   </head>
+   <body>
+     <div id="root"></div>
+diff --git a/src/index.css b/src/index.css
+index e5ad394..3c06fb2 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -3,7 +3,8 @@
+ @tailwind components;
+ @tailwind utilities;
+ 
+-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
++/* Шрифт Inter теперь подключается в index.html (preconnect + <link>),
++   а не через @import здесь — @import блокирует рендеринг страницы. */
+ 
+ @layer base {
+   :root {
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 0d67ae5..3f4a567 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -68,12 +68,24 @@ export default function HomePage() {
+             >
+               <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+                 <div className="hidden md:block relative h-full">
+-                  <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
++                  <img
++                    src={banner.image}
++                    alt={banner.title}
++                    className="w-full h-full object-cover"
++                    fetchPriority={i === 0 ? 'high' : 'low'}
++                    loading={i === 0 ? 'eager' : 'lazy'}
++                  />
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent to-secondary/40" />
+                 </div>
+                 <div className="relative flex flex-col justify-center gap-3 sm:gap-4 px-5 sm:px-8 md:px-10 py-8 md:py-0">
+                   {/* Фон-фото на мобильном — приглушённое, за текстом */}
+-                  <img src={banner.image} alt="" className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20" />
++                  <img
++                    src={banner.image}
++                    alt=""
++                    className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20"
++                    fetchPriority={i === 0 ? 'high' : 'low'}
++                    loading={i === 0 ? 'eager' : 'lazy'}
++                  />
+                   <div className="relative flex flex-col gap-3 sm:gap-4">
+                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
+                       {banner.title}

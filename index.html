@@ -9,6 +9,14 @@
     <meta property="og:title" content="ENTER.TJ — Компьютерная техника и офисная мебель в Душанбе" />
     <meta property="og:description" content="Ноутбуки, ПК, мониторы, принтеры, офисная мебель с доставкой по Душанбе и Таджикистану." />
     <meta property="og:type" content="website" />
+
+    <!-- Шрифт Inter: preconnect + обычная ссылка вместо @import в CSS —
+         @import блокирует рендеринг страницы, пока не скачается и не
+         распарсится файл шрифта. Так браузер начинает загрузку раньше
+         и параллельно с остальным контентом. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
   </head>
   <body>
     <div id="root"></div>
