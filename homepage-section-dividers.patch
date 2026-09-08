@@ -1,0 +1,22 @@
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 74cf88a..57c9207 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -130,7 +130,7 @@ export default function HomePage() {
+       </section>
+ 
+       {/* Popular Products (по рейтингу) */}
+-      <section className="bg-muted/50 py-10">
++      <section className="bg-muted/50 py-10 border-t border-border">
+         <div className="container mx-auto px-4">
+           <div className="flex items-center justify-between mb-1">
+             <div className="flex items-center gap-2">
+@@ -231,7 +231,7 @@ export default function HomePage() {
+ 
+       {/* Brands — бесконечная автопрокрутка */}
+       {brands.length > 0 && (
+-        <section className="bg-muted/50 py-10 overflow-hidden">
++        <section className="bg-muted/50 py-10 overflow-hidden border-t border-border">
+           <div className="container mx-auto px-4">
+             <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.our_brands')}</h2>
+           </div>
