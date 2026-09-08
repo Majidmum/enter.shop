@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2 } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -285,6 +285,19 @@ export default function Header() {
               {cat.name}
             </Link>
           ))}
+          <div className="h-5 w-px bg-border shrink-0 mx-1" />
+          <Link to="/delivery" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
+            <Truck className="h-4 w-4" />
+            {t('header.nav_delivery')}
+          </Link>
+          <Link to="/about" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
+            <Info className="h-4 w-4" />
+            {t('header.nav_about')}
+          </Link>
+          <Link to="/contacts" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
+            <Phone className="h-4 w-4" />
+            {t('header.nav_contacts')}
+          </Link>
         </div>
       </div>
 
@@ -308,18 +321,6 @@ export default function Header() {
           </form>
         </div>
       )}
-
-      {/* Secondary nav — остальные страницы, доступны через бургер-меню на мобильном и футер */}
-      <div className="hidden lg:block border-t border-border bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 h-9 flex items-center gap-6">
-          {navLinks.slice(3).map((link) => (
-            <Link key={link.href} to={link.href}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </div>
     </header>
   );
 }
