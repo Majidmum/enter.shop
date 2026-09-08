@@ -39,12 +39,24 @@ export default function CatalogPage() {
   const [sort, setSort] = useState<SortOption>('featured');
   const [selCategories, setSelCategories] = useState<string[]>([]);
   const [selBrands, setSelBrands] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  // Безопасный дефолт до загрузки товаров — не отфильтровывает ничего.
+  // Реальные границы (0..макс. цена в каталоге) выставляются, как только придут данные.
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [onlyDiscount, setOnlyDiscount] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [catExpanded, setCatExpanded] = useState(true);
   const [brandExpanded, setBrandExpanded] = useState(true);
+
+  const maxPrice = useMemo(
+    () => (products.length ? Math.max(...products.map((p) => p.price)) : 100000),
+    [products]
+  );
+
+  useEffect(() => {
+    // Как только реальные товары загружены — открываем слайдер на весь диапазон цен каталога.
+    if (products.length) setPriceRange([0, maxPrice]);
+  }, [products.length, maxPrice]);
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -80,13 +92,13 @@ export default function CatalogPage() {
   const clearFilters = () => {
     setSelCategories([]);
     setSelBrands([]);
-    setPriceRange([0, 10000]);
+    setPriceRange([0, maxPrice]);
     setOnlyInStock(false);
     setOnlyDiscount(false);
     setPage(1);
   };
 
-  const hasFilters = selCategories.length > 0 || selBrands.length > 0 || onlyInStock || onlyDiscount || priceRange[0] > 0 || priceRange[1] < 10000;
+  const hasFilters = selCategories.length > 0 || selBrands.length > 0 || onlyInStock || onlyDiscount || priceRange[0] > 0 || priceRange[1] < maxPrice;
 
   const FilterContent = (
     <div className="flex flex-col gap-5">
@@ -134,7 +146,7 @@ export default function CatalogPage() {
       <div>
         <p className="font-semibold text-sm mb-3">{t('catalog.price')}</p>
         <Slider
-          min={0} max={10000} step={100}
+          min={0} max={maxPrice} step={Math.max(100, Math.round(maxPrice / 100))}
           value={priceRange}
           onValueChange={(v) => { setPriceRange(v as [number, number]); setPage(1); }}
           className="mb-2"

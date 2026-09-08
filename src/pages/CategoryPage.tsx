@@ -31,10 +31,24 @@ export default function CategoryPage() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('featured');
   const [selBrands, setSelBrands] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  // Безопасный дефолт до загрузки товаров — не отфильтровывает ничего.
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
+
+  const categoryRawProducts = useMemo(
+    () => (category ? products.filter((p) => p.categoryId === category.id) : []),
+    [category, products]
+  );
+  const maxPrice = useMemo(
+    () => (categoryRawProducts.length ? Math.max(...categoryRawProducts.map((p) => p.price)) : 100000),
+    [categoryRawProducts]
+  );
+
+  useEffect(() => {
+    if (categoryRawProducts.length) setPriceRange([0, maxPrice]);
+  }, [categoryRawProducts.length, maxPrice]);
 
   const categoryProducts = useMemo(() => {
-    let list = category ? products.filter((p) => p.categoryId === category.id) : [];
+    let list = categoryRawProducts;
     if (selBrands.length) list = list.filter((p) => selBrands.includes(p.brandId));
     list = list.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
     switch (sort) {
@@ -44,7 +58,7 @@ export default function CategoryPage() {
       default: list.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
     }
     return list;
-  }, [category, selBrands, priceRange, sort]);
+  }, [categoryRawProducts, selBrands, priceRange, sort]);
 
   const totalPages = Math.ceil(categoryProducts.length / PAGE_SIZE);
   const paginated = categoryProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -100,7 +114,7 @@ export default function CategoryPage() {
               ))}
             </div>
             <p className="font-semibold text-sm mb-2">Цена (сомони)</p>
-            <Slider min={0} max={10000} step={100} value={priceRange}
+            <Slider min={0} max={maxPrice} step={Math.max(100, Math.round(maxPrice / 100))} value={priceRange}
               onValueChange={(v) => { setPriceRange(v as [number, number]); setPage(1); }} className="mb-2" />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{priceRange[0].toLocaleString()}</span>
