@@ -1,12 +1,13 @@
 import { Building2, Users, Award, Truck, Shield, Headphones, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import PageMeta from '@/components/common/PageMeta';
+import { useCountUp } from '@/hooks/use-count-up';
 
 const stats = [
-  { value: '5+', label: 'Лет на рынке' },
-  { value: '10 000+', label: 'Довольных клиентов' },
-  { value: '30+', label: 'Проверенных брендов' },
-  { value: '2000+', label: 'Товаров в каталоге' },
+  { value: 5, suffix: '+', label: 'Лет на рынке' },
+  { value: 10000, suffix: '+', label: 'Довольных клиентов' },
+  { value: 30, suffix: '+', label: 'Проверенных брендов' },
+  { value: 2000, suffix: '+', label: 'Товаров в каталоге' },
 ];
 
 const team = [
@@ -14,6 +15,18 @@ const team = [
   { name: 'Дилноза Раупова', role: 'Директор по продажам', img: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&q=80' },
   { name: 'Фаррух Исмоилов', role: 'Технический специалист', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' },
 ];
+
+function StatCounter({ value, suffix, label }: { value: number; suffix: string; label: string }) {
+  const { ref, value: current } = useCountUp<HTMLDivElement>(value);
+  return (
+    <div ref={ref} className="text-center text-white">
+      <p className="text-3xl md:text-4xl font-bold">
+        {current.toLocaleString('ru-RU')}{suffix}
+      </p>
+      <p className="text-white/80 text-sm mt-1">{label}</p>
+    </div>
+  );
+}
 
 export default function AboutPage() {
   return (
@@ -41,10 +54,7 @@ export default function AboutPage() {
       <div className="bg-primary">
         <div className="container mx-auto px-4 py-10 grid grid-cols-2 md:grid-cols-4 gap-6">
           {stats.map((s) => (
-            <div key={s.label} className="text-center text-white">
-              <p className="text-3xl md:text-4xl font-bold">{s.value}</p>
-              <p className="text-white/80 text-sm mt-1">{s.label}</p>
-            </div>
+            <StatCounter key={s.label} value={s.value} suffix={s.suffix} label={s.label} />
           ))}
         </div>
       </div>

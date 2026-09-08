@@ -108,7 +108,7 @@ export default function HomePage() {
         </div>
 
         {/* Плитки быстрых ссылок под баннером (по образцу Uzum) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 mb-4">
           {[
             { icon: Laptop, label: t('home.tile_computers'), href: '/catalog' },
             { icon: Building2, label: t('home.tile_office'), href: '/office' },
