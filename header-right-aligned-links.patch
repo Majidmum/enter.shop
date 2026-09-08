@@ -1,0 +1,106 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index c2b0c53..1899003 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -251,53 +251,58 @@ export default function Header() {
+         </div>
+       </div>
+ 
+-      {/* Category pills row (desktop) — по образцу Uzum: цветные плашки + категории в одной ленте */}
++      {/* Category pills row (desktop) — слева прокручиваемые категории, справа закреплённые ссылки */}
+       <div className="hidden md:block border-t border-border">
+-        <div className="container mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+-          <Link
+-            to="/sale"
+-            className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold whitespace-nowrap"
+-          >
+-            <Tag className="h-4 w-4" />
+-            {t('header.nav_sale')}
+-          </Link>
+-          <Link
+-            to="/office"
+-            className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-sm font-semibold whitespace-nowrap"
+-          >
+-            <Building2 className="h-4 w-4" />
+-            {t('header.nav_office')}
+-          </Link>
+-          <div className="h-5 w-px bg-border shrink-0 mx-1" />
+-          {categories.slice(0, 10).map((cat) => (
++        <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
++          <div className="flex items-center gap-2 overflow-x-auto min-w-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+             <Link
+-              key={cat.id}
+-              to={`/category/${cat.slug}`}
+-              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
++              to="/sale"
++              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold whitespace-nowrap"
+             >
+-              <span className="h-6 w-6 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+-                {cat.image ? (
+-                  <img src={cat.image} alt="" className="h-full w-full object-cover" />
+-                ) : (
+-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+-                )}
+-              </span>
+-              {cat.name}
++              <Tag className="h-4 w-4" />
++              {t('header.nav_sale')}
+             </Link>
+-          ))}
+-          <div className="h-5 w-px bg-border shrink-0 mx-1" />
+-          <Link to="/delivery" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
+-            <Truck className="h-4 w-4" />
+-            {t('header.nav_delivery')}
+-          </Link>
+-          <Link to="/about" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
+-            <Info className="h-4 w-4" />
+-            {t('header.nav_about')}
+-          </Link>
+-          <Link to="/contacts" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
+-            <Phone className="h-4 w-4" />
+-            {t('header.nav_contacts')}
+-          </Link>
++            <Link
++              to="/office"
++              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-sm font-semibold whitespace-nowrap"
++            >
++              <Building2 className="h-4 w-4" />
++              {t('header.nav_office')}
++            </Link>
++            <div className="h-5 w-px bg-border shrink-0 mx-1" />
++            {categories.slice(0, 10).map((cat) => (
++              <Link
++                key={cat.id}
++                to={`/category/${cat.slug}`}
++                className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
++              >
++                <span className="h-6 w-6 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
++                  {cat.image ? (
++                    <img src={cat.image} alt="" className="h-full w-full object-cover" />
++                  ) : (
++                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
++                  )}
++                </span>
++                {cat.name}
++              </Link>
++            ))}
++          </div>
++
++          {/* Закреплено у правого края, не прокручивается вместе с категориями */}
++          <div className="hidden lg:flex items-center gap-1 shrink-0">
++            <Link to="/delivery" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
++              <Truck className="h-4 w-4" />
++              {t('header.nav_delivery')}
++            </Link>
++            <Link to="/about" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
++              <Info className="h-4 w-4" />
++              {t('header.nav_about')}
++            </Link>
++            <Link to="/contacts" className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap text-muted-foreground">
++              <Phone className="h-4 w-4" />
++              {t('header.nav_contacts')}
++            </Link>
++          </div>
+         </div>
+       </div>
+ 
