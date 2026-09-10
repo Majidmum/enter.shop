@@ -9,9 +9,10 @@ import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/components/theme-provider';
-import { fetchCategories, fetchBrands } from '@/lib/supabaseData';
+import { fetchCategories, fetchBrands, fetchProducts } from '@/lib/supabaseData';
+import { getCategoryIcon } from '@/lib/categoryIcons';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
-import type { Category, Brand } from '@/types';
+import type { Category, Brand, Product } from '@/types';
 
 function ThemeToggle({ className = '' }: { className?: string }) {
   const { t } = useTranslation();
@@ -72,6 +73,7 @@ export default function Header() {
   const [catOpen, setCatOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   // Какая категория слева сейчас "активна" (наведена/выбрана) — справа показываем её подкатегории.
   // Специальное значение 'brands' — показывает список брендов вместо подкатегорий.
   const [activeCatId, setActiveCatId] = useState<string | 'brands' | null>(null);
@@ -79,16 +81,29 @@ export default function Header() {
   useEffect(() => {
     fetchCategories().then(setCategories);
     fetchBrands().then(setBrands);
+    fetchProducts().then(setProducts);
   }, []);
 
-  // Дерево категорий: родительские категории + их подкатегории под каждой
+  const brandsById = useMemo(() => new Map(brands.map((b) => [b.id, b])), [brands]);
+
+  // Дерево категорий: родительские категории + их подкатегории,
+  // а для каждой подкатегории — реальные бренды товаров внутри неё
+  // (для правой панели меню, по образцу крупных маркетплейсов).
   const categoryTree = useMemo(() => {
     const topLevel = categories.filter((c) => !c.parentId);
     return topLevel.map((parent) => ({
       ...parent,
-      children: categories.filter((c) => c.parentId === parent.id),
+      children: categories
+        .filter((c) => c.parentId === parent.id)
+        .map((sub) => {
+          const brandIds = new Set(
+            products.filter((p) => p.categoryId === sub.id).map((p) => p.brandId)
+          );
+          const subBrands = [...brandIds].map((id) => brandsById.get(id)).filter((b): b is Brand => !!b);
+          return { ...sub, brands: subBrands };
+        }),
     }));
-  }, [categories]);
+  }, [categories, products, brandsById]);
 
   // По умолчанию, как только дерево загрузилось — подсвечиваем первую категорию (как у Uzum)
   useEffect(() => {
@@ -161,20 +176,24 @@ export default function Header() {
               ))}
               <div className="border-t border-sidebar-border my-2" />
               <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">{t('header.categories')}</p>
-              {categoryTree.slice(0, 8).map((cat) => (
-                <div key={cat.id}>
-                  <Link to={`/category/${cat.slug}`} onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
-                    {cat.name}
-                  </Link>
-                  {cat.children.map((sub) => (
-                    <Link key={sub.id} to={`/category/${sub.slug}`} onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 pl-8 pr-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors min-h-12">
-                      {sub.name}
+              {categoryTree.slice(0, 8).map((cat) => {
+                const Icon = getCategoryIcon(cat.name);
+                return (
+                  <div key={cat.id}>
+                    <Link to={`/category/${cat.slug}`} onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {cat.name}
                     </Link>
-                  ))}
-                </div>
-              ))}
+                    {cat.children.map((sub) => (
+                      <Link key={sub.id} to={`/category/${sub.slug}`} onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 pl-8 pr-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors min-h-12">
+                        {sub.name}
+                      </Link>
+                    ))}
+                  </div>
+                );
+              })}
               {brands.length > 0 && (
                 <>
                   <div className="border-t border-sidebar-border my-2" />
@@ -213,23 +232,29 @@ export default function Header() {
               onMouseLeave={() => setCatOpen(false)}
               className="absolute top-full left-0 mt-1 flex rounded-xl bg-card border border-border shadow-lg z-50 overflow-hidden"
             >
-              {/* Левая колонка — список категорий верхнего уровня */}
+              {/* Левая колонка — список категорий верхнего уровня, с иконками */}
               <div className="w-64 py-2 max-h-[70vh] overflow-y-auto shrink-0 border-r border-border">
                 {categoryTree.length > 0 ? (
-                  categoryTree.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      to={`/category/${cat.slug}`}
-                      onMouseEnter={() => setActiveCatId(cat.id)}
-                      onClick={() => setCatOpen(false)}
-                      className={`flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors ${
-                        activeCatId === cat.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'
-                      }`}
-                    >
-                      {cat.name}
-                      {cat.children.length > 0 && <ChevronDown className="h-3.5 w-3.5 -rotate-90 shrink-0" />}
-                    </Link>
-                  ))
+                  categoryTree.map((cat) => {
+                    const Icon = getCategoryIcon(cat.name);
+                    return (
+                      <Link
+                        key={cat.id}
+                        to={`/category/${cat.slug}`}
+                        onMouseEnter={() => setActiveCatId(cat.id)}
+                        onClick={() => setCatOpen(false)}
+                        className={`flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors ${
+                          activeCatId === cat.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2.5 min-w-0">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{cat.name}</span>
+                        </span>
+                        {cat.children.length > 0 && <ChevronDown className="h-3.5 w-3.5 -rotate-90 shrink-0" />}
+                      </Link>
+                    );
+                  })
                 ) : (
                   <p className="px-4 py-2.5 text-sm text-muted-foreground">{t('header.categories_empty')}</p>
                 )}
@@ -240,14 +265,18 @@ export default function Header() {
                       activeCatId === 'brands' ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'
                     }`}
                   >
-                    {t('header.brands')}
+                    <span className="flex items-center gap-2.5">
+                      <Tag className="h-4 w-4 shrink-0" />
+                      {t('header.brands')}
+                    </span>
                     <ChevronDown className="h-3.5 w-3.5 -rotate-90 shrink-0" />
                   </button>
                 )}
               </div>
 
-              {/* Правая панель — подкатегории активной категории, в несколько колонок */}
-              <div className="w-[520px] p-5 max-h-[70vh] overflow-y-auto">
+              {/* Правая панель — подкатегории жирными заголовками колонок,
+                  под каждой — реальные бренды товаров именно этой подкатегории */}
+              <div className="w-[640px] p-5 max-h-[70vh] overflow-y-auto">
                 {activeCatId === 'brands' ? (
                   <>
                     <p className="font-semibold text-sm mb-3">{t('header.brands')}</p>
@@ -268,16 +297,34 @@ export default function Header() {
                 ) : activeCategory ? (
                   <>
                     <Link to={`/category/${activeCategory.slug}`} onClick={() => setCatOpen(false)}
-                      className="font-semibold text-sm mb-3 flex items-center gap-1 hover:text-primary transition-colors w-fit">
+                      className="font-semibold text-base mb-4 flex items-center gap-1 hover:text-primary transition-colors w-fit">
                       {activeCategory.name} <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
                     </Link>
                     {activeCategory.children.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+                      <div className="grid grid-cols-3 gap-x-6 gap-y-5">
                         {activeCategory.children.map((sub) => (
-                          <Link key={sub.id} to={`/category/${sub.slug}`} onClick={() => setCatOpen(false)}
-                            className="py-1 text-sm text-muted-foreground hover:text-primary transition-colors">
-                            {sub.name}
-                          </Link>
+                          <div key={sub.id} className="min-w-0">
+                            <Link to={`/category/${sub.slug}`} onClick={() => setCatOpen(false)}
+                              className="block text-xs font-bold uppercase tracking-wider text-foreground hover:text-primary transition-colors mb-2">
+                              {sub.name}
+                            </Link>
+                            <div className="flex flex-col gap-1.5">
+                              {sub.brands.length > 0 ? (
+                                sub.brands.map((brand) => (
+                                  <Link
+                                    key={brand.id}
+                                    to={`/category/${sub.slug}?brand=${brand.id}`}
+                                    onClick={() => setCatOpen(false)}
+                                    className="text-sm text-muted-foreground hover:text-primary transition-colors truncate"
+                                  >
+                                    {brand.name}
+                                  </Link>
+                                ))
+                              ) : (
+                                <span className="text-sm text-muted-foreground">{t('header.no_subcategories')}</span>
+                              )}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     ) : (
@@ -377,22 +424,19 @@ export default function Header() {
               {t('header.nav_office')}
             </Link>
             <div className="h-5 w-px bg-border shrink-0 mx-1" />
-            {categoryTree.slice(0, 10).map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/category/${cat.slug}`}
-                className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
-              >
-                <span className="h-6 w-6 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
-                  {cat.image ? (
-                    <img src={cat.image} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  )}
-                </span>
-                {cat.name}
-              </Link>
-            ))}
+            {categoryTree.slice(0, 10).map((cat) => {
+              const Icon = getCategoryIcon(cat.name);
+              return (
+                <Link
+                  key={cat.id}
+                  to={`/category/${cat.slug}`}
+                  className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {cat.name}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Закреплено у правого края, не прокручивается вместе с категориями */}

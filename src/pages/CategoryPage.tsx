@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ const PAGE_SIZE = 12;
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -35,7 +36,10 @@ export default function CategoryPage() {
   );
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('featured');
-  const [selBrands, setSelBrands] = useState<string[]>([]);
+  const [selBrands, setSelBrands] = useState<string[]>(() => {
+    const brandParam = searchParams.get('brand');
+    return brandParam ? [brandParam] : [];
+  });
   // Безопасный дефолт до загрузки товаров — не отфильтровывает ничего.
   const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
 
