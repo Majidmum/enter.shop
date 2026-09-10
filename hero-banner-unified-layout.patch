@@ -1,0 +1,84 @@
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index cdc334e..3d3a8be 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -56,7 +56,7 @@ export default function HomePage() {
+         title={t('home.meta_title')}
+         description={t('home.meta_description')}
+       />
+-      {/* Hero Banner — контейнерный, закруглённый, фото слева / текст справа */}
++      {/* Hero Banner — единая раскладка на всех экранах: фото + градиент + текст поверх */}
+       <section className="container mx-auto px-4 pt-4 md:pt-6">
+         <div className="relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
+           {activeBanners.map((banner, i) => {
+@@ -67,47 +67,35 @@ export default function HomePage() {
+                 className={`absolute inset-0 transition-opacity duration-700 ${i === bannerIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+               >
+                 {hasText ? (
+-                  <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+-                    <div className="hidden md:block relative h-full">
+-                      <img
+-                        src={banner.image}
+-                        alt={banner.title}
+-                        className="w-full h-full object-cover"
+-                        loading={i === 0 ? 'eager' : 'lazy'}
+-                        {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
+-                      />
+-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-secondary/40" />
+-                    </div>
+-                    <div className="relative flex flex-col justify-center gap-3 sm:gap-4 px-5 sm:px-8 md:px-10 py-8 md:py-0">
+-                      {/* Фон-фото на мобильном — приглушённое, за текстом */}
+-                      <img
+-                        src={banner.image}
+-                        alt=""
+-                        className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20"
+-                        loading={i === 0 ? 'eager' : 'lazy'}
+-                        {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
+-                      />
+-                      <div className="relative flex flex-col gap-3 sm:gap-4">
+-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
+-                          {banner.title}
+-                        </h1>
+-                        {banner.subtitle && (
+-                          <p className="text-sm sm:text-base text-white/80 max-w-md">{banner.subtitle}</p>
+-                        )}
+-                        <div className="flex flex-wrap gap-3">
+-                          <Link to={banner.buttonLink}>
+-                            <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold rounded-full">
+-                              {banner.buttonText || 'Подробнее'} <ArrowRight className="h-4 w-4 ml-1" />
+-                            </Button>
+-                          </Link>
+-                        </div>
++                  <div className="relative w-full h-full">
++                    <img
++                      src={banner.image}
++                      alt={banner.title}
++                      className="absolute inset-0 w-full h-full object-cover"
++                      loading={i === 0 ? 'eager' : 'lazy'}
++                      {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
++                    />
++                    <div className="absolute inset-0 bg-gradient-to-r from-secondary/85 via-secondary/50 to-transparent" />
++                    <div className="relative h-full flex flex-col justify-center gap-3 sm:gap-4 px-5 sm:px-8 md:px-12 py-8 max-w-xl">
++                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
++                        {banner.title}
++                      </h1>
++                      {banner.subtitle && (
++                        <p className="text-sm sm:text-base text-white/80">{banner.subtitle}</p>
++                      )}
++                      <div className="flex flex-wrap gap-3">
++                        <Link to={banner.buttonLink}>
++                          <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold rounded-full">
++                            {banner.buttonText || 'Подробнее'} <ArrowRight className="h-4 w-4 ml-1" />
++                          </Button>
++                        </Link>
+                       </div>
+                     </div>
+                   </div>
+                 ) : (
+                   // Баннер без заголовка — готовая картинка сама несёт весь смысл
+                   // (например, дизайн с уже вписанным текстом). Показываем на всю
+-                  // ширину, без пустой текстовой половины.
++                  // ширину, без текстового наложения.
+                   <Link to={banner.buttonLink || '#'} className="block w-full h-full">
+                     <img
+                       src={banner.image}
