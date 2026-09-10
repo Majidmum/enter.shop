@@ -38,7 +38,10 @@ export default function CatalogPage() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortOption>('featured');
   const [selCategories, setSelCategories] = useState<string[]>([]);
-  const [selBrands, setSelBrands] = useState<string[]>([]);
+  const [selBrands, setSelBrands] = useState<string[]>(() => {
+    const brandParam = searchParams.get('brand');
+    return brandParam ? [brandParam] : [];
+  });
   // Безопасный дефолт до загрузки товаров — не отфильтровывает ничего.
   // Реальные границы (0..макс. цена в каталоге) выставляются, как только придут данные.
   const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);

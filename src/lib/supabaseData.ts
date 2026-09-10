@@ -26,6 +26,7 @@ export async function createCategory(input: {
   name: string;
   slug?: string;
   image?: string;
+  parentId?: string | null;
 }): Promise<Category> {
   const slug = input.slug || slugify(input.name);
   const { data, error } = await supabase
@@ -34,6 +35,7 @@ export async function createCategory(input: {
       name: input.name,
       slug,
       image: input.image || '',
+      parent_id: input.parentId || null,
     })
     .select()
     .single();
@@ -43,9 +45,14 @@ export async function createCategory(input: {
 
 export async function updateCategory(
   id: string,
-  patch: Partial<{ name: string; slug: string; image: string }>
+  patch: Partial<{ name: string; slug: string; image: string; parentId: string | null }>
 ): Promise<Category> {
-  const { data, error } = await supabase.from('categories').update(patch).eq('id', id).select().single();
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+  if (patch.slug !== undefined) dbPatch.slug = patch.slug;
+  if (patch.image !== undefined) dbPatch.image = patch.image;
+  if (patch.parentId !== undefined) dbPatch.parent_id = patch.parentId || null;
+  const { data, error } = await supabase.from('categories').update(dbPatch).eq('id', id).select().single();
   if (error) throw error;
   return rowToCategory(data);
 }

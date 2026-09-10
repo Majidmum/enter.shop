@@ -28,16 +28,24 @@ export default function CategoryPage() {
   }, []);
 
   const category = categories.find((c) => c.slug === slug);
+  const parentCategory = category?.parentId ? categories.find((c) => c.id === category.parentId) : undefined;
+  const subcategories = useMemo(
+    () => (category ? categories.filter((c) => c.parentId === category.id) : []),
+    [category, categories]
+  );
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('featured');
   const [selBrands, setSelBrands] = useState<string[]>([]);
   // Безопасный дефолт до загрузки товаров — не отфильтровывает ничего.
   const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
 
-  const categoryRawProducts = useMemo(
-    () => (category ? products.filter((p) => p.categoryId === category.id) : []),
-    [category, products]
-  );
+  const categoryRawProducts = useMemo(() => {
+    if (!category) return [];
+    // Если это родительская категория — показываем товары из неё самой
+    // и из всех подкатегорий сразу (обычная практика интернет-магазинов).
+    const relevantIds = new Set([category.id, ...subcategories.map((s) => s.id)]);
+    return products.filter((p) => relevantIds.has(p.categoryId));
+  }, [category, subcategories, products]);
   const maxPrice = useMemo(
     () => (categoryRawProducts.length ? Math.max(...categoryRawProducts.map((p) => p.price)) : 100000),
     [categoryRawProducts]
@@ -86,7 +94,11 @@ export default function CategoryPage() {
         title={`${category.name} — купить в Душанбе | ENTER.TJ`}
         description={`${category.name}: широкий выбор в интернет-магазине ENTER.TJ. Доставка по Душанбе и Таджикистану, официальная гарантия.`}
       />
-      <Breadcrumb items={[{ label: 'Категории', href: '/categories' }, { label: category.name }]} />
+      <Breadcrumb items={[
+        { label: 'Категории', href: '/categories' },
+        ...(parentCategory ? [{ label: parentCategory.name, href: `/category/${parentCategory.slug}` }] : []),
+        { label: category.name },
+      ]} />
 
       {/* Banner */}
       <div className="relative rounded-2xl overflow-hidden mt-4 mb-6 min-h-36 bg-secondary">
@@ -96,6 +108,21 @@ export default function CategoryPage() {
           <p className="text-white/70 mt-1">{category.productCount} товаров</p>
         </div>
       </div>
+
+      {/* Подкатегории — только если у этой категории они есть */}
+      {subcategories.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {subcategories.map((sub) => (
+            <Link
+              key={sub.id}
+              to={`/category/${sub.slug}`}
+              className="px-4 py-2 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-sm font-medium transition-colors"
+            >
+              {sub.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="flex gap-6">
         {/* Sidebar */}

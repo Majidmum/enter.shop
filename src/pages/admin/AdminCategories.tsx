@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Check, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/supabaseData';
 import type { Category } from '@/types';
 import { toast } from 'sonner';
@@ -26,6 +27,19 @@ export default function AdminCategories() {
 
   useEffect(load, []);
 
+  // Родительские категории, сразу за каждой — её подкатегории (с отступом в таблице)
+  const sortedItems = useMemo(() => {
+    const topLevel = items.filter((c) => !c.parentId);
+    const result: Category[] = [];
+    topLevel.forEach((parent) => {
+      result.push(parent);
+      items.filter((c) => c.parentId === parent.id).forEach((child) => result.push(child));
+    });
+    // Подкатегории-сироты (родитель удалён/не найден) — в конец списком
+    const orphans = items.filter((c) => c.parentId && !topLevel.some((p) => p.id === c.parentId));
+    return [...result, ...orphans];
+  }, [items]);
+
   const openNew = () => { setEditing(null); setDraft({ name: '', slug: '' }); setOpen(true); };
   const openEdit = (c: Category) => { setEditing(c); setDraft({ ...c }); setOpen(true); };
 
@@ -35,11 +49,11 @@ export default function AdminCategories() {
     setSaving(true);
     try {
       if (editing) {
-        const updated = await updateCategory(editing.id, { name: draft.name, slug: draft.slug, image: draft.image });
+        const updated = await updateCategory(editing.id, { name: draft.name, slug: draft.slug, image: draft.image, parentId: draft.parentId || null });
         setItems((prev) => prev.map((c) => c.id === editing.id ? updated : c));
         toast.success('Категория обновлена');
       } else {
-        const created = await createCategory({ name: draft.name, slug: draft.slug, image: draft.image });
+        const created = await createCategory({ name: draft.name, slug: draft.slug, image: draft.image, parentId: draft.parentId || null });
         setItems((prev) => [...prev, created]);
         toast.success('Категория добавлена');
       }
@@ -84,14 +98,15 @@ export default function AdminCategories() {
               </tr>
             </thead>
             <tbody>
-              {items.map((c) => (
+              {sortedItems.map((c) => (
                 <tr key={c.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    <div className={`flex items-center gap-3 ${c.parentId ? 'pl-6' : ''}`}>
+                      {c.parentId && <span className="text-muted-foreground">↳</span>}
                       <div className="h-9 w-9 rounded-lg overflow-hidden bg-muted shrink-0">
                         <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
                       </div>
-                      <span className="font-medium">{c.name}</span>
+                      <span className={c.parentId ? 'text-sm' : 'font-medium'}>{c.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{c.slug}</td>
@@ -132,6 +147,24 @@ export default function AdminCategories() {
             <div>
               <Label>Slug</Label>
               <Input className="mt-1" value={draft.slug || ''} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="генерируется автоматически" />
+            </div>
+            <div>
+              <Label>Родительская категория</Label>
+              <Select
+                value={draft.parentId || 'none'}
+                onValueChange={(v) => setDraft({ ...draft, parentId: v === 'none' ? undefined : v })}
+              >
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Нет — категория верхнего уровня</SelectItem>
+                  {items
+                    .filter((c) => !c.parentId && c.id !== editing?.id)
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Оставьте "Нет", чтобы создать обычную категорию, или выберите — чтобы создать подкатегорию.</p>
             </div>
             <div>
               <Label>Изображение категории *</Label>

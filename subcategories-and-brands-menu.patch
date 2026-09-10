@@ -1,0 +1,394 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index 1899003..6a949d5 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -1,4 +1,4 @@
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useMemo } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+ import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone } from 'lucide-react';
+@@ -9,9 +9,9 @@ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
+ import { useAuthStore } from '@/store/authStore';
+ import { useTheme } from '@/components/theme-provider';
+-import { fetchCategories } from '@/lib/supabaseData';
++import { fetchCategories, fetchBrands } from '@/lib/supabaseData';
+ import { SUPPORTED_LANGUAGES } from '@/i18n/config';
+-import type { Category } from '@/types';
++import type { Category, Brand } from '@/types';
+ 
+ function ThemeToggle({ className = '' }: { className?: string }) {
+   const { t } = useTranslation();
+@@ -71,11 +71,22 @@ export default function Header() {
+   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+   const [catOpen, setCatOpen] = useState(false);
+   const [categories, setCategories] = useState<Category[]>([]);
++  const [brands, setBrands] = useState<Brand[]>([]);
+ 
+   useEffect(() => {
+     fetchCategories().then(setCategories);
++    fetchBrands().then(setBrands);
+   }, []);
+ 
++  // Дерево категорий: родительские категории + их подкатегории под каждой
++  const categoryTree = useMemo(() => {
++    const topLevel = categories.filter((c) => !c.parentId);
++    return topLevel.map((parent) => ({
++      ...parent,
++      children: categories.filter((c) => c.parentId === parent.id),
++    }));
++  }, [categories]);
++
+   const cartCount = useCartStore((s) => s.itemCount());
+   const favCount = useFavoritesStore((s) => s.items.length);
+   const { isAuthenticated, user } = useAuthStore();
+@@ -136,12 +147,32 @@ export default function Header() {
+               ))}
+               <div className="border-t border-sidebar-border my-2" />
+               <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">{t('header.categories')}</p>
+-              {categories.slice(0, 8).map((cat) => (
+-                <Link key={cat.id} to={`/category/${cat.slug}`} onClick={() => setMobileOpen(false)}
+-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
+-                  {cat.name}
+-                </Link>
++              {categoryTree.slice(0, 8).map((cat) => (
++                <div key={cat.id}>
++                  <Link to={`/category/${cat.slug}`} onClick={() => setMobileOpen(false)}
++                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
++                    {cat.name}
++                  </Link>
++                  {cat.children.map((sub) => (
++                    <Link key={sub.id} to={`/category/${sub.slug}`} onClick={() => setMobileOpen(false)}
++                      className="flex items-center gap-2 pl-8 pr-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors min-h-12">
++                      {sub.name}
++                    </Link>
++                  ))}
++                </div>
+               ))}
++              {brands.length > 0 && (
++                <>
++                  <div className="border-t border-sidebar-border my-2" />
++                  <p className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider mb-1">{t('header.brands')}</p>
++                  {brands.slice(0, 8).map((brand) => (
++                    <Link key={brand.id} to={`/catalog?brand=${brand.id}`} onClick={() => setMobileOpen(false)}
++                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-h-12">
++                      {brand.name}
++                    </Link>
++                  ))}
++                </>
++              )}
+             </nav>
+           </SheetContent>
+         </Sheet>
+@@ -166,18 +197,49 @@ export default function Header() {
+             <div
+               onMouseEnter={() => setCatOpen(true)}
+               onMouseLeave={() => setCatOpen(false)}
+-              className="absolute top-full left-0 mt-1 w-64 rounded-xl bg-card border border-border shadow-lg z-50 py-2"
++              className="absolute top-full left-0 mt-1 flex rounded-xl bg-card border border-border shadow-lg z-50 overflow-hidden"
+             >
+-              {categories.length > 0 ? (
+-                categories.map((cat) => (
+-                  <Link key={cat.id} to={`/category/${cat.slug}`} onClick={() => setCatOpen(false)}
+-                    className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
+-                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+-                    {cat.name}
+-                  </Link>
+-                ))
+-              ) : (
+-                <p className="px-4 py-2.5 text-sm text-muted-foreground">{t('header.categories_empty')}</p>
++              {/* Категории и подкатегории */}
++              <div className="w-72 py-2 max-h-[70vh] overflow-y-auto">
++                {categoryTree.length > 0 ? (
++                  categoryTree.map((cat) => (
++                    <div key={cat.id}>
++                      <Link to={`/category/${cat.slug}`} onClick={() => setCatOpen(false)}
++                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors">
++                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
++                        {cat.name}
++                      </Link>
++                      {cat.children.map((sub) => (
++                        <Link key={sub.id} to={`/category/${sub.slug}`} onClick={() => setCatOpen(false)}
++                          className="flex items-center gap-2 pl-10 pr-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
++                          {sub.name}
++                        </Link>
++                      ))}
++                    </div>
++                  ))
++                ) : (
++                  <p className="px-4 py-2.5 text-sm text-muted-foreground">{t('header.categories_empty')}</p>
++                )}
++              </div>
++
++              {/* Бренды */}
++              {brands.length > 0 && (
++                <div className="w-56 py-2 border-l border-border max-h-[70vh] overflow-y-auto bg-muted/30">
++                  <p className="px-4 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
++                    {t('header.brands')}
++                  </p>
++                  {brands.map((brand) => (
++                    <Link key={brand.id} to={`/catalog?brand=${brand.id}`} onClick={() => setCatOpen(false)}
++                      className="flex items-center gap-2.5 px-4 py-2 text-sm hover:bg-muted transition-colors">
++                      {brand.logo ? (
++                        <img src={brand.logo} alt="" className="h-4 w-4 object-contain shrink-0" />
++                      ) : (
++                        <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
++                      )}
++                      {brand.name}
++                    </Link>
++                  ))}
++                </div>
+               )}
+             </div>
+           )}
+@@ -270,7 +332,7 @@ export default function Header() {
+               {t('header.nav_office')}
+             </Link>
+             <div className="h-5 w-px bg-border shrink-0 mx-1" />
+-            {categories.slice(0, 10).map((cat) => (
++            {categoryTree.slice(0, 10).map((cat) => (
+               <Link
+                 key={cat.id}
+                 to={`/category/${cat.slug}`}
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+index 78ed7be..cc464cf 100644
+--- a/src/i18n/locales/ru.json
++++ b/src/i18n/locales/ru.json
+@@ -31,6 +31,7 @@
+     "nav_contacts": "Контакты",
+     "categories": "Категории",
+     "categories_empty": "Категории скоро появятся",
++    "brands": "Бренды",
+     "search_aria": "Поиск",
+     "theme_toggle_aria": "Переключить тему",
+     "language_toggle_aria": "Сменить язык"
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+index 06f74cb..16bc0bb 100644
+--- a/src/i18n/locales/tg.json
++++ b/src/i18n/locales/tg.json
+@@ -31,6 +31,7 @@
+     "nav_contacts": "Тамос",
+     "categories": "Категорияҳо",
+     "categories_empty": "Категорияҳо ба зудӣ пайдо мешаванд",
++    "brands": "Брендҳо",
+     "search_aria": "Ҷустуҷӯ",
+     "theme_toggle_aria": "Иваз кардани мавзӯъ",
+     "language_toggle_aria": "Иваз кардани забон"
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index c549dd1..66bf5a8 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -26,6 +26,7 @@ export async function createCategory(input: {
+   name: string;
+   slug?: string;
+   image?: string;
++  parentId?: string | null;
+ }): Promise<Category> {
+   const slug = input.slug || slugify(input.name);
+   const { data, error } = await supabase
+@@ -34,6 +35,7 @@ export async function createCategory(input: {
+       name: input.name,
+       slug,
+       image: input.image || '',
++      parent_id: input.parentId || null,
+     })
+     .select()
+     .single();
+@@ -43,9 +45,14 @@ export async function createCategory(input: {
+ 
+ export async function updateCategory(
+   id: string,
+-  patch: Partial<{ name: string; slug: string; image: string }>
++  patch: Partial<{ name: string; slug: string; image: string; parentId: string | null }>
+ ): Promise<Category> {
+-  const { data, error } = await supabase.from('categories').update(patch).eq('id', id).select().single();
++  const dbPatch: Record<string, unknown> = {};
++  if (patch.name !== undefined) dbPatch.name = patch.name;
++  if (patch.slug !== undefined) dbPatch.slug = patch.slug;
++  if (patch.image !== undefined) dbPatch.image = patch.image;
++  if (patch.parentId !== undefined) dbPatch.parent_id = patch.parentId || null;
++  const { data, error } = await supabase.from('categories').update(dbPatch).eq('id', id).select().single();
+   if (error) throw error;
+   return rowToCategory(data);
+ }
+diff --git a/src/pages/CatalogPage.tsx b/src/pages/CatalogPage.tsx
+index 6a16c27..01cc6eb 100644
+--- a/src/pages/CatalogPage.tsx
++++ b/src/pages/CatalogPage.tsx
+@@ -38,7 +38,10 @@ export default function CatalogPage() {
+   const [page, setPage] = useState(1);
+   const [sort, setSort] = useState<SortOption>('featured');
+   const [selCategories, setSelCategories] = useState<string[]>([]);
+-  const [selBrands, setSelBrands] = useState<string[]>([]);
++  const [selBrands, setSelBrands] = useState<string[]>(() => {
++    const brandParam = searchParams.get('brand');
++    return brandParam ? [brandParam] : [];
++  });
+   // Безопасный дефолт до загрузки товаров — не отфильтровывает ничего.
+   // Реальные границы (0..макс. цена в каталоге) выставляются, как только придут данные.
+   const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
+diff --git a/src/pages/CategoryPage.tsx b/src/pages/CategoryPage.tsx
+index 8c59a13..f1d6316 100644
+--- a/src/pages/CategoryPage.tsx
++++ b/src/pages/CategoryPage.tsx
+@@ -28,16 +28,24 @@ export default function CategoryPage() {
+   }, []);
+ 
+   const category = categories.find((c) => c.slug === slug);
++  const parentCategory = category?.parentId ? categories.find((c) => c.id === category.parentId) : undefined;
++  const subcategories = useMemo(
++    () => (category ? categories.filter((c) => c.parentId === category.id) : []),
++    [category, categories]
++  );
+   const [page, setPage] = useState(1);
+   const [sort, setSort] = useState('featured');
+   const [selBrands, setSelBrands] = useState<string[]>([]);
+   // Безопасный дефолт до загрузки товаров — не отфильтровывает ничего.
+   const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
+ 
+-  const categoryRawProducts = useMemo(
+-    () => (category ? products.filter((p) => p.categoryId === category.id) : []),
+-    [category, products]
+-  );
++  const categoryRawProducts = useMemo(() => {
++    if (!category) return [];
++    // Если это родительская категория — показываем товары из неё самой
++    // и из всех подкатегорий сразу (обычная практика интернет-магазинов).
++    const relevantIds = new Set([category.id, ...subcategories.map((s) => s.id)]);
++    return products.filter((p) => relevantIds.has(p.categoryId));
++  }, [category, subcategories, products]);
+   const maxPrice = useMemo(
+     () => (categoryRawProducts.length ? Math.max(...categoryRawProducts.map((p) => p.price)) : 100000),
+     [categoryRawProducts]
+@@ -86,7 +94,11 @@ export default function CategoryPage() {
+         title={`${category.name} — купить в Душанбе | ENTER.TJ`}
+         description={`${category.name}: широкий выбор в интернет-магазине ENTER.TJ. Доставка по Душанбе и Таджикистану, официальная гарантия.`}
+       />
+-      <Breadcrumb items={[{ label: 'Категории', href: '/categories' }, { label: category.name }]} />
++      <Breadcrumb items={[
++        { label: 'Категории', href: '/categories' },
++        ...(parentCategory ? [{ label: parentCategory.name, href: `/category/${parentCategory.slug}` }] : []),
++        { label: category.name },
++      ]} />
+ 
+       {/* Banner */}
+       <div className="relative rounded-2xl overflow-hidden mt-4 mb-6 min-h-36 bg-secondary">
+@@ -97,6 +109,21 @@ export default function CategoryPage() {
+         </div>
+       </div>
+ 
++      {/* Подкатегории — только если у этой категории они есть */}
++      {subcategories.length > 0 && (
++        <div className="flex flex-wrap gap-2 mb-6">
++          {subcategories.map((sub) => (
++            <Link
++              key={sub.id}
++              to={`/category/${sub.slug}`}
++              className="px-4 py-2 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-sm font-medium transition-colors"
++            >
++              {sub.name}
++            </Link>
++          ))}
++        </div>
++      )}
++
+       <div className="flex gap-6">
+         {/* Sidebar */}
+         <aside className="hidden md:flex flex-col w-52 shrink-0">
+diff --git a/src/pages/admin/AdminCategories.tsx b/src/pages/admin/AdminCategories.tsx
+index 5452942..49e9e93 100644
+--- a/src/pages/admin/AdminCategories.tsx
++++ b/src/pages/admin/AdminCategories.tsx
+@@ -1,4 +1,4 @@
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useMemo } from 'react';
+ import { Plus, Pencil, Trash2, Check, Upload, X } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
+ import { Label } from '@/components/ui/label';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
++import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/supabaseData';
+ import type { Category } from '@/types';
+ import { toast } from 'sonner';
+@@ -26,6 +27,19 @@ export default function AdminCategories() {
+ 
+   useEffect(load, []);
+ 
++  // Родительские категории, сразу за каждой — её подкатегории (с отступом в таблице)
++  const sortedItems = useMemo(() => {
++    const topLevel = items.filter((c) => !c.parentId);
++    const result: Category[] = [];
++    topLevel.forEach((parent) => {
++      result.push(parent);
++      items.filter((c) => c.parentId === parent.id).forEach((child) => result.push(child));
++    });
++    // Подкатегории-сироты (родитель удалён/не найден) — в конец списком
++    const orphans = items.filter((c) => c.parentId && !topLevel.some((p) => p.id === c.parentId));
++    return [...result, ...orphans];
++  }, [items]);
++
+   const openNew = () => { setEditing(null); setDraft({ name: '', slug: '' }); setOpen(true); };
+   const openEdit = (c: Category) => { setEditing(c); setDraft({ ...c }); setOpen(true); };
+ 
+@@ -35,11 +49,11 @@ export default function AdminCategories() {
+     setSaving(true);
+     try {
+       if (editing) {
+-        const updated = await updateCategory(editing.id, { name: draft.name, slug: draft.slug, image: draft.image });
++        const updated = await updateCategory(editing.id, { name: draft.name, slug: draft.slug, image: draft.image, parentId: draft.parentId || null });
+         setItems((prev) => prev.map((c) => c.id === editing.id ? updated : c));
+         toast.success('Категория обновлена');
+       } else {
+-        const created = await createCategory({ name: draft.name, slug: draft.slug, image: draft.image });
++        const created = await createCategory({ name: draft.name, slug: draft.slug, image: draft.image, parentId: draft.parentId || null });
+         setItems((prev) => [...prev, created]);
+         toast.success('Категория добавлена');
+       }
+@@ -84,14 +98,15 @@ export default function AdminCategories() {
+               </tr>
+             </thead>
+             <tbody>
+-              {items.map((c) => (
++              {sortedItems.map((c) => (
+                 <tr key={c.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                   <td className="px-4 py-3">
+-                    <div className="flex items-center gap-3">
++                    <div className={`flex items-center gap-3 ${c.parentId ? 'pl-6' : ''}`}>
++                      {c.parentId && <span className="text-muted-foreground">↳</span>}
+                       <div className="h-9 w-9 rounded-lg overflow-hidden bg-muted shrink-0">
+                         <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
+                       </div>
+-                      <span className="font-medium">{c.name}</span>
++                      <span className={c.parentId ? 'text-sm' : 'font-medium'}>{c.name}</span>
+                     </div>
+                   </td>
+                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{c.slug}</td>
+@@ -133,6 +148,24 @@ export default function AdminCategories() {
+               <Label>Slug</Label>
+               <Input className="mt-1" value={draft.slug || ''} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="генерируется автоматически" />
+             </div>
++            <div>
++              <Label>Родительская категория</Label>
++              <Select
++                value={draft.parentId || 'none'}
++                onValueChange={(v) => setDraft({ ...draft, parentId: v === 'none' ? undefined : v })}
++              >
++                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
++                <SelectContent>
++                  <SelectItem value="none">Нет — категория верхнего уровня</SelectItem>
++                  {items
++                    .filter((c) => !c.parentId && c.id !== editing?.id)
++                    .map((c) => (
++                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
++                    ))}
++                </SelectContent>
++              </Select>
++              <p className="text-xs text-muted-foreground mt-1">Оставьте "Нет", чтобы создать обычную категорию, или выберите — чтобы создать подкатегорию.</p>
++            </div>
+             <div>
+               <Label>Изображение категории *</Label>
+               <div className="mt-1 border-2 border-dashed border-border rounded-lg p-3 bg-muted/30">
