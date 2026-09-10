@@ -67,21 +67,41 @@ export default function HomePage() {
                 className={`absolute inset-0 transition-opacity duration-700 ${i === bannerIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
               >
                 {hasText ? (
-                  <div className="relative w-full h-full">
-                    <img
-                      src={banner.image}
-                      alt={banner.title}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      loading={i === 0 ? 'eager' : 'lazy'}
-                      {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-secondary/85 via-secondary/50 to-transparent" />
-                    <div className="relative h-full flex flex-col justify-center gap-3 sm:gap-4 px-5 sm:px-8 md:px-12 py-8 max-w-xl">
-                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
+                  <div className="relative w-full h-full md:flex">
+                    {/* Фото — своя панель */}
+                    <div className="relative w-full h-full md:w-1/2">
+                      <img
+                        src={banner.image}
+                        alt={banner.title}
+                        className="w-full h-full object-cover"
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
+                      />
+                      {/* На мобильном текст ложится поверх фото — тут нужно затемнение */}
+                      <div className="md:hidden absolute inset-0 bg-gradient-to-t from-secondary via-secondary/60 to-transparent" />
+                      <div className="md:hidden absolute inset-0 flex flex-col justify-end gap-3 px-5 py-6">
+                        <h1 className="text-2xl font-black text-white leading-tight text-balance">
+                          {banner.title}
+                        </h1>
+                        {banner.subtitle && (
+                          <p className="text-sm text-white/80">{banner.subtitle}</p>
+                        )}
+                        <div className="flex flex-wrap gap-3">
+                          <Link to={banner.buttonLink}>
+                            <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold rounded-full">
+                              {banner.buttonText || 'Подробнее'} <ArrowRight className="h-4 w-4 ml-1" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Текст — отдельная панель, только на десктопе (фото отдельно, текст отдельно) */}
+                    <div className="hidden md:flex md:w-1/2 flex-col justify-center gap-4 px-10 lg:px-14 bg-secondary">
+                      <h1 className="text-3xl lg:text-4xl font-black text-white leading-tight text-balance">
                         {banner.title}
                       </h1>
                       {banner.subtitle && (
-                        <p className="text-sm sm:text-base text-white/80">{banner.subtitle}</p>
+                        <p className="text-base text-white/80 max-w-md">{banner.subtitle}</p>
                       )}
                       <div className="flex flex-wrap gap-3">
                         <Link to={banner.buttonLink}>
