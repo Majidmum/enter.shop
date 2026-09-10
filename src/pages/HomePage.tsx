@@ -73,8 +73,8 @@ export default function HomePage() {
                         src={banner.image}
                         alt={banner.title}
                         className="w-full h-full object-cover"
-                        fetchPriority={i === 0 ? 'high' : 'low'}
                         loading={i === 0 ? 'eager' : 'lazy'}
+                        {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-secondary/40" />
                     </div>
@@ -84,8 +84,8 @@ export default function HomePage() {
                         src={banner.image}
                         alt=""
                         className="md:hidden absolute inset-0 w-full h-full object-cover opacity-20"
-                        fetchPriority={i === 0 ? 'high' : 'low'}
                         loading={i === 0 ? 'eager' : 'lazy'}
+                        {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
                       />
                       <div className="relative flex flex-col gap-3 sm:gap-4">
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight text-balance">
@@ -113,8 +113,8 @@ export default function HomePage() {
                       src={banner.image}
                       alt=""
                       className="w-full h-full object-cover"
-                      fetchPriority={i === 0 ? 'high' : 'low'}
                       loading={i === 0 ? 'eager' : 'lazy'}
+                      {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
                     />
                   </Link>
                 )}
