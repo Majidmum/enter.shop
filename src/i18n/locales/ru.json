@@ -32,6 +32,7 @@
     "categories": "Категории",
     "categories_empty": "Категории скоро появятся",
     "brands": "Бренды",
+    "no_subcategories": "В этой категории пока нет подкатегорий",
     "search_aria": "Поиск",
     "theme_toggle_aria": "Переключить тему",
     "language_toggle_aria": "Сменить язык"

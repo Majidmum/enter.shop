@@ -1,0 +1,169 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index 6a949d5..bc90d00 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -72,6 +72,9 @@ export default function Header() {
+   const [catOpen, setCatOpen] = useState(false);
+   const [categories, setCategories] = useState<Category[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
++  // Какая категория слева сейчас "активна" (наведена/выбрана) — справа показываем её подкатегории.
++  // Специальное значение 'brands' — показывает список брендов вместо подкатегорий.
++  const [activeCatId, setActiveCatId] = useState<string | 'brands' | null>(null);
+ 
+   useEffect(() => {
+     fetchCategories().then(setCategories);
+@@ -87,6 +90,17 @@ export default function Header() {
+     }));
+   }, [categories]);
+ 
++  // По умолчанию, как только дерево загрузилось — подсвечиваем первую категорию (как у Uzum)
++  useEffect(() => {
++    if (categoryTree.length > 0 && activeCatId === null) {
++      setActiveCatId(categoryTree[0].id);
++    }
++  }, [categoryTree, activeCatId]);
++
++  const activeCategory = activeCatId && activeCatId !== 'brands'
++    ? categoryTree.find((c) => c.id === activeCatId)
++    : undefined;
++
+   const cartCount = useCartStore((s) => s.itemCount());
+   const favCount = useFavoritesStore((s) => s.items.length);
+   const { isAuthenticated, user } = useAuthStore();
+@@ -199,48 +213,79 @@ export default function Header() {
+               onMouseLeave={() => setCatOpen(false)}
+               className="absolute top-full left-0 mt-1 flex rounded-xl bg-card border border-border shadow-lg z-50 overflow-hidden"
+             >
+-              {/* Категории и подкатегории */}
+-              <div className="w-72 py-2 max-h-[70vh] overflow-y-auto">
++              {/* Левая колонка — список категорий верхнего уровня */}
++              <div className="w-64 py-2 max-h-[70vh] overflow-y-auto shrink-0 border-r border-border">
+                 {categoryTree.length > 0 ? (
+                   categoryTree.map((cat) => (
+-                    <div key={cat.id}>
+-                      <Link to={`/category/${cat.slug}`} onClick={() => setCatOpen(false)}
+-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors">
+-                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+-                        {cat.name}
+-                      </Link>
+-                      {cat.children.map((sub) => (
+-                        <Link key={sub.id} to={`/category/${sub.slug}`} onClick={() => setCatOpen(false)}
+-                          className="flex items-center gap-2 pl-10 pr-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+-                          {sub.name}
+-                        </Link>
+-                      ))}
+-                    </div>
++                    <Link
++                      key={cat.id}
++                      to={`/category/${cat.slug}`}
++                      onMouseEnter={() => setActiveCatId(cat.id)}
++                      onClick={() => setCatOpen(false)}
++                      className={`flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors ${
++                        activeCatId === cat.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'
++                      }`}
++                    >
++                      {cat.name}
++                      {cat.children.length > 0 && <ChevronDown className="h-3.5 w-3.5 -rotate-90 shrink-0" />}
++                    </Link>
+                   ))
+                 ) : (
+                   <p className="px-4 py-2.5 text-sm text-muted-foreground">{t('header.categories_empty')}</p>
+                 )}
++                {brands.length > 0 && (
++                  <button
++                    onMouseEnter={() => setActiveCatId('brands')}
++                    className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-left transition-colors border-t border-border mt-1 pt-3 ${
++                      activeCatId === 'brands' ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'
++                    }`}
++                  >
++                    {t('header.brands')}
++                    <ChevronDown className="h-3.5 w-3.5 -rotate-90 shrink-0" />
++                  </button>
++                )}
+               </div>
+ 
+-              {/* Бренды */}
+-              {brands.length > 0 && (
+-                <div className="w-56 py-2 border-l border-border max-h-[70vh] overflow-y-auto bg-muted/30">
+-                  <p className="px-4 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+-                    {t('header.brands')}
+-                  </p>
+-                  {brands.map((brand) => (
+-                    <Link key={brand.id} to={`/catalog?brand=${brand.id}`} onClick={() => setCatOpen(false)}
+-                      className="flex items-center gap-2.5 px-4 py-2 text-sm hover:bg-muted transition-colors">
+-                      {brand.logo ? (
+-                        <img src={brand.logo} alt="" className="h-4 w-4 object-contain shrink-0" />
+-                      ) : (
+-                        <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
+-                      )}
+-                      {brand.name}
++              {/* Правая панель — подкатегории активной категории, в несколько колонок */}
++              <div className="w-[520px] p-5 max-h-[70vh] overflow-y-auto">
++                {activeCatId === 'brands' ? (
++                  <>
++                    <p className="font-semibold text-sm mb-3">{t('header.brands')}</p>
++                    <div className="grid grid-cols-3 gap-x-4 gap-y-2">
++                      {brands.map((brand) => (
++                        <Link key={brand.id} to={`/catalog?brand=${brand.id}`} onClick={() => setCatOpen(false)}
++                          className="flex items-center gap-2 py-1 text-sm text-muted-foreground hover:text-primary transition-colors">
++                          {brand.logo ? (
++                            <img src={brand.logo} alt="" className="h-4 w-4 object-contain shrink-0" />
++                          ) : (
++                            <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
++                          )}
++                          {brand.name}
++                        </Link>
++                      ))}
++                    </div>
++                  </>
++                ) : activeCategory ? (
++                  <>
++                    <Link to={`/category/${activeCategory.slug}`} onClick={() => setCatOpen(false)}
++                      className="font-semibold text-sm mb-3 flex items-center gap-1 hover:text-primary transition-colors w-fit">
++                      {activeCategory.name} <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
+                     </Link>
+-                  ))}
+-                </div>
+-              )}
++                    {activeCategory.children.length > 0 ? (
++                      <div className="grid grid-cols-3 gap-x-4 gap-y-2">
++                        {activeCategory.children.map((sub) => (
++                          <Link key={sub.id} to={`/category/${sub.slug}`} onClick={() => setCatOpen(false)}
++                            className="py-1 text-sm text-muted-foreground hover:text-primary transition-colors">
++                            {sub.name}
++                          </Link>
++                        ))}
++                      </div>
++                    ) : (
++                      <p className="text-sm text-muted-foreground">{t('header.no_subcategories')}</p>
++                    )}
++                  </>
++                ) : null}
++              </div>
+             </div>
+           )}
+         </div>
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+index cc464cf..d7368b4 100644
+--- a/src/i18n/locales/ru.json
++++ b/src/i18n/locales/ru.json
+@@ -32,6 +32,7 @@
+     "categories": "Категории",
+     "categories_empty": "Категории скоро появятся",
+     "brands": "Бренды",
++    "no_subcategories": "В этой категории пока нет подкатегорий",
+     "search_aria": "Поиск",
+     "theme_toggle_aria": "Переключить тему",
+     "language_toggle_aria": "Сменить язык"
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+index 16bc0bb..e6f4bd9 100644
+--- a/src/i18n/locales/tg.json
++++ b/src/i18n/locales/tg.json
+@@ -32,6 +32,7 @@
+     "categories": "Категорияҳо",
+     "categories_empty": "Категорияҳо ба зудӣ пайдо мешаванд",
+     "brands": "Брендҳо",
++    "no_subcategories": "Дар ин категория ҳанӯз зеркатегория нест",
+     "search_aria": "Ҷустуҷӯ",
+     "theme_toggle_aria": "Иваз кардани мавзӯъ",
+     "language_toggle_aria": "Иваз кардани забон"

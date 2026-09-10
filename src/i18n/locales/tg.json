@@ -32,6 +32,7 @@
     "categories": "Категорияҳо",
     "categories_empty": "Категорияҳо ба зудӣ пайдо мешаванд",
     "brands": "Брендҳо",
+    "no_subcategories": "Дар ин категория ҳанӯз зеркатегория нест",
     "search_aria": "Ҷустуҷӯ",
     "theme_toggle_aria": "Иваз кардани мавзӯъ",
     "language_toggle_aria": "Иваз кардани забон"
