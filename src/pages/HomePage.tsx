@@ -175,7 +175,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+              
               <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.popular_products')}</h2>
             </div>
             <Link to="/catalog?sort=rating" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
