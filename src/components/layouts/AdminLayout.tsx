@@ -18,6 +18,7 @@ const navItems = [
   { href: '/admin/promotions', label: 'Акции',  icon: Megaphone },
   { href: '/admin/office', label: 'Офис под ключ', icon: Building2 },
   { href: '/admin/banners',    label: 'Баннеры',     icon: Image },
+  { href: '/admin/promo-campaigns', label: 'Рекламные акции', icon: Megaphone },
   { href: '/admin/reviews',    label: 'Отзывы',     icon: Star },
   { href: '/admin/settings', label: 'Настройки', icon: Settings },
 ];

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -9,10 +9,10 @@ import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/components/theme-provider';
-import { fetchCategories, fetchBrands, fetchProducts } from '@/lib/supabaseData';
+import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromotions } from '@/lib/supabaseData';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
-import type { Category, Brand, Product } from '@/types';
+import type { Category, Brand, Product, Promotion } from '@/types';
 
 function ThemeToggle({ className = '' }: { className?: string }) {
   const { t } = useTranslation();
@@ -74,12 +74,14 @@ export default function Header() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   // Какая категория слева сейчас "активна" (наведена/выбрана) — справа показываем её подкатегории.
   // Специальное значение 'brands' — показывает список брендов вместо подкатегорий.
   const [activeCatId, setActiveCatId] = useState<string | 'brands' | null>(null);
 
   useEffect(() => {
     fetchCategories().then(setCategories);
+    fetchActivePromotions().then(setActivePromotions);
     fetchBrands().then(setBrands);
     fetchProducts().then(setProducts);
   }, []);
@@ -408,7 +410,7 @@ export default function Header() {
       {/* Category pills row (desktop) — слева прокручиваемые категории, справа закреплённые ссылки */}
       <div className="hidden md:block border-t border-border">
         <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 overflow-x-auto min-w-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <Link
               to="/sale"
               className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold whitespace-nowrap"
@@ -424,19 +426,23 @@ export default function Header() {
               {t('header.nav_office')}
             </Link>
             <div className="h-5 w-px bg-border shrink-0 mx-1" />
-            {categoryTree.slice(0, 10).map((cat) => {
-              const Icon = getCategoryIcon(cat.name);
-              return (
-                <Link
-                  key={cat.id}
-                  to={`/category/${cat.slug}`}
-                  className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full hover:bg-muted hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {cat.name}
-                </Link>
-              );
-            })}
+            {/* Бегущая строка с акциями — вместо списка категорий */}
+            <div className="flex-1 min-w-0 overflow-hidden">
+              {activePromotions.length > 0 && (
+                <div className="flex items-center whitespace-nowrap w-max animate-[brand-scroll_30s_linear_infinite] hover:[animation-play-state:paused]">
+                  {[...activePromotions, ...activePromotions].map((promo, i) => (
+                    <Link
+                      key={`${promo.id}-${i}`}
+                      to="/sale"
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-5"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                      {promo.name} — скидка {promo.discount}%
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Закреплено у правого края, не прокручивается вместе с категориями */}

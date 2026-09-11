@@ -123,6 +123,17 @@ export interface Banner {
   status: 'active' | 'inactive';
 }
 
+export interface PromoCampaign {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  buttonText: string;
+  buttonLink: string;
+  order: number;
+  status: 'active' | 'inactive';
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;

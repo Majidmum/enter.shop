@@ -25,6 +25,7 @@ import AboutPage from '@/pages/AboutPage';
 import DeliveryPage from '@/pages/DeliveryPage';
 import ContactsPage from '@/pages/ContactsPage';
 import SalePage from '@/pages/SalePage';
+import CampaignsPage from '@/pages/CampaignsPage';
 import OfficePage from '@/pages/OfficePage';
 import NotFound from '@/pages/NotFound';
 
@@ -38,6 +39,7 @@ import AdminBrands from '@/pages/admin/AdminBrands';
 import AdminPromotions from '@/pages/admin/AdminPromotions';
 import AdminOfficePackages from '@/pages/admin/AdminOfficePackages';
 import AdminBanners from '@/pages/admin/AdminBanners';
+import AdminPromoCampaigns from '@/pages/admin/AdminPromoCampaigns';
 import AdminReviews from '@/pages/admin/AdminReviews';
 import AdminSettings from '@/pages/admin/AdminSettings';
 
@@ -67,6 +69,7 @@ const App: React.FC = () => {
           <Route path="delivery" element={<DeliveryPage />} />
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="sale" element={<SalePage />} />
+          <Route path="campaigns" element={<CampaignsPage />} />
           <Route path="office" element={<OfficePage />} />
         </Route>
 
@@ -88,6 +91,7 @@ const App: React.FC = () => {
           <Route path="promotions" element={<AdminPromotions />} />
           <Route path="office" element={<AdminOfficePackages />} />
           <Route path="banners" element={<AdminBanners />} />
+          <Route path="promo-campaigns" element={<AdminPromoCampaigns />} />
           <Route path="reviews" element={<AdminReviews />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

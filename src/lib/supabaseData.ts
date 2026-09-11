@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, Order, OrderStatus } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, Order, OrderStatus, PromoCampaign } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -659,6 +659,80 @@ export async function updateBanner(id: string, patch: Partial<BannerInput>): Pro
 
 export async function deleteBanner(id: string): Promise<void> {
   const { error } = await supabase.from('banners').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ============================================================================
+// РЕКЛАМНЫЕ АКЦИИ (отдельная страница /campaigns, не путать с promotions/sale)
+// ============================================================================
+
+function rowToPromoCampaign(row: any): PromoCampaign {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description || '',
+    image: row.image || '',
+    buttonText: row.button_text || '',
+    buttonLink: row.button_link || '/',
+    order: row.sort_order,
+    status: row.status,
+  };
+}
+
+/** Для админки — все кампании, включая выключенные. */
+export async function fetchPromoCampaigns(): Promise<PromoCampaign[]> {
+  const { data, error } = await supabase.from('promo_campaigns').select('*').order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(rowToPromoCampaign);
+}
+
+/** Для сайта — только включённые кампании. */
+export async function fetchActivePromoCampaigns(): Promise<PromoCampaign[]> {
+  const { data, error } = await supabase
+    .from('promo_campaigns')
+    .select('*')
+    .eq('status', 'active')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(rowToPromoCampaign);
+}
+
+export interface PromoCampaignInput {
+  title: string;
+  description?: string;
+  image?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  order?: number;
+  status?: 'active' | 'inactive';
+}
+
+function promoCampaignToDbPatch(input: Partial<PromoCampaignInput>) {
+  const patch: Record<string, unknown> = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.description !== undefined) patch.description = input.description;
+  if (input.image !== undefined) patch.image = input.image;
+  if (input.buttonText !== undefined) patch.button_text = input.buttonText;
+  if (input.buttonLink !== undefined) patch.button_link = input.buttonLink;
+  if (input.order !== undefined) patch.sort_order = input.order;
+  if (input.status !== undefined) patch.status = input.status;
+  return patch;
+}
+
+export async function createPromoCampaign(input: PromoCampaignInput): Promise<PromoCampaign> {
+  const { data, error } = await supabase.from('promo_campaigns').insert(promoCampaignToDbPatch(input)).select().single();
+  if (error) throw error;
+  return rowToPromoCampaign(data);
+}
+
+export async function updatePromoCampaign(id: string, patch: Partial<PromoCampaignInput>): Promise<PromoCampaign> {
+  const { data, error } = await supabase.from('promo_campaigns').update(promoCampaignToDbPatch(patch)).eq('id', id).select().single();
+  if (error) throw error;
+  return rowToPromoCampaign(data);
+}
+
+export async function deletePromoCampaign(id: string): Promise<void> {
+  const { error } = await supabase.from('promo_campaigns').delete().eq('id', id);
   if (error) throw error;
 }
 

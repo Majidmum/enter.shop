@@ -19,6 +19,7 @@ import AboutPage from '@/pages/AboutPage';
 import DeliveryPage from '@/pages/DeliveryPage';
 import ContactsPage from '@/pages/ContactsPage';
 import SalePage from '@/pages/SalePage';
+import CampaignsPage from '@/pages/CampaignsPage';
 import OfficePage from '@/pages/OfficePage';
 import NotFound from '@/pages/NotFound';
 
@@ -67,6 +68,7 @@ export const routes: RouteConfig[] = [
   { name: 'Delivery',         path: '/delivery',           element: <DeliveryPage />,     public: true },
   { name: 'Contacts',         path: '/contacts',           element: <ContactsPage />,     public: true },
   { name: 'Sale',             path: '/sale',               element: <SalePage />,         public: true },
+  { name: 'Campaigns',        path: '/campaigns',          element: <CampaignsPage />,    public: true },
   { name: 'Office',           path: '/office',             element: <OfficePage />,       public: true },
 
   // ── Admin layout wrapper ──
