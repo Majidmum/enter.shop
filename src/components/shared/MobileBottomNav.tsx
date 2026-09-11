@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 export default function MobileBottomNav() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const cartCount = useCartStore((s) => s.itemCount());
+  const cartCount = useCartStore((s) => s.items.length);
   const favCount = useFavoritesStore((s) => s.items.length);
   const user = useAuthStore((s) => s.user);
 

@@ -116,7 +116,7 @@ export default function Header() {
     ? categoryTree.find((c) => c.id === activeCatId)
     : undefined;
 
-  const cartCount = useCartStore((s) => s.itemCount());
+  const cartCount = useCartStore((s) => s.items.length);
   const favCount = useFavoritesStore((s) => s.items.length);
   const { isAuthenticated, user } = useAuthStore();
 
