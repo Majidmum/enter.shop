@@ -434,9 +434,13 @@ export default function Header() {
                     <Link
                       key={`${campaign.id}-${i}`}
                       to="/campaigns"
-                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-5"
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors px-5"
                     >
-                      <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                      {campaign.image ? (
+                        <img src={campaign.image} alt="" className="h-5 w-5 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                      )}
                       {campaign.title}
                     </Link>
                   ))}
