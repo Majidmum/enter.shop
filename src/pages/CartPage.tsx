@@ -49,17 +49,17 @@ export default function CartPage() {
                 <p className="text-base font-bold text-foreground mt-auto">{product.price.toLocaleString()} {t('common.currency')}</p>
               </div>
               <div className="flex flex-col items-end justify-between gap-2 shrink-0">
-                <button onClick={() => removeItem(product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                <button onClick={() => removeItem(product.id)} className="h-9 w-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
                 <div className="flex items-center border border-border rounded-lg overflow-hidden">
                   <button onClick={() => updateQuantity(product.id, quantity - 1)}
-                    className="flex h-8 w-8 items-center justify-center hover:bg-muted transition-colors">
+                    className="flex h-10 w-10 items-center justify-center hover:bg-muted transition-colors">
                     <Minus className="h-3.5 w-3.5" />
                   </button>
                   <span className="w-8 text-center text-sm font-medium">{quantity}</span>
                   <button onClick={() => updateQuantity(product.id, quantity + 1)}
-                    className="flex h-8 w-8 items-center justify-center hover:bg-muted transition-colors">
+                    className="flex h-10 w-10 items-center justify-center hover:bg-muted transition-colors">
                     <Plus className="h-3.5 w-3.5" />
                   </button>
                 </div>

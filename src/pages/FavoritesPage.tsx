@@ -50,9 +50,9 @@ export default function FavoritesPage() {
                   onClick={() => { addToCart(product); toast.success('Добавлено в корзину'); }}>
                   <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Купить
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => removeItem(product.id)}
-                  className="text-muted-foreground hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5" />
+                <Button size="icon" variant="outline" onClick={() => removeItem(product.id)}
+                  className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             </div>

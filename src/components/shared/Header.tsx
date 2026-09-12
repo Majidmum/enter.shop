@@ -22,7 +22,7 @@ function ThemeToggle({ className = '' }: { className?: string }) {
     <Button
       variant="ghost"
       size="icon"
-      className={`h-9 w-9 ${className}`}
+      className={`h-10 w-10 ${className}`}
       onClick={toggleTheme}
       aria-label={t('header.theme_toggle_aria')}
     >
@@ -41,7 +41,7 @@ function LanguageToggle({ className = '' }: { className?: string }) {
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9"
+        className="h-10 w-10"
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         aria-label={t('header.language_toggle_aria')}
@@ -167,7 +167,7 @@ export default function Header() {
         {/* Mobile menu trigger */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden shrink-0">
+            <Button variant="ghost" size="icon" className="h-10 w-10 md:hidden shrink-0">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -369,7 +369,7 @@ export default function Header() {
 
         {/* Mobile compact actions: search toggle + language + theme */}
         <div className="flex items-center gap-0.5 md:hidden shrink-0">
-          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileSearchOpen((v) => !v)} aria-label={t('header.search_aria')}>
+          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setMobileSearchOpen((v) => !v)} aria-label={t('header.search_aria')}>
             {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
           </Button>
           <LanguageToggle />
