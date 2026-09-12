@@ -15,6 +15,7 @@ import {
   fetchCategories, fetchBrands, fetchPromotions, updatePromotion,
 } from '@/lib/supabaseData';
 import type { Product, Category, Brand, Promotion } from '@/types';
+import { compressImageFile } from '@/lib/imageCompress';
 import { toast } from 'sonner';
 
 type ProductDraft = Partial<Product> & { name: string; price: number };
@@ -426,14 +427,9 @@ export default function AdminProducts() {
                         className="hidden"
                         onChange={(e) => {
                           Array.from(e.target.files || []).forEach((file) => {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const result = event.target?.result;
-                              if (typeof result === 'string') {
-                                setUploadedImages(prev => [...prev, result]);
-                              }
-                            };
-                            reader.readAsDataURL(file);
+                            compressImageFile(file)
+                              .then((compressed) => setUploadedImages((prev) => [...prev, compressed]))
+                              .catch(() => toast.error('Не удалось обработать изображение'));
                           });
                         }}
                       />
@@ -453,14 +449,9 @@ export default function AdminProducts() {
                       className="hidden"
                       onChange={(e) => {
                         Array.from(e.target.files || []).forEach((file) => {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const result = event.target?.result;
-                            if (typeof result === 'string') {
-                              setUploadedImages(prev => [...prev, result]);
-                            }
-                          };
-                          reader.readAsDataURL(file);
+                          compressImageFile(file)
+                            .then((compressed) => setUploadedImages((prev) => [...prev, compressed]))
+                            .catch(() => toast.error('Не удалось обработать изображение'));
                         });
                       }}
                     />

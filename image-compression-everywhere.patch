@@ -1,0 +1,233 @@
+diff --git a/src/lib/imageCompress.ts b/src/lib/imageCompress.ts
+new file mode 100644
+index 0000000..dd14aa3
+--- /dev/null
++++ b/src/lib/imageCompress.ts
+@@ -0,0 +1,39 @@
++/**
++ * Сжимает и уменьшает загруженное фото перед сохранением в базу.
++ * Без этого полноразмерное фото с телефона (несколько МБ) целиком
++ * превращается в base64-текст и грузится на каждой странице сайта.
++ *
++ * @param file исходный файл из <input type="file">
++ * @param maxSize максимальная ширина/высота в пикселях (пропорции сохраняются)
++ * @param quality качество JPEG-сжатия (0–1)
++ */
++export function compressImageFile(file: File, maxSize = 1600, quality = 0.82): Promise<string> {
++  return new Promise((resolve, reject) => {
++    const reader = new FileReader();
++    reader.onload = (e) => {
++      const img = new Image();
++      img.onload = () => {
++        let { width, height } = img;
++        if (width > maxSize || height > maxSize) {
++          const ratio = Math.min(maxSize / width, maxSize / height);
++          width = Math.round(width * ratio);
++          height = Math.round(height * ratio);
++        }
++        const canvas = document.createElement('canvas');
++        canvas.width = width;
++        canvas.height = height;
++        const ctx = canvas.getContext('2d');
++        if (!ctx) {
++          reject(new Error('Не удалось получить контекст canvas'));
++          return;
++        }
++        ctx.drawImage(img, 0, 0, width, height);
++        resolve(canvas.toDataURL('image/jpeg', quality));
++      };
++      img.onerror = () => reject(new Error('Не удалось загрузить изображение'));
++      img.src = e.target?.result as string;
++    };
++    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
++    reader.readAsDataURL(file);
++  });
++}
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index b286b74..77a0473 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -9,6 +9,7 @@ import ProductCard from '@/components/shared/ProductCard';
+ import ReviewCard from '@/components/shared/ReviewCard';
+ import Breadcrumb from '@/components/shared/Breadcrumb';
+ import { fetchProducts, fetchApprovedReviews, createReview, fetchActivePromotions } from '@/lib/supabaseData';
++import { compressImageFile } from '@/lib/imageCompress';
+ import { applyActivePromotions } from '@/lib/promotions';
+ import { useAuthStore } from '@/store/authStore';
+ import { useCartStore } from '@/store/cartStore';
+@@ -346,12 +347,9 @@ export default function ProductPage() {
+                         className="hidden"
+                         onChange={(e) => {
+                           Array.from(e.target.files || []).forEach((file) => {
+-                            const reader = new FileReader();
+-                            reader.onload = (event) => {
+-                              const result = event.target?.result;
+-                              if (typeof result === 'string') setReviewImages((prev) => [...prev, result]);
+-                            };
+-                            reader.readAsDataURL(file);
++                            compressImageFile(file, 1000, 0.8)
++                              .then((compressed) => setReviewImages((prev) => [...prev, compressed]))
++                              .catch(() => toast.error('Не удалось обработать изображение'));
+                           });
+                           e.target.value = '';
+                         }}
+diff --git a/src/pages/admin/AdminBanners.tsx b/src/pages/admin/AdminBanners.tsx
+index b1133c5..79a6cdd 100644
+--- a/src/pages/admin/AdminBanners.tsx
++++ b/src/pages/admin/AdminBanners.tsx
+@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { fetchBanners, createBanner, updateBanner, deleteBanner } from '@/lib/supabaseData';
++import { compressImageFile } from '@/lib/imageCompress';
+ import type { Banner } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -212,12 +213,9 @@ export default function AdminBanners() {
+                       onChange={(e) => {
+                         const file = e.target.files?.[0];
+                         if (!file) return;
+-                        const reader = new FileReader();
+-                        reader.onload = (event) => {
+-                          const result = event.target?.result;
+-                          if (typeof result === 'string') setDraft((prev) => ({ ...prev, image: result }));
+-                        };
+-                        reader.readAsDataURL(file);
++                        compressImageFile(file)
++                          .then((compressed) => setDraft((prev) => ({ ...prev, image: compressed })))
++                          .catch(() => toast.error('Не удалось обработать изображение'));
+                       }}
+                     />
+                   </label>
+diff --git a/src/pages/admin/AdminBrands.tsx b/src/pages/admin/AdminBrands.tsx
+index 529bfcb..57db068 100644
+--- a/src/pages/admin/AdminBrands.tsx
++++ b/src/pages/admin/AdminBrands.tsx
+@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/supabaseData';
++import { compressImageFile } from '@/lib/imageCompress';
+ import type { Brand } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -179,12 +180,9 @@ export default function AdminBrands() {
+                       onChange={(e) => {
+                         const file = e.target.files?.[0];
+                         if (!file) return;
+-                        const reader = new FileReader();
+-                        reader.onload = (event) => {
+-                          const result = event.target?.result;
+-                          if (typeof result === 'string') setDraft((prev) => ({ ...prev, logo: result }));
+-                        };
+-                        reader.readAsDataURL(file);
++                        compressImageFile(file, 400, 0.85)
++                          .then((compressed) => setDraft((prev) => ({ ...prev, logo: compressed })))
++                          .catch(() => toast.error('Не удалось обработать изображение'));
+                       }}
+                     />
+                   </label>
+diff --git a/src/pages/admin/AdminCategories.tsx b/src/pages/admin/AdminCategories.tsx
+index 49e9e93..d60af35 100644
+--- a/src/pages/admin/AdminCategories.tsx
++++ b/src/pages/admin/AdminCategories.tsx
+@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/supabaseData';
++import { compressImageFile } from '@/lib/imageCompress';
+ import type { Category } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -193,12 +194,9 @@ export default function AdminCategories() {
+                       onChange={(e) => {
+                         const file = e.target.files?.[0];
+                         if (!file) return;
+-                        const reader = new FileReader();
+-                        reader.onload = (event) => {
+-                          const result = event.target?.result;
+-                          if (typeof result === 'string') setDraft((prev) => ({ ...prev, image: result }));
+-                        };
+-                        reader.readAsDataURL(file);
++                        compressImageFile(file)
++                          .then((compressed) => setDraft((prev) => ({ ...prev, image: compressed })))
++                          .catch(() => toast.error('Не удалось обработать изображение'));
+                       }}
+                     />
+                   </label>
+diff --git a/src/pages/admin/AdminProducts.tsx b/src/pages/admin/AdminProducts.tsx
+index a6e85bd..7180ec8 100644
+--- a/src/pages/admin/AdminProducts.tsx
++++ b/src/pages/admin/AdminProducts.tsx
+@@ -15,6 +15,7 @@ import {
+   fetchCategories, fetchBrands, fetchPromotions, updatePromotion,
+ } from '@/lib/supabaseData';
+ import type { Product, Category, Brand, Promotion } from '@/types';
++import { compressImageFile } from '@/lib/imageCompress';
+ import { toast } from 'sonner';
+ 
+ type ProductDraft = Partial<Product> & { name: string; price: number };
+@@ -426,14 +427,9 @@ export default function AdminProducts() {
+                         className="hidden"
+                         onChange={(e) => {
+                           Array.from(e.target.files || []).forEach((file) => {
+-                            const reader = new FileReader();
+-                            reader.onload = (event) => {
+-                              const result = event.target?.result;
+-                              if (typeof result === 'string') {
+-                                setUploadedImages(prev => [...prev, result]);
+-                              }
+-                            };
+-                            reader.readAsDataURL(file);
++                            compressImageFile(file)
++                              .then((compressed) => setUploadedImages((prev) => [...prev, compressed]))
++                              .catch(() => toast.error('Не удалось обработать изображение'));
+                           });
+                         }}
+                       />
+@@ -453,14 +449,9 @@ export default function AdminProducts() {
+                       className="hidden"
+                       onChange={(e) => {
+                         Array.from(e.target.files || []).forEach((file) => {
+-                          const reader = new FileReader();
+-                          reader.onload = (event) => {
+-                            const result = event.target?.result;
+-                            if (typeof result === 'string') {
+-                              setUploadedImages(prev => [...prev, result]);
+-                            }
+-                          };
+-                          reader.readAsDataURL(file);
++                          compressImageFile(file)
++                            .then((compressed) => setUploadedImages((prev) => [...prev, compressed]))
++                            .catch(() => toast.error('Не удалось обработать изображение'));
+                         });
+                       }}
+                     />
+diff --git a/src/pages/admin/AdminPromoCampaigns.tsx b/src/pages/admin/AdminPromoCampaigns.tsx
+index 39268ab..4b4cedc 100644
+--- a/src/pages/admin/AdminPromoCampaigns.tsx
++++ b/src/pages/admin/AdminPromoCampaigns.tsx
+@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { fetchPromoCampaigns, createPromoCampaign, updatePromoCampaign, deletePromoCampaign } from '@/lib/supabaseData';
++import { compressImageFile } from '@/lib/imageCompress';
+ import type { PromoCampaign } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -206,12 +207,9 @@ export default function AdminPromoCampaigns() {
+                     <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                       const file = e.target.files?.[0];
+                       if (!file) return;
+-                      const reader = new FileReader();
+-                      reader.onload = (event) => {
+-                        const result = event.target?.result;
+-                        if (typeof result === 'string') setDraft((prev) => ({ ...prev, image: result }));
+-                      };
+-                      reader.readAsDataURL(file);
++                      compressImageFile(file)
++                        .then((compressed) => setDraft((prev) => ({ ...prev, image: compressed })))
++                        .catch(() => toast.error('Не удалось обработать изображение'));
+                     }} />
+                   </label>
+                 )}

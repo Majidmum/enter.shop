@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchBanners, createBanner, updateBanner, deleteBanner } from '@/lib/supabaseData';
+import { compressImageFile } from '@/lib/imageCompress';
 import type { Banner } from '@/types';
 import { toast } from 'sonner';
 
@@ -212,12 +213,9 @@ export default function AdminBanners() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const result = event.target?.result;
-                          if (typeof result === 'string') setDraft((prev) => ({ ...prev, image: result }));
-                        };
-                        reader.readAsDataURL(file);
+                        compressImageFile(file)
+                          .then((compressed) => setDraft((prev) => ({ ...prev, image: compressed })))
+                          .catch(() => toast.error('Не удалось обработать изображение'));
                       }}
                     />
                   </label>
