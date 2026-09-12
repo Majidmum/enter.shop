@@ -12,9 +12,10 @@ import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { ProductGridSkeleton } from '@/components/shared/Skeletons';
-import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+import { fetchProducts, fetchCategories, fetchBrands, fetchActivePromotions } from '@/lib/supabaseData';
+import { applyActivePromotions } from '@/lib/promotions';
 import PageMeta from '@/components/common/PageMeta';
-import type { Product, Category, Brand } from '@/types';
+import type { Product, Category, Brand, Promotion } from '@/types';
 
 const PAGE_SIZE = 12;
 
@@ -27,11 +28,12 @@ export default function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
-      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); })
+    Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchActivePromotions()])
+      .then(([p, c, b, promos]) => { setProducts(p); setCategories(c); setBrands(b); setActivePromotions(promos); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -62,7 +64,7 @@ export default function CatalogPage() {
   }, [products.length, maxPrice]);
 
   const filtered = useMemo(() => {
-    let list = [...products];
+    let list = applyActivePromotions(products, activePromotions);
     if (searchQuery) list = list.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
     if (selCategories.length) list = list.filter((p) => selCategories.includes(p.categoryId));
     if (selBrands.length) list = list.filter((p) => selBrands.includes(p.brandId));
@@ -78,7 +80,7 @@ export default function CatalogPage() {
       default: list.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
     }
     return list;
-  }, [searchQuery, selCategories, selBrands, priceRange, onlyInStock, onlyDiscount, sort]);
+  }, [products, activePromotions, searchQuery, selCategories, selBrands, priceRange, onlyInStock, onlyDiscount, sort]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

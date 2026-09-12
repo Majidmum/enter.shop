@@ -7,6 +7,7 @@ import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { Badge } from '@/components/ui/badge';
 import { fetchProducts, fetchActivePromotions } from '@/lib/supabaseData';
+import { applyActivePromotions } from '@/lib/promotions';
 import PageMeta from '@/components/common/PageMeta';
 import { ProductGridSkeleton } from '@/components/shared/Skeletons';
 import type { Product, Promotion } from '@/types';
@@ -25,19 +26,8 @@ export default function SalePage() {
     fetchActivePromotions().then(setActivePromotions);
   }, []);
 
-  // Товар попадает в распродажу, если у него либо своя скидка (product.discount),
-  // либо он отмечен в productIds какой-то активной акции — тогда берём скидку
-  // самой выгодной из таких акций как "эффективную" для отображения и сортировки.
-  const saleProducts = products
-    .map((p) => {
-      if (p.discount) return p;
-      const promoDiscounts = activePromotions
-        .filter((promo) => promo.productIds.includes(p.id))
-        .map((promo) => promo.discount);
-      if (promoDiscounts.length === 0) return null;
-      return { ...p, discount: Math.max(...promoDiscounts) };
-    })
-    .filter((p): p is Product => !!p)
+  const saleProducts = applyActivePromotions(products, activePromotions)
+    .filter((p) => !!p.discount)
     .sort((a, b) => {
       if (sort === 'discount') return (b.discount || 0) - (a.discount || 0);
       if (sort === 'price-asc') return a.price - b.price;

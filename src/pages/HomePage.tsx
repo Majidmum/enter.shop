@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
-import { fetchProducts, fetchBrands, fetchApprovedReviews, fetchActiveBanners } from '@/lib/supabaseData';
+import { fetchProducts, fetchBrands, fetchApprovedReviews, fetchActiveBanners, fetchActivePromotions } from '@/lib/supabaseData';
+import { applyActivePromotions } from '@/lib/promotions';
 import PageMeta from '@/components/common/PageMeta';
 import { ProductGridSkeleton } from '@/components/shared/Skeletons';
-import type { Product, Brand, Review, Banner } from '@/types';
+import type { Product, Brand, Review, Banner, Promotion } from '@/types';
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -16,24 +17,27 @@ export default function HomePage() {
   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [activeBanners, setActiveBanners] = useState<Banner[]>([]);
+  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews(), fetchActiveBanners()])
-      .then(([p, b, r, banners]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); setActiveBanners(banners); })
+    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews(), fetchActiveBanners(), fetchActivePromotions()])
+      .then(([p, b, r, banners, promos]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); setActiveBanners(banners); setActivePromotions(promos); })
       .finally(() => setProductsLoading(false));
   }, []);
+
+  const displayProducts = applyActivePromotions(products, activePromotions);
 
   const [bannerIdx, setBannerIdx] = useState(0);
 
   // "Популярные товары" — на основе реальной оценки и количества отзывов,
   // а не ручного флажка. Чем выше рейтинг и чем больше отзывов — тем выше в списке.
-  const popularProducts = [...products]
+  const popularProducts = [...displayProducts]
     .filter((p) => p.status === 'active')
     .sort((a, b) => (b.rating - a.rating) || (b.reviewCount - a.reviewCount))
     .slice(0, 8);
 
   // "Новинки" — управляется администратором вручную (переключатель в форме товара)
-  const newProducts = products.filter((p) => p.isNew && p.status === 'active').slice(0, 8);
+  const newProducts = displayProducts.filter((p) => p.isNew && p.status === 'active').slice(0, 8);
 
   useEffect(() => {
     const t = setInterval(() => setBannerIdx((i) => (i + 1) % activeBanners.length), 5000);

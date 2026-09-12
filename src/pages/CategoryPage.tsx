@@ -8,9 +8,10 @@ import ProductCard from '@/components/shared/ProductCard';
 import Pagination from '@/components/shared/Pagination';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { ProductGridSkeleton } from '@/components/shared/Skeletons';
-import { fetchProducts, fetchCategories, fetchBrands } from '@/lib/supabaseData';
+import { fetchProducts, fetchCategories, fetchBrands, fetchActivePromotions } from '@/lib/supabaseData';
+import { applyActivePromotions } from '@/lib/promotions';
 import PageMeta from '@/components/common/PageMeta';
-import type { Product, Category, Brand } from '@/types';
+import type { Product, Category, Brand, Promotion } from '@/types';
 
 const PAGE_SIZE = 12;
 
@@ -20,11 +21,12 @@ export default function CategoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
-      .then(([p, c, b]) => { setProducts(p); setCategories(c); setBrands(b); })
+    Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchActivePromotions()])
+      .then(([p, c, b, promos]) => { setProducts(p); setCategories(c); setBrands(b); setActivePromotions(promos); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -48,8 +50,8 @@ export default function CategoryPage() {
     // Если это родительская категория — показываем товары из неё самой
     // и из всех подкатегорий сразу (обычная практика интернет-магазинов).
     const relevantIds = new Set([category.id, ...subcategories.map((s) => s.id)]);
-    return products.filter((p) => relevantIds.has(p.categoryId));
-  }, [category, subcategories, products]);
+    return applyActivePromotions(products, activePromotions).filter((p) => relevantIds.has(p.categoryId));
+  }, [category, subcategories, products, activePromotions]);
   const maxPrice = useMemo(
     () => (categoryRawProducts.length ? Math.max(...categoryRawProducts.map((p) => p.price)) : 100000),
     [categoryRawProducts]

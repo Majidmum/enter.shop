@@ -84,7 +84,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
         <div className="flex items-baseline gap-1.5 flex-wrap">
           <span className="text-sm sm:text-base font-bold text-foreground">{product.price.toLocaleString()} сом.</span>
           {product.oldPrice && (
-            <span className="text-[11px] text-muted-foreground line-through">{product.oldPrice.toLocaleString()}</span>
+            <span className="text-[11px] text-destructive line-through">{product.oldPrice.toLocaleString()}</span>
           )}
         </div>
 

@@ -8,19 +8,21 @@ import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/shared/ProductCard';
 import ReviewCard from '@/components/shared/ReviewCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
-import { fetchProducts, fetchApprovedReviews, createReview } from '@/lib/supabaseData';
+import { fetchProducts, fetchApprovedReviews, createReview, fetchActivePromotions } from '@/lib/supabaseData';
+import { applyActivePromotions } from '@/lib/promotions';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { toast } from 'sonner';
 import PageMeta from '@/components/common/PageMeta';
 import { ProductDetailSkeleton } from '@/components/shared/Skeletons';
-import type { Product, Review } from '@/types';
+import type { Product, Review, Promotion } from '@/types';
 
 export default function ProductPage() {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
+  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -35,9 +37,10 @@ export default function ProductPage() {
 
   useEffect(() => {
     fetchProducts().then(setProducts).finally(() => setLoading(false));
+    fetchActivePromotions().then(setActivePromotions);
   }, []);
 
-  const product = products.find((p) => p.slug === slug);
+  const product = applyActivePromotions(products, activePromotions).find((p) => p.slug === slug);
 
   useEffect(() => {
     if (!product) return;
