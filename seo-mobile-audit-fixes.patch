@@ -1,0 +1,316 @@
+diff --git a/public/sitemap.xml b/public/sitemap.xml
+index 9cecd16..6ea5d05 100644
+--- a/public/sitemap.xml
++++ b/public/sitemap.xml
+@@ -20,6 +20,11 @@
+     <changefreq>daily</changefreq>
+     <priority>0.8</priority>
+   </url>
++  <url>
++    <loc>https://enter.tj/campaigns</loc>
++    <changefreq>daily</changefreq>
++    <priority>0.7</priority>
++  </url>
+   <url>
+     <loc>https://enter.tj/office</loc>
+     <changefreq>weekly</changefreq>
+diff --git a/src/components/common/PageMeta.tsx b/src/components/common/PageMeta.tsx
+index 92ec431..15014da 100644
+--- a/src/components/common/PageMeta.tsx
++++ b/src/components/common/PageMeta.tsx
+@@ -9,29 +9,45 @@ const PageMeta = ({
+   description,
+   noIndex = false,
+   ogImage = DEFAULT_OG_IMAGE,
++  canonicalPath,
++  jsonLd,
+ }: {
+   title: string;
+   description: string;
+   /** Для служебных/приватных страниц (корзина, вход, чекаут), которым не нужно попадать в поиск. */
+   noIndex?: boolean;
+   ogImage?: string;
+-}) => (
+-  <Helmet>
+-    <title>{title}</title>
+-    <meta name="description" content={description} />
+-    {noIndex ? (
+-      <meta name="robots" content="noindex, nofollow" />
+-    ) : (
+-      <meta name="robots" content="index, follow" />
+-    )}
+-    {/* Open Graph — как ссылка выглядит при шаринге в соцсетях/мессенджерах */}
+-    <meta property="og:site_name" content={SITE_NAME} />
+-    <meta property="og:title" content={title} />
+-    <meta property="og:description" content={description} />
+-    <meta property="og:image" content={ogImage} />
+-    <meta property="og:type" content="website" />
+-  </Helmet>
+-);
++  /** Путь без домена, например "/catalog" — для тега canonical. */
++  canonicalPath?: string;
++  /** Один объект или массив объектов структурированных данных Schema.org (Product, BreadcrumbList и т.д.) */
++  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
++}) => {
++  const jsonLdArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
++
++  return (
++    <Helmet>
++      <title>{title}</title>
++      <meta name="description" content={description} />
++      {canonicalPath && <link rel="canonical" href={`https://enter.tj${canonicalPath}`} />}
++      {noIndex ? (
++        <meta name="robots" content="noindex, nofollow" />
++      ) : (
++        <meta name="robots" content="index, follow" />
++      )}
++      {/* Open Graph — как ссылка выглядит при шаринге в соцсетях/мессенджерах */}
++      <meta property="og:site_name" content={SITE_NAME} />
++      <meta property="og:title" content={title} />
++      <meta property="og:description" content={description} />
++      <meta property="og:image" content={ogImage} />
++      <meta property="og:type" content="website" />
++      {jsonLdArray.map((schema, i) => (
++        <script key={i} type="application/ld+json">
++          {JSON.stringify(schema)}
++        </script>
++      ))}
++    </Helmet>
++  );
++};
+ 
+ export const AppWrapper = ({ children }: { children: React.ReactNode }) => (
+   <HelmetProvider>
+diff --git a/src/components/shared/Breadcrumb.tsx b/src/components/shared/Breadcrumb.tsx
+index f9264fb..a08fece 100644
+--- a/src/components/shared/Breadcrumb.tsx
++++ b/src/components/shared/Breadcrumb.tsx
+@@ -1,4 +1,5 @@
+ import { Link } from 'react-router-dom';
++import { Helmet } from 'react-helmet-async';
+ import { ChevronRight, Home } from 'lucide-react';
+ 
+ export interface BreadcrumbItem {
+@@ -8,11 +9,31 @@ export interface BreadcrumbItem {
+ 
+ interface BreadcrumbProps {
+   items: BreadcrumbItem[];
++  /** Добавить структурированные данные BreadcrumbList (Schema.org) для этой цепочки — помогает поиску показывать её прямо в выдаче. */
++  jsonLd?: boolean;
+ }
+ 
+-export default function Breadcrumb({ items }: BreadcrumbProps) {
++export default function Breadcrumb({ items, jsonLd = false }: BreadcrumbProps) {
++  const allItems = [{ label: 'Главная', href: '/' }, ...items];
++
+   return (
+     <nav className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
++      {jsonLd && (
++        <Helmet>
++          <script type="application/ld+json">
++            {JSON.stringify({
++              '@context': 'https://schema.org',
++              '@type': 'BreadcrumbList',
++              itemListElement: allItems.map((item, i) => ({
++                '@type': 'ListItem',
++                position: i + 1,
++                name: item.label,
++                ...(item.href ? { item: `https://enter.tj${item.href}` } : {}),
++              })),
++            })}
++          </script>
++        </Helmet>
++      )}
+       <Link to="/" className="flex items-center gap-1 hover:text-primary transition-colors shrink-0">
+         <Home className="h-3.5 w-3.5" />
+         <span>Главная</span>
+diff --git a/src/index.css b/src/index.css
+index 3c06fb2..aa65110 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -116,10 +116,19 @@
+     scrollbar-color: hsl(var(--border)) transparent;
+   }
+ 
++  html {
++    /* Страховка от горизонтальной прокрутки на мобильных — если какой-то
++       элемент случайно окажется шире экрана, это не сломает всю страницу вбок. */
++    overflow-x: hidden;
++    width: 100%;
++  }
++
+   body {
+     @apply bg-background text-foreground;
+     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+     -webkit-font-smoothing: antialiased;
++    overflow-x: hidden;
++    width: 100%;
+   }
+ 
+   h1, h2, h3, h4, h5, h6 {
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index 9b90162..af7e822 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -129,6 +129,7 @@ function rowToProduct(row: any): Product {
+     sku: row.sku,
+     categoryId: row.category_id || '',
+     categoryName: row.categories?.name || '',
++    categorySlug: row.categories?.slug || '',
+     brandId: row.brand_id || '',
+     brandName: row.brands?.name || '',
+     price: Number(row.price),
+@@ -146,7 +147,7 @@ function rowToProduct(row: any): Product {
+   };
+ }
+ 
+-const PRODUCT_SELECT = '*, categories(name), brands(name)';
++const PRODUCT_SELECT = '*, categories(name, slug), brands(name)';
+ 
+ export async function fetchProducts(): Promise<Product[]> {
+   const { data, error } = await supabase
+diff --git a/src/pages/CategoryPage.tsx b/src/pages/CategoryPage.tsx
+index fccb144..e518aa9 100644
+--- a/src/pages/CategoryPage.tsx
++++ b/src/pages/CategoryPage.tsx
+@@ -99,12 +99,13 @@ export default function CategoryPage() {
+       <PageMeta
+         title={`${category.name} — купить в Душанбе | ENTER.TJ`}
+         description={`${category.name}: широкий выбор в интернет-магазине ENTER.TJ. Доставка по Душанбе и Таджикистану, официальная гарантия.`}
++        canonicalPath={`/category/${category.slug}`}
+       />
+       <Breadcrumb items={[
+         { label: 'Категории', href: '/categories' },
+         ...(parentCategory ? [{ label: parentCategory.name, href: `/category/${parentCategory.slug}` }] : []),
+         { label: category.name },
+-      ]} />
++      ]} jsonLd />
+ 
+       {/* Banner */}
+       <div className="relative rounded-2xl overflow-hidden mt-4 mb-6 min-h-36 bg-secondary">
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 6fbc662..84961f1 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -59,8 +59,34 @@ export default function HomePage() {
+       <PageMeta
+         title={t('home.meta_title')}
+         description={t('home.meta_description')}
++        canonicalPath="/"
++        jsonLd={[
++          {
++            '@context': 'https://schema.org',
++            '@type': 'Organization',
++            name: 'ENTER.TJ',
++            url: 'https://enter.tj',
++            logo: 'https://enter.tj/enter-logo-white-bg.png',
++            contactPoint: {
++              '@type': 'ContactPoint',
++              telephone: '+992-555-000-070',
++              contactType: 'customer service',
++              areaServed: 'TJ',
++            },
++          },
++          {
++            '@context': 'https://schema.org',
++            '@type': 'WebSite',
++            name: 'ENTER.TJ',
++            url: 'https://enter.tj',
++          },
++        ]}
+       />
+       {/* Hero Banner — единая раскладка на всех экранах: фото + градиент + текст поверх */}
++      {/* Один настоящий h1 страницы — всегда есть, даже если у активного баннера
++          нет заголовка (у нас баннер может быть просто фото без текста). */}
++      <h1 className="sr-only">ENTER.TJ — компьютерная техника и офисная мебель в Душанбе</h1>
++
+       <section className="container mx-auto px-4 pt-4 md:pt-6">
+         <div className="relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
+           {activeBanners.map((banner, i) => {
+@@ -84,9 +110,9 @@ export default function HomePage() {
+                       {/* На мобильном текст ложится поверх фото — тут нужно затемнение */}
+                       <div className="md:hidden absolute inset-0 bg-gradient-to-t from-secondary via-secondary/60 to-transparent" />
+                       <div className="md:hidden absolute inset-0 flex flex-col justify-end gap-3 px-5 py-6">
+-                        <h1 className="text-2xl font-black text-white leading-tight text-balance">
++                        <p className="text-2xl font-black text-white leading-tight text-balance">
+                           {banner.title}
+-                        </h1>
++                        </p>
+                         {banner.subtitle && (
+                           <p className="text-sm text-white/80">{banner.subtitle}</p>
+                         )}
+@@ -101,9 +127,9 @@ export default function HomePage() {
+                     </div>
+                     {/* Текст — отдельная панель, только на десктопе (фото отдельно, текст отдельно) */}
+                     <div className="hidden md:flex md:w-1/2 flex-col justify-center gap-4 px-10 lg:px-14 bg-secondary">
+-                      <h1 className="text-3xl lg:text-4xl font-black text-white leading-tight text-balance">
++                      <p className="text-3xl lg:text-4xl font-black text-white leading-tight text-balance">
+                         {banner.title}
+-                      </h1>
++                      </p>
+                       {banner.subtitle && (
+                         <p className="text-base text-white/80 max-w-md">{banner.subtitle}</p>
+                       )}
+diff --git a/src/pages/ProductPage.tsx b/src/pages/ProductPage.tsx
+index 77a0473..b4c68a7 100644
+--- a/src/pages/ProductPage.tsx
++++ b/src/pages/ProductPage.tsx
+@@ -114,12 +114,41 @@ export default function ProductPage() {
+         title={t('product.meta_title', { name: product.name, price: product.price.toLocaleString() })}
+         description={(product.description || t('product.meta_description_fallback', { name: product.name, brand: product.brandName })).slice(0, 160)}
+         ogImage={product.images[0]}
++        canonicalPath={`/product/${product.slug}`}
++        jsonLd={{
++          '@context': 'https://schema.org',
++          '@type': 'Product',
++          name: product.name,
++          image: product.images,
++          description: product.description || undefined,
++          sku: product.sku,
++          brand: { '@type': 'Brand', name: product.brandName },
++          offers: {
++            '@type': 'Offer',
++            url: `https://enter.tj/product/${product.slug}`,
++            priceCurrency: 'TJS',
++            price: product.price,
++            availability: product.stock > 0
++              ? 'https://schema.org/InStock'
++              : 'https://schema.org/OutOfStock',
++          },
++          ...(product.reviewCount > 0 && {
++            aggregateRating: {
++              '@type': 'AggregateRating',
++              ratingValue: product.rating,
++              reviewCount: product.reviewCount,
++            },
++          }),
++        }}
++      />
++      <Breadcrumb
++        items={[
++          { label: t('common.catalog'), href: '/catalog' },
++          { label: product.categoryName, href: product.categorySlug ? `/category/${product.categorySlug}` : '/catalog' },
++          { label: product.name },
++        ]}
++        jsonLd
+       />
+-      <Breadcrumb items={[
+-        { label: t('common.catalog'), href: '/catalog' },
+-        { label: product.categoryName, href: `/category/${product.slug.split('-')[0]}` },
+-        { label: product.name },
+-      ]} />
+ 
+       <div className="mt-5 sm:mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+         {/* Gallery */}
+diff --git a/src/types/index.ts b/src/types/index.ts
+index ef471ad..38134c9 100644
+--- a/src/types/index.ts
++++ b/src/types/index.ts
+@@ -28,6 +28,7 @@ export interface Product {
+   sku: string;
+   categoryId: string;
+   categoryName: string;
++  categorySlug: string;
+   brandId: string;
+   brandName: string;
+   price: number;

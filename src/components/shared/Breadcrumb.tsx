@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ChevronRight, Home } from 'lucide-react';
 
 export interface BreadcrumbItem {
@@ -8,11 +9,31 @@ export interface BreadcrumbItem {
 
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
+  /** Добавить структурированные данные BreadcrumbList (Schema.org) для этой цепочки — помогает поиску показывать её прямо в выдаче. */
+  jsonLd?: boolean;
 }
 
-export default function Breadcrumb({ items }: BreadcrumbProps) {
+export default function Breadcrumb({ items, jsonLd = false }: BreadcrumbProps) {
+  const allItems = [{ label: 'Главная', href: '/' }, ...items];
+
   return (
     <nav className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
+      {jsonLd && (
+        <Helmet>
+          <script type="application/ld+json">
+            {JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: allItems.map((item, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                name: item.label,
+                ...(item.href ? { item: `https://enter.tj${item.href}` } : {}),
+              })),
+            })}
+          </script>
+        </Helmet>
+      )}
       <Link to="/" className="flex items-center gap-1 hover:text-primary transition-colors shrink-0">
         <Home className="h-3.5 w-3.5" />
         <span>Главная</span>

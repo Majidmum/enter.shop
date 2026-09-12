@@ -28,6 +28,7 @@ export interface Product {
   sku: string;
   categoryId: string;
   categoryName: string;
+  categorySlug: string;
   brandId: string;
   brandName: string;
   price: number;

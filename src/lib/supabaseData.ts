@@ -129,6 +129,7 @@ function rowToProduct(row: any): Product {
     sku: row.sku,
     categoryId: row.category_id || '',
     categoryName: row.categories?.name || '',
+    categorySlug: row.categories?.slug || '',
     brandId: row.brand_id || '',
     brandName: row.brands?.name || '',
     price: Number(row.price),
@@ -146,7 +147,7 @@ function rowToProduct(row: any): Product {
   };
 }
 
-const PRODUCT_SELECT = '*, categories(name), brands(name)';
+const PRODUCT_SELECT = '*, categories(name, slug), brands(name)';
 
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase

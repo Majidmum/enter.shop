@@ -114,12 +114,41 @@ export default function ProductPage() {
         title={t('product.meta_title', { name: product.name, price: product.price.toLocaleString() })}
         description={(product.description || t('product.meta_description_fallback', { name: product.name, brand: product.brandName })).slice(0, 160)}
         ogImage={product.images[0]}
+        canonicalPath={`/product/${product.slug}`}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.name,
+          image: product.images,
+          description: product.description || undefined,
+          sku: product.sku,
+          brand: { '@type': 'Brand', name: product.brandName },
+          offers: {
+            '@type': 'Offer',
+            url: `https://enter.tj/product/${product.slug}`,
+            priceCurrency: 'TJS',
+            price: product.price,
+            availability: product.stock > 0
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/OutOfStock',
+          },
+          ...(product.reviewCount > 0 && {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: product.rating,
+              reviewCount: product.reviewCount,
+            },
+          }),
+        }}
       />
-      <Breadcrumb items={[
-        { label: t('common.catalog'), href: '/catalog' },
-        { label: product.categoryName, href: `/category/${product.slug.split('-')[0]}` },
-        { label: product.name },
-      ]} />
+      <Breadcrumb
+        items={[
+          { label: t('common.catalog'), href: '/catalog' },
+          { label: product.categoryName, href: product.categorySlug ? `/category/${product.categorySlug}` : '/catalog' },
+          { label: product.name },
+        ]}
+        jsonLd
+      />
 
       <div className="mt-5 sm:mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         {/* Gallery */}

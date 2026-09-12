@@ -99,12 +99,13 @@ export default function CategoryPage() {
       <PageMeta
         title={`${category.name} — купить в Душанбе | ENTER.TJ`}
         description={`${category.name}: широкий выбор в интернет-магазине ENTER.TJ. Доставка по Душанбе и Таджикистану, официальная гарантия.`}
+        canonicalPath={`/category/${category.slug}`}
       />
       <Breadcrumb items={[
         { label: 'Категории', href: '/categories' },
         ...(parentCategory ? [{ label: parentCategory.name, href: `/category/${parentCategory.slug}` }] : []),
         { label: category.name },
-      ]} />
+      ]} jsonLd />
 
       {/* Banner */}
       <div className="relative rounded-2xl overflow-hidden mt-4 mb-6 min-h-36 bg-secondary">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/components/theme-provider';
 import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromoCampaigns } from '@/lib/supabaseData';
 import { getCategoryIcon } from '@/lib/categoryIcons';
+import { useCityStore } from '@/store/cityStore';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
 import type { Category, Brand, Product, PromoCampaign } from '@/types';
 
@@ -70,6 +71,7 @@ export default function Header() {
   const [query, setQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const { city, reopen } = useCityStore();
   const [catOpen, setCatOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -145,7 +147,14 @@ export default function Header() {
       {/* Top bar (desktop only) */}
       <div className="bg-secondary text-white/70 text-xs hidden md:block">
         <div className="container mx-auto px-4 flex items-center justify-between h-8">
-          <span>{t('header.location_line')}</span>
+          <button
+            type="button"
+            onClick={reopen}
+            className="flex items-center gap-1 hover:text-white transition-colors"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            {t('header.location_line', { city: city || 'Душанбе' })}
+          </button>
           <div className="flex items-center gap-4">
             <a href="tel:+992555000070" className="hover:text-white transition-colors">+992 555 000 070</a>
             <Link to="/delivery" className="hover:text-white transition-colors">{t('header.delivery')}</Link>

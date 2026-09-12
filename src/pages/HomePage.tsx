@@ -59,8 +59,34 @@ export default function HomePage() {
       <PageMeta
         title={t('home.meta_title')}
         description={t('home.meta_description')}
+        canonicalPath="/"
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'ENTER.TJ',
+            url: 'https://enter.tj',
+            logo: 'https://enter.tj/enter-logo-white-bg.png',
+            contactPoint: {
+              '@type': 'ContactPoint',
+              telephone: '+992-555-000-070',
+              contactType: 'customer service',
+              areaServed: 'TJ',
+            },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'ENTER.TJ',
+            url: 'https://enter.tj',
+          },
+        ]}
       />
       {/* Hero Banner — единая раскладка на всех экранах: фото + градиент + текст поверх */}
+      {/* Один настоящий h1 страницы — всегда есть, даже если у активного баннера
+          нет заголовка (у нас баннер может быть просто фото без текста). */}
+      <h1 className="sr-only">ENTER.TJ — компьютерная техника и офисная мебель в Душанбе</h1>
+
       <section className="container mx-auto px-4 pt-4 md:pt-6">
         <div className="relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
           {activeBanners.map((banner, i) => {
@@ -84,9 +110,9 @@ export default function HomePage() {
                       {/* На мобильном текст ложится поверх фото — тут нужно затемнение */}
                       <div className="md:hidden absolute inset-0 bg-gradient-to-t from-secondary via-secondary/60 to-transparent" />
                       <div className="md:hidden absolute inset-0 flex flex-col justify-end gap-3 px-5 py-6">
-                        <h1 className="text-2xl font-black text-white leading-tight text-balance">
+                        <p className="text-2xl font-black text-white leading-tight text-balance">
                           {banner.title}
-                        </h1>
+                        </p>
                         {banner.subtitle && (
                           <p className="text-sm text-white/80">{banner.subtitle}</p>
                         )}
@@ -101,9 +127,9 @@ export default function HomePage() {
                     </div>
                     {/* Текст — отдельная панель, только на десктопе (фото отдельно, текст отдельно) */}
                     <div className="hidden md:flex md:w-1/2 flex-col justify-center gap-4 px-10 lg:px-14 bg-secondary">
-                      <h1 className="text-3xl lg:text-4xl font-black text-white leading-tight text-balance">
+                      <p className="text-3xl lg:text-4xl font-black text-white leading-tight text-balance">
                         {banner.title}
-                      </h1>
+                      </p>
                       {banner.subtitle && (
                         <p className="text-base text-white/80 max-w-md">{banner.subtitle}</p>
                       )}

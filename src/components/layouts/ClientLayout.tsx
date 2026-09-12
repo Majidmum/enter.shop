@@ -3,6 +3,7 @@ import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
 import MobileBottomNav from '@/components/shared/MobileBottomNav';
 import FloatingActions from '@/components/shared/FloatingActions';
+import CitySelectModal from '@/components/shared/CitySelectModal';
 
 export default function ClientLayout() {
   return (
@@ -14,6 +15,7 @@ export default function ClientLayout() {
       <Footer />
       <MobileBottomNav />
       <FloatingActions />
+      <CitySelectModal />
     </div>
   );
 }
