@@ -7,19 +7,28 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Laptop, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
 import PageMeta from '@/components/common/PageMeta';
+import { supabase } from '@/db/supabase';
 
 const schema = z.object({ email: z.string().email('Некорректный email') });
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: '' } });
 
-  const onSubmit = (data: z.infer<typeof schema>) => {
-    console.log('Reset email for:', data.email);
+  const onSubmit = async (data: z.infer<typeof schema>) => {
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    // Сообщаем об успехе в любом случае — так нельзя узнать, зарегистрирован ли
+    // этот email в системе (иначе это была бы дыра — можно проверять чужие email на регистрацию).
+    if (error) {
+      console.error('Password reset error:', error.message);
+    }
     setSent(true);
-    toast.success('Ссылка для сброса отправлена!');
   };
 
   return (
@@ -53,7 +62,7 @@ export default function ForgotPasswordPage() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">Отправить ссылку</Button>
+                <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">{loading ? 'Отправляем...' : 'Отправить ссылку'}</Button>
               </form>
             </Form>
             <p className="text-center text-sm text-muted-foreground mt-4">

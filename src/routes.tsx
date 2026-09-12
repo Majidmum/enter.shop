@@ -15,6 +15,7 @@ import AccountPage from '@/pages/AccountPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import AboutPage from '@/pages/AboutPage';
 import DeliveryPage from '@/pages/DeliveryPage';
 import ContactsPage from '@/pages/ContactsPage';
@@ -64,6 +65,7 @@ export const routes: RouteConfig[] = [
   { name: 'Login',            path: '/login',              element: <LoginPage />,        public: true },
   { name: 'Register',         path: '/register',           element: <RegisterPage />,     public: true },
   { name: 'Forgot Password',  path: '/forgot-password',    element: <ForgotPasswordPage />, public: true },
+  { name: 'Reset Password',   path: '/reset-password',     element: <ResetPasswordPage />,  public: true },
   { name: 'About',            path: '/about',              element: <AboutPage />,        public: true },
   { name: 'Delivery',         path: '/delivery',           element: <DeliveryPage />,     public: true },
   { name: 'Contacts',         path: '/contacts',           element: <ContactsPage />,     public: true },
