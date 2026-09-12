@@ -1,0 +1,58 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index de8228e..77053fc 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -427,7 +427,7 @@ export default function Header() {
+             </Link>
+             <div className="h-5 w-px bg-border shrink-0 mx-1" />
+             {/* Бегущая строка с рекламными акциями — вместо списка категорий */}
+-            <div className="flex-1 min-w-0 overflow-hidden">
++            <div className="relative flex-1 basis-0 min-w-0 overflow-hidden">
+               {activeCampaigns.length > 0 && (
+                 <div className="flex items-center whitespace-nowrap w-max animate-[brand-scroll_30s_linear_infinite] hover:[animation-play-state:paused]">
+                   {[...activeCampaigns, ...activeCampaigns].map((campaign, i) => (
+@@ -446,6 +446,8 @@ export default function Header() {
+                   ))}
+                 </div>
+               )}
++              {/* Плавное затухание у правого края — видно, что строка обрезается специально */}
++              <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-card to-transparent" />
+             </div>
+           </div>
+ 
+diff --git a/src/pages/SalePage.tsx b/src/pages/SalePage.tsx
+index ba6f497..366b29c 100644
+--- a/src/pages/SalePage.tsx
++++ b/src/pages/SalePage.tsx
+@@ -25,12 +25,25 @@ export default function SalePage() {
+     fetchActivePromotions().then(setActivePromotions);
+   }, []);
+ 
+-  const saleProducts = products.filter((p) => !!p.discount).sort((a, b) => {
+-    if (sort === 'discount') return (b.discount || 0) - (a.discount || 0);
+-    if (sort === 'price-asc') return a.price - b.price;
+-    if (sort === 'price-desc') return b.price - a.price;
+-    return (b.rating) - (a.rating);
+-  });
++  // Товар попадает в распродажу, если у него либо своя скидка (product.discount),
++  // либо он отмечен в productIds какой-то активной акции — тогда берём скидку
++  // самой выгодной из таких акций как "эффективную" для отображения и сортировки.
++  const saleProducts = products
++    .map((p) => {
++      if (p.discount) return p;
++      const promoDiscounts = activePromotions
++        .filter((promo) => promo.productIds.includes(p.id))
++        .map((promo) => promo.discount);
++      if (promoDiscounts.length === 0) return null;
++      return { ...p, discount: Math.max(...promoDiscounts) };
++    })
++    .filter((p): p is Product => !!p)
++    .sort((a, b) => {
++      if (sort === 'discount') return (b.discount || 0) - (a.discount || 0);
++      if (sort === 'price-asc') return a.price - b.price;
++      if (sort === 'price-desc') return b.price - a.price;
++      return (b.rating) - (a.rating);
++    });
+ 
+   const totalPages = Math.ceil(saleProducts.length / PAGE_SIZE);
+   const paginated = saleProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

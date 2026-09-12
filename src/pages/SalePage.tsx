@@ -25,12 +25,25 @@ export default function SalePage() {
     fetchActivePromotions().then(setActivePromotions);
   }, []);
 
-  const saleProducts = products.filter((p) => !!p.discount).sort((a, b) => {
-    if (sort === 'discount') return (b.discount || 0) - (a.discount || 0);
-    if (sort === 'price-asc') return a.price - b.price;
-    if (sort === 'price-desc') return b.price - a.price;
-    return (b.rating) - (a.rating);
-  });
+  // Товар попадает в распродажу, если у него либо своя скидка (product.discount),
+  // либо он отмечен в productIds какой-то активной акции — тогда берём скидку
+  // самой выгодной из таких акций как "эффективную" для отображения и сортировки.
+  const saleProducts = products
+    .map((p) => {
+      if (p.discount) return p;
+      const promoDiscounts = activePromotions
+        .filter((promo) => promo.productIds.includes(p.id))
+        .map((promo) => promo.discount);
+      if (promoDiscounts.length === 0) return null;
+      return { ...p, discount: Math.max(...promoDiscounts) };
+    })
+    .filter((p): p is Product => !!p)
+    .sort((a, b) => {
+      if (sort === 'discount') return (b.discount || 0) - (a.discount || 0);
+      if (sort === 'price-asc') return a.price - b.price;
+      if (sort === 'price-desc') return b.price - a.price;
+      return (b.rating) - (a.rating);
+    });
 
   const totalPages = Math.ceil(saleProducts.length / PAGE_SIZE);
   const paginated = saleProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

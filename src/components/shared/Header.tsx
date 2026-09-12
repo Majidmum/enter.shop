@@ -427,7 +427,7 @@ export default function Header() {
             </Link>
             <div className="h-5 w-px bg-border shrink-0 mx-1" />
             {/* Бегущая строка с рекламными акциями — вместо списка категорий */}
-            <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="relative flex-1 basis-0 min-w-0 overflow-hidden">
               {activeCampaigns.length > 0 && (
                 <div className="flex items-center whitespace-nowrap w-max animate-[brand-scroll_30s_linear_infinite] hover:[animation-play-state:paused]">
                   {[...activeCampaigns, ...activeCampaigns].map((campaign, i) => (
@@ -446,6 +446,8 @@ export default function Header() {
                   ))}
                 </div>
               )}
+              {/* Плавное затухание у правого края — видно, что строка обрезается специально */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-card to-transparent" />
             </div>
           </div>
 
