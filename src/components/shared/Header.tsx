@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -126,6 +126,7 @@ export default function Header() {
     { label: t('common.catalog'), href: '/catalog' },
     { label: t('header.nav_sale'), href: '/sale' },
     { label: t('header.nav_office'), href: '/office' },
+    { label: t('header.nav_campaigns'), href: '/campaigns' },
     { label: t('header.nav_delivery'), href: '/delivery' },
     { label: t('header.nav_about'), href: '/about' },
     { label: t('header.nav_contacts'), href: '/contacts' },
@@ -424,6 +425,13 @@ export default function Header() {
             >
               <Building2 className="h-4 w-4" />
               {t('header.nav_office')}
+            </Link>
+            <Link
+              to="/campaigns"
+              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70 transition-colors text-sm font-semibold whitespace-nowrap"
+            >
+              <Megaphone className="h-4 w-4" />
+              {t('header.nav_campaigns')}
             </Link>
             <div className="h-5 w-px bg-border shrink-0 mx-1" />
             {/* Бегущая строка с акциями — вместо списка категорий */}

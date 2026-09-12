@@ -1,0 +1,59 @@
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index b70456e..bca09a4 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -1,7 +1,7 @@
+ import { useState, useEffect, useMemo } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles } from 'lucide-react';
++import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, Megaphone } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+@@ -126,6 +126,7 @@ export default function Header() {
+     { label: t('common.catalog'), href: '/catalog' },
+     { label: t('header.nav_sale'), href: '/sale' },
+     { label: t('header.nav_office'), href: '/office' },
++    { label: t('header.nav_campaigns'), href: '/campaigns' },
+     { label: t('header.nav_delivery'), href: '/delivery' },
+     { label: t('header.nav_about'), href: '/about' },
+     { label: t('header.nav_contacts'), href: '/contacts' },
+@@ -425,6 +426,13 @@ export default function Header() {
+               <Building2 className="h-4 w-4" />
+               {t('header.nav_office')}
+             </Link>
++            <Link
++              to="/campaigns"
++              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70 transition-colors text-sm font-semibold whitespace-nowrap"
++            >
++              <Megaphone className="h-4 w-4" />
++              {t('header.nav_campaigns')}
++            </Link>
+             <div className="h-5 w-px bg-border shrink-0 mx-1" />
+             {/* Бегущая строка с акциями — вместо списка категорий */}
+             <div className="flex-1 min-w-0 overflow-hidden">
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+index d7368b4..1e5186a 100644
+--- a/src/i18n/locales/ru.json
++++ b/src/i18n/locales/ru.json
+@@ -26,6 +26,7 @@
+     "delivery": "Доставка",
+     "nav_sale": "Акции",
+     "nav_office": "Офис под ключ",
++    "nav_campaigns": "Рекламные акции",
+     "nav_delivery": "Доставка",
+     "nav_about": "О нас",
+     "nav_contacts": "Контакты",
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+index e6f4bd9..e9189a6 100644
+--- a/src/i18n/locales/tg.json
++++ b/src/i18n/locales/tg.json
+@@ -26,6 +26,7 @@
+     "delivery": "Расонидан",
+     "nav_sale": "Тахфифҳо",
+     "nav_office": "Ҷиҳозонии дафтар",
++    "nav_campaigns": "Таблиғоти рекламавӣ",
+     "nav_delivery": "Расонидан",
+     "nav_about": "Дар бораи мо",
+     "nav_contacts": "Тамос",
