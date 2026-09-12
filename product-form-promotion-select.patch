@@ -1,0 +1,135 @@
+diff --git a/src/pages/admin/AdminProducts.tsx b/src/pages/admin/AdminProducts.tsx
+index 764f5b5..a6e85bd 100644
+--- a/src/pages/admin/AdminProducts.tsx
++++ b/src/pages/admin/AdminProducts.tsx
+@@ -8,12 +8,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+ import { Label } from '@/components/ui/label';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import { Switch } from '@/components/ui/switch';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { Textarea } from '@/components/ui/textarea';
+ import {
+   fetchProducts, createProduct, updateProduct, deleteProduct,
+-  fetchCategories, fetchBrands,
++  fetchCategories, fetchBrands, fetchPromotions, updatePromotion,
+ } from '@/lib/supabaseData';
+-import type { Product, Category, Brand } from '@/types';
++import type { Product, Category, Brand, Promotion } from '@/types';
+ import { toast } from 'sonner';
+ 
+ type ProductDraft = Partial<Product> & { name: string; price: number };
+@@ -22,6 +23,7 @@ export default function AdminProducts() {
+   const [items, setItems] = useState<Product[]>([]);
+   const [categories, setCategories] = useState<Category[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
++  const [promotions, setPromotions] = useState<Promotion[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [saving, setSaving] = useState(false);
+   const [search, setSearch] = useState('');
+@@ -32,11 +34,14 @@ export default function AdminProducts() {
+   const [deleteId, setDeleteId] = useState<string | null>(null);
+   const [draft, setDraft] = useState<ProductDraft>({ name: '', price: 0, status: 'active' });
+   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
++  // Какие акции отмечены для этого товара в форме — не хранится на самом товаре,
++  // это отражение того, в productIds каких акций сейчас/будет этот товар.
++  const [selectedPromoIds, setSelectedPromoIds] = useState<string[]>([]);
+ 
+   const load = () => {
+     setLoading(true);
+-    Promise.all([fetchProducts(), fetchCategories(), fetchBrands()])
+-      .then(([p, c, b]) => { setItems(p); setCategories(c); setBrands(b); })
++    Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchPromotions()])
++      .then(([p, c, b, promos]) => { setItems(p); setCategories(c); setBrands(b); setPromotions(promos); })
+       .catch((e) => toast.error(e.message))
+       .finally(() => setLoading(false));
+   };
+@@ -54,6 +59,7 @@ export default function AdminProducts() {
+     setEditing(null);
+     setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: categories[0]?.id || '', brandId: brands[0]?.id || '', specs: [] });
+     setUploadedImages([]);
++    setSelectedPromoIds([]);
+     setOpen(true);
+   };
+ 
+@@ -61,9 +67,31 @@ export default function AdminProducts() {
+     setEditing(p);
+     setDraft({ ...p });
+     setUploadedImages(p.images || []);
++    setSelectedPromoIds(promotions.filter((promo) => promo.productIds.includes(p.id)).map((promo) => promo.id));
+     setOpen(true);
+   };
+ 
++  /** Проставляет/убирает этот товар в productIds выбранных акций — только у тех, что реально изменились. */
++  const syncProductPromotions = async (productId: string) => {
++    const changed = promotions.filter((promo) => {
++      const shouldInclude = selectedPromoIds.includes(promo.id);
++      const currentlyIncluded = promo.productIds.includes(productId);
++      return shouldInclude !== currentlyIncluded;
++    });
++    if (changed.length === 0) return;
++
++    const updated = await Promise.all(
++      changed.map((promo) => {
++        const shouldInclude = selectedPromoIds.includes(promo.id);
++        const nextIds = shouldInclude
++          ? [...promo.productIds, productId]
++          : promo.productIds.filter((id) => id !== productId);
++        return updatePromotion(promo.id, { productIds: nextIds });
++      })
++    );
++    setPromotions((prev) => prev.map((p) => updated.find((u) => u.id === p.id) || p));
++  };
++
+   const handleSave = async () => {
+     if (!draft.name || !draft.price) { toast.error('Заполните обязательные поля'); return; }
+     if (uploadedImages.length === 0) { toast.error('Добавьте хотя бы одно изображение'); return; }
+@@ -85,6 +113,7 @@ export default function AdminProducts() {
+           isFeatured: !!draft.isFeatured,
+           specs: (draft.specs || []).filter((s) => s.label.trim() && s.value.trim()),
+         });
++        await syncProductPromotions(updated.id);
+         setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p));
+         toast.success('Товар обновлён');
+       } else {
+@@ -102,6 +131,7 @@ export default function AdminProducts() {
+           isFeatured: !!draft.isFeatured,
+           specs: (draft.specs || []).filter((s) => s.label.trim() && s.value.trim()),
+         });
++        await syncProductPromotions(created.id);
+         setItems((prev) => [created, ...prev]);
+         toast.success('Товар добавлен');
+       }
+@@ -280,6 +310,33 @@ export default function AdminProducts() {
+                 <Switch checked={!!draft.isFeatured} onCheckedChange={(v) => setDraft({ ...draft, isFeatured: v })} />
+               </div>
+             </div>
++            <div className="md:col-span-2">
++              <Label>Участие в акциях</Label>
++              {promotions.length > 0 ? (
++                <div className="mt-1 flex flex-col gap-2 rounded-lg border border-border p-3">
++                  {promotions.map((promo) => (
++                    <div key={promo.id} className="flex items-center gap-2">
++                      <Checkbox
++                        id={`promo-${promo.id}`}
++                        checked={selectedPromoIds.includes(promo.id)}
++                        onCheckedChange={(checked) => {
++                          setSelectedPromoIds((prev) =>
++                            checked ? [...prev, promo.id] : prev.filter((id) => id !== promo.id)
++                          );
++                        }}
++                      />
++                      <Label htmlFor={`promo-${promo.id}`} className="cursor-pointer font-normal">
++                        {promo.name} (−{promo.discount}%)
++                      </Label>
++                    </div>
++                  ))}
++                </div>
++              ) : (
++                <p className="text-xs text-muted-foreground mt-1">
++                  Акций пока нет — создайте их в разделе "Акции", затем товар можно будет отметить здесь.
++                </p>
++              )}
++            </div>
+             <div className="md:col-span-2">
+               <Label>Описание</Label>
+               <Textarea className="mt-1" rows={3} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
