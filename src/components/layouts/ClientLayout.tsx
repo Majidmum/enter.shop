@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
 import MobileBottomNav from '@/components/shared/MobileBottomNav';
+import FloatingActions from '@/components/shared/FloatingActions';
 
 export default function ClientLayout() {
   return (
@@ -12,6 +13,7 @@ export default function ClientLayout() {
       </main>
       <Footer />
       <MobileBottomNav />
+      <FloatingActions />
     </div>
   );
 }

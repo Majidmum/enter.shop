@@ -199,10 +199,10 @@ export default function CatalogPage() {
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Toolbar */}
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="flex flex-wrap md:flex-nowrap items-center gap-3 mb-4">
             <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="md:hidden flex items-center gap-1.5">
+                <Button variant="outline" size="sm" className="md:hidden flex items-center gap-1.5 shrink-0">
                   <SlidersHorizontal className="h-4 w-4" /> {t('catalog.filters')} {hasFilters && <span className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">{selCategories.length + selBrands.length}</span>}
                 </Button>
               </SheetTrigger>
@@ -212,10 +212,8 @@ export default function CatalogPage() {
               </SheetContent>
             </Sheet>
 
-            <p className="text-sm text-muted-foreground flex-1 min-w-0">{t('catalog.products_found', { count: filtered.length })}</p>
-
             <Select value={sort} onValueChange={(v) => { setSort(v as SortOption); setPage(1); }}>
-              <SelectTrigger className="w-44 h-8 text-sm">
+              <SelectTrigger className="w-auto md:w-44 h-9 md:h-8 text-sm ml-auto md:ml-0 md:order-3 shrink-0">
                 <SelectValue placeholder={t('catalog.sort_placeholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -226,6 +224,9 @@ export default function CatalogPage() {
                 <SelectItem value="rating">{t('catalog.sort_rating')}</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* На мобильном — своя полноширинная строка, чтобы не переноситься некрасиво между кнопками */}
+            <p className="text-sm text-muted-foreground basis-full md:basis-0 md:flex-1 md:min-w-0 md:order-2">{t('catalog.products_found', { count: filtered.length })}</p>
           </div>
 
           {/* Grid */}
