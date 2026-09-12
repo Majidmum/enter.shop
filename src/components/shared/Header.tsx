@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, Megaphone } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -9,10 +9,10 @@ import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/components/theme-provider';
-import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromotions } from '@/lib/supabaseData';
+import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromoCampaigns } from '@/lib/supabaseData';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
-import type { Category, Brand, Product, Promotion } from '@/types';
+import type { Category, Brand, Product, PromoCampaign } from '@/types';
 
 function ThemeToggle({ className = '' }: { className?: string }) {
   const { t } = useTranslation();
@@ -74,14 +74,14 @@ export default function Header() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
+  const [activeCampaigns, setActiveCampaigns] = useState<PromoCampaign[]>([]);
   // Какая категория слева сейчас "активна" (наведена/выбрана) — справа показываем её подкатегории.
   // Специальное значение 'brands' — показывает список брендов вместо подкатегорий.
   const [activeCatId, setActiveCatId] = useState<string | 'brands' | null>(null);
 
   useEffect(() => {
     fetchCategories().then(setCategories);
-    fetchActivePromotions().then(setActivePromotions);
+    fetchActivePromoCampaigns().then(setActiveCampaigns);
     fetchBrands().then(setBrands);
     fetchProducts().then(setProducts);
   }, []);
@@ -126,7 +126,6 @@ export default function Header() {
     { label: t('common.catalog'), href: '/catalog' },
     { label: t('header.nav_sale'), href: '/sale' },
     { label: t('header.nav_office'), href: '/office' },
-    { label: t('header.nav_campaigns'), href: '/campaigns' },
     { label: t('header.nav_delivery'), href: '/delivery' },
     { label: t('header.nav_about'), href: '/about' },
     { label: t('header.nav_contacts'), href: '/contacts' },
@@ -426,26 +425,19 @@ export default function Header() {
               <Building2 className="h-4 w-4" />
               {t('header.nav_office')}
             </Link>
-            <Link
-              to="/campaigns"
-              className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70 transition-colors text-sm font-semibold whitespace-nowrap"
-            >
-              <Megaphone className="h-4 w-4" />
-              {t('header.nav_campaigns')}
-            </Link>
             <div className="h-5 w-px bg-border shrink-0 mx-1" />
-            {/* Бегущая строка с акциями — вместо списка категорий */}
+            {/* Бегущая строка с рекламными акциями — вместо списка категорий */}
             <div className="flex-1 min-w-0 overflow-hidden">
-              {activePromotions.length > 0 && (
+              {activeCampaigns.length > 0 && (
                 <div className="flex items-center whitespace-nowrap w-max animate-[brand-scroll_30s_linear_infinite] hover:[animation-play-state:paused]">
-                  {[...activePromotions, ...activePromotions].map((promo, i) => (
+                  {[...activeCampaigns, ...activeCampaigns].map((campaign, i) => (
                     <Link
-                      key={`${promo.id}-${i}`}
-                      to="/sale"
+                      key={`${campaign.id}-${i}`}
+                      to="/campaigns"
                       className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-5"
                     >
                       <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-                      {promo.name} — скидка {promo.discount}%
+                      {campaign.title}
                     </Link>
                   ))}
                 </div>
