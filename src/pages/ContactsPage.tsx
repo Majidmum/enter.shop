@@ -51,7 +51,8 @@ export default function ContactsPage() {
     <div className="pb-16 md:pb-0">
       <PageMeta
         title="Контакты — ENTER.TJ"
-        description="Свяжитесь с ENTER.TJ: адрес, телефон, email и часы работы магазина компьютерной техники и офисной мебели в Душанбе."
+        description="Свяжитесь с ENTER.TJ: адрес магазина, телефоны, email и часы работы. Компьютерная техника и офисная мебель с доставкой по Душанбе и Таджикистану."
+        canonicalPath="/contacts"
       />
       <div className="bg-secondary text-white py-12">
         <div className="container mx-auto px-4">

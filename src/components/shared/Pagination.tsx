@@ -22,7 +22,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
         size="icon"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="h-8 w-8"
+        className="h-10 w-10"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -39,7 +39,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
               variant={page === currentPage ? 'default' : 'outline'}
               size="icon"
               onClick={() => onPageChange(page)}
-              className={`h-8 w-8 text-sm ${page === currentPage ? 'bg-primary text-white' : ''}`}
+              className={`h-10 w-10 text-sm ${page === currentPage ? 'bg-primary text-white' : ''}`}
             >
               {page}
             </Button>
@@ -52,7 +52,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
         size="icon"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="h-8 w-8"
+        className="h-10 w-10"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

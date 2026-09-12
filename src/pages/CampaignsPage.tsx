@@ -19,7 +19,8 @@ export default function CampaignsPage() {
     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
       <PageMeta
         title="Рекламные акции — ENTER.TJ"
-        description="Специальные предложения, объявления о новых поступлениях и рекламные кампании ENTER.TJ."
+        description="Специальные предложения, объявления о новых поступлениях и рекламные кампании ENTER.TJ — компьютерной техники и офисной мебели в Душанбе, Таджикистан."
+        canonicalPath="/campaigns"
       />
       <Breadcrumb items={[{ label: 'Рекламные акции' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">Рекламные акции</h1>

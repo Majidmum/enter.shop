@@ -4,11 +4,15 @@ import PageMeta from "@/components/common/PageMeta";
 export default function NotFound() {
   return (
     <>
-      <PageMeta title="Page Not Found" description="" />
+      <PageMeta
+        title="Страница не найдена — ENTER.TJ"
+        description="Запрошенная страница не найдена. Вернитесь на главную ENTER.TJ или перейдите в каталог компьютерной техники и офисной мебели."
+        noIndex
+      />
       <div className="relative flex flex-col items-center justify-center min-h-screen p-6 overflow-hidden z-1">
         <div className="mx-auto w-full max-w-[242px] text-center sm:max-w-[472px]">
           <h1 className="mb-8 font-bold text-gray-800 text-title-md dark:text-white/90 xl:text-title-2xl">
-            ERROR
+            Ошибка 404
           </h1>
 
           <img src="/images/error/404.svg" alt="404" className="dark:hidden" />

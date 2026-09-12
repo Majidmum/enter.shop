@@ -34,6 +34,7 @@ export default function AboutPage() {
       <PageMeta
         title="О нас — ENTER.TJ"
         description="ENTER.TJ — надёжный поставщик компьютерной техники и офисной мебели в Душанбе. Узнайте больше о нашей компании, гарантиях и сервисе."
+        canonicalPath="/about"
       />
       {/* Hero */}
       <div className="bg-secondary text-white py-16">

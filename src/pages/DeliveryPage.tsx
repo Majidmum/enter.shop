@@ -7,7 +7,8 @@ export default function DeliveryPage() {
     <div className="pb-16 md:pb-0">
       <PageMeta
         title="Доставка и оплата — ENTER.TJ"
-        description="Условия доставки и оплаты в интернет-магазине ENTER.TJ: доставка по Душанбе, самовывоз, наличный и безналичный расчёт."
+        description="Условия доставки и оплаты в интернет-магазине ENTER.TJ: доставка по Душанбе и Таджикистану, самовывоз, наличный и безналичный расчёт, гарантия на товар."
+        canonicalPath="/delivery"
       />
       <div className="bg-secondary text-white py-12">
         <div className="container mx-auto px-4">

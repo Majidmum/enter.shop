@@ -19,6 +19,7 @@ export default function CategoriesPage() {
       <PageMeta
         title="Все категории товаров — ENTER.TJ"
         description="Все категории компьютерной техники и офисной мебели в интернет-магазине ENTER.TJ: ноутбуки, ПК, мониторы, принтеры, мебель и аксессуары."
+        canonicalPath="/categories"
       />
       <Breadcrumb items={[{ label: 'Категории' }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">Все категории</h1>

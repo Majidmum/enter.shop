@@ -181,6 +181,7 @@ export default function CatalogPage() {
       <PageMeta
         title={searchQuery ? t('catalog.meta_title_search', { query: searchQuery }) : t('catalog.meta_title')}
         description={t('catalog.meta_description')}
+        canonicalPath="/catalog"
       />
       <Breadcrumb items={[{ label: t('common.catalog') }]} />
       <h1 className="text-2xl font-bold mt-4 mb-6">

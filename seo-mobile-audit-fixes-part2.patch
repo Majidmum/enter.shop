@@ -1,0 +1,171 @@
+diff --git a/src/components/shared/Pagination.tsx b/src/components/shared/Pagination.tsx
+index 7ca40da..9b9b077 100644
+--- a/src/components/shared/Pagination.tsx
++++ b/src/components/shared/Pagination.tsx
+@@ -22,7 +22,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
+         size="icon"
+         onClick={() => onPageChange(currentPage - 1)}
+         disabled={currentPage === 1}
+-        className="h-8 w-8"
++        className="h-10 w-10"
+       >
+         <ChevronLeft className="h-4 w-4" />
+       </Button>
+@@ -39,7 +39,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
+               variant={page === currentPage ? 'default' : 'outline'}
+               size="icon"
+               onClick={() => onPageChange(page)}
+-              className={`h-8 w-8 text-sm ${page === currentPage ? 'bg-primary text-white' : ''}`}
++              className={`h-10 w-10 text-sm ${page === currentPage ? 'bg-primary text-white' : ''}`}
+             >
+               {page}
+             </Button>
+@@ -52,7 +52,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
+         size="icon"
+         onClick={() => onPageChange(currentPage + 1)}
+         disabled={currentPage === totalPages}
+-        className="h-8 w-8"
++        className="h-10 w-10"
+       >
+         <ChevronRight className="h-4 w-4" />
+       </Button>
+diff --git a/src/components/shared/ReviewCard.tsx b/src/components/shared/ReviewCard.tsx
+index 8383fc8..af0512f 100644
+--- a/src/components/shared/ReviewCard.tsx
++++ b/src/components/shared/ReviewCard.tsx
+@@ -118,9 +118,9 @@ export default function ReviewCard({ review }: { review: Review }) {
+           <button
+             type="button"
+             onClick={() => setLightbox(null)}
+-            className="absolute top-4 right-4 text-white/80 hover:text-white"
++            className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-black/30 text-white/80 hover:text-white hover:bg-black/50 transition-colors"
+           >
+-            <X className="h-6 w-6" />
++            <X className="h-5 w-5" />
+           </button>
+           <img src={lightbox} alt="" className="max-w-full max-h-full rounded-lg" onClick={(e) => e.stopPropagation()} />
+         </div>
+diff --git a/src/pages/AboutPage.tsx b/src/pages/AboutPage.tsx
+index 1d9203e..045d268 100644
+--- a/src/pages/AboutPage.tsx
++++ b/src/pages/AboutPage.tsx
+@@ -34,6 +34,7 @@ export default function AboutPage() {
+       <PageMeta
+         title="О нас — ENTER.TJ"
+         description="ENTER.TJ — надёжный поставщик компьютерной техники и офисной мебели в Душанбе. Узнайте больше о нашей компании, гарантиях и сервисе."
++        canonicalPath="/about"
+       />
+       {/* Hero */}
+       <div className="bg-secondary text-white py-16">
+diff --git a/src/pages/CampaignsPage.tsx b/src/pages/CampaignsPage.tsx
+index 9c5dc3f..87be97e 100644
+--- a/src/pages/CampaignsPage.tsx
++++ b/src/pages/CampaignsPage.tsx
+@@ -19,7 +19,8 @@ export default function CampaignsPage() {
+     <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+       <PageMeta
+         title="Рекламные акции — ENTER.TJ"
+-        description="Специальные предложения, объявления о новых поступлениях и рекламные кампании ENTER.TJ."
++        description="Специальные предложения, объявления о новых поступлениях и рекламные кампании ENTER.TJ — компьютерной техники и офисной мебели в Душанбе, Таджикистан."
++        canonicalPath="/campaigns"
+       />
+       <Breadcrumb items={[{ label: 'Рекламные акции' }]} />
+       <h1 className="text-2xl font-bold mt-4 mb-6">Рекламные акции</h1>
+diff --git a/src/pages/CatalogPage.tsx b/src/pages/CatalogPage.tsx
+index b7b405d..2b1fe1a 100644
+--- a/src/pages/CatalogPage.tsx
++++ b/src/pages/CatalogPage.tsx
+@@ -181,6 +181,7 @@ export default function CatalogPage() {
+       <PageMeta
+         title={searchQuery ? t('catalog.meta_title_search', { query: searchQuery }) : t('catalog.meta_title')}
+         description={t('catalog.meta_description')}
++        canonicalPath="/catalog"
+       />
+       <Breadcrumb items={[{ label: t('common.catalog') }]} />
+       <h1 className="text-2xl font-bold mt-4 mb-6">
+diff --git a/src/pages/CategoriesPage.tsx b/src/pages/CategoriesPage.tsx
+index 2cea07f..f5c9f8e 100644
+--- a/src/pages/CategoriesPage.tsx
++++ b/src/pages/CategoriesPage.tsx
+@@ -19,6 +19,7 @@ export default function CategoriesPage() {
+       <PageMeta
+         title="Все категории товаров — ENTER.TJ"
+         description="Все категории компьютерной техники и офисной мебели в интернет-магазине ENTER.TJ: ноутбуки, ПК, мониторы, принтеры, мебель и аксессуары."
++        canonicalPath="/categories"
+       />
+       <Breadcrumb items={[{ label: 'Категории' }]} />
+       <h1 className="text-2xl font-bold mt-4 mb-6">Все категории</h1>
+diff --git a/src/pages/ContactsPage.tsx b/src/pages/ContactsPage.tsx
+index ae3fc9c..b210eef 100644
+--- a/src/pages/ContactsPage.tsx
++++ b/src/pages/ContactsPage.tsx
+@@ -51,7 +51,8 @@ export default function ContactsPage() {
+     <div className="pb-16 md:pb-0">
+       <PageMeta
+         title="Контакты — ENTER.TJ"
+-        description="Свяжитесь с ENTER.TJ: адрес, телефон, email и часы работы магазина компьютерной техники и офисной мебели в Душанбе."
++        description="Свяжитесь с ENTER.TJ: адрес магазина, телефоны, email и часы работы. Компьютерная техника и офисная мебель с доставкой по Душанбе и Таджикистану."
++        canonicalPath="/contacts"
+       />
+       <div className="bg-secondary text-white py-12">
+         <div className="container mx-auto px-4">
+diff --git a/src/pages/DeliveryPage.tsx b/src/pages/DeliveryPage.tsx
+index 37b0636..bc34a3c 100644
+--- a/src/pages/DeliveryPage.tsx
++++ b/src/pages/DeliveryPage.tsx
+@@ -7,7 +7,8 @@ export default function DeliveryPage() {
+     <div className="pb-16 md:pb-0">
+       <PageMeta
+         title="Доставка и оплата — ENTER.TJ"
+-        description="Условия доставки и оплаты в интернет-магазине ENTER.TJ: доставка по Душанбе, самовывоз, наличный и безналичный расчёт."
++        description="Условия доставки и оплаты в интернет-магазине ENTER.TJ: доставка по Душанбе и Таджикистану, самовывоз, наличный и безналичный расчёт, гарантия на товар."
++        canonicalPath="/delivery"
+       />
+       <div className="bg-secondary text-white py-12">
+         <div className="container mx-auto px-4">
+diff --git a/src/pages/NotFound.tsx b/src/pages/NotFound.tsx
+index 3604ce1..fe48eb3 100644
+--- a/src/pages/NotFound.tsx
++++ b/src/pages/NotFound.tsx
+@@ -4,11 +4,15 @@ import PageMeta from "@/components/common/PageMeta";
+ export default function NotFound() {
+   return (
+     <>
+-      <PageMeta title="Page Not Found" description="" />
++      <PageMeta
++        title="Страница не найдена — ENTER.TJ"
++        description="Запрошенная страница не найдена. Вернитесь на главную ENTER.TJ или перейдите в каталог компьютерной техники и офисной мебели."
++        noIndex
++      />
+       <div className="relative flex flex-col items-center justify-center min-h-screen p-6 overflow-hidden z-1">
+         <div className="mx-auto w-full max-w-[242px] text-center sm:max-w-[472px]">
+           <h1 className="mb-8 font-bold text-gray-800 text-title-md dark:text-white/90 xl:text-title-2xl">
+-            ERROR
++            Ошибка 404
+           </h1>
+ 
+           <img src="/images/error/404.svg" alt="404" className="dark:hidden" />
+diff --git a/src/pages/OfficePage.tsx b/src/pages/OfficePage.tsx
+index c8c0b5e..0db5c37 100644
+--- a/src/pages/OfficePage.tsx
++++ b/src/pages/OfficePage.tsx
+@@ -73,6 +73,7 @@ const onSubmit = async (data: FormData) => {
+       <PageMeta
+         title="Офис под ключ — оснащение офисов техникой и мебелью | ENTER.TJ"
+         description="Комплексное оснащение офисов в Душанбе: компьютеры, мебель, принтеры и сетевое оборудование. Готовые пакеты и индивидуальные решения для бизнеса."
++        canonicalPath="/office"
+       />
+       {/* Hero */}
+       <div className="bg-secondary text-white py-16">
+diff --git a/src/pages/SalePage.tsx b/src/pages/SalePage.tsx
+index 29323dd..52cd498 100644
+--- a/src/pages/SalePage.tsx
++++ b/src/pages/SalePage.tsx
+@@ -43,6 +43,7 @@ export default function SalePage() {
+       <PageMeta
+         title="Акции и скидки — ENTER.TJ"
+         description="Скидки до 20% на ноутбуки, ПК, мониторы, офисную мебель и аксессуары в ENTER.TJ. Актуальные акции и специальные предложения в Душанбе."
++        canonicalPath="/sale"
+       />
+       {/* Hero */}
+       <div className="bg-gradient-to-r from-secondary via-secondary to-primary/80 text-white py-14">

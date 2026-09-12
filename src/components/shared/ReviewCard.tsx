@@ -118,9 +118,9 @@ export default function ReviewCard({ review }: { review: Review }) {
           <button
             type="button"
             onClick={() => setLightbox(null)}
-            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-black/30 text-white/80 hover:text-white hover:bg-black/50 transition-colors"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
           <img src={lightbox} alt="" className="max-w-full max-h-full rounded-lg" onClick={(e) => e.stopPropagation()} />
         </div>

@@ -73,6 +73,7 @@ const onSubmit = async (data: FormData) => {
       <PageMeta
         title="Офис под ключ — оснащение офисов техникой и мебелью | ENTER.TJ"
         description="Комплексное оснащение офисов в Душанбе: компьютеры, мебель, принтеры и сетевое оборудование. Готовые пакеты и индивидуальные решения для бизнеса."
+        canonicalPath="/office"
       />
       {/* Hero */}
       <div className="bg-secondary text-white py-16">
