@@ -1,0 +1,179 @@
+diff --git a/src/lib/supabaseData.ts b/src/lib/supabaseData.ts
+index bf41a7e..623786f 100644
+--- a/src/lib/supabaseData.ts
++++ b/src/lib/supabaseData.ts
+@@ -865,6 +865,7 @@ function rowToAuditLogEntry(row: any): AuditLogEntry {
+     tableName: row.table_name,
+     recordId: row.record_id,
+     action: row.action,
++    oldData: row.old_data,
+     changedData: row.changed_data,
+     createdAt: row.created_at,
+   };
+diff --git a/src/pages/admin/AdminAuditLog.tsx b/src/pages/admin/AdminAuditLog.tsx
+index e73693c..a3545f8 100644
+--- a/src/pages/admin/AdminAuditLog.tsx
++++ b/src/pages/admin/AdminAuditLog.tsx
+@@ -36,6 +36,95 @@ const ROLE_LABELS: Record<string, string> = {
+   manager: 'Менеджер',
+ };
+ 
++// Человекопонятные названия для самых частых полей. Всё, чего нет в списке,
++// показываем как есть (технические поля вроде id/created_at всё равно
++// отфильтровываются раньше, до попадания сюда).
++const FIELD_LABELS: Record<string, string> = {
++  name: 'Название',
++  title: 'Заголовок',
++  description: 'Описание',
++  price: 'Цена',
++  old_price: 'Старая цена',
++  discount: 'Скидка',
++  stock: 'Остаток',
++  sku: 'Артикул',
++  slug: 'URL-адрес',
++  status: 'Статус',
++  images: 'Фото',
++  image: 'Фото',
++  logo: 'Логотип',
++  specs: 'Характеристики',
++  is_new: 'Новинка',
++  is_featured: 'Популярный',
++  category_id: 'Категория',
++  brand_id: 'Бренд',
++  parent_id: 'Родительская категория',
++  start_date: 'Дата начала',
++  end_date: 'Дата окончания',
++  product_ids: 'Товары в акции',
++  sort_order: 'Порядок',
++  button_text: 'Текст кнопки',
++  button_link: 'Ссылка кнопки',
++  subtitle: 'Подзаголовок',
++};
++
++// Служебные поля, которые не показываем в детальном просмотре — пользователю
++// они ничего не скажут, а строку зря займут.
++const HIDDEN_FIELDS = new Set(['id', 'created_at', 'updated_at', 'category_id', 'brand_id']);
++
++function isImageLikeValue(value: unknown): boolean {
++  if (typeof value === 'string') return value.startsWith('data:image') || (value.startsWith('http') && /\.(jpg|jpeg|png|webp|gif)/i.test(value));
++  if (Array.isArray(value)) return value.length > 0 && value.every((v) => typeof v === 'string' && (v.startsWith('data:image') || v.startsWith('http')));
++  return false;
++}
++
++function formatValue(value: unknown): string {
++  if (value === null || value === undefined || value === '') return '—';
++  if (isImageLikeValue(value)) {
++    const count = Array.isArray(value) ? value.length : 1;
++    return count === 1 ? '🖼 Фото' : `🖼 Фото (${count} шт.)`;
++  }
++  if (typeof value === 'boolean') return value ? 'Да' : 'Нет';
++  if (Array.isArray(value)) {
++    if (value.length === 0) return '—';
++    return value.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join(', ');
++  }
++  if (typeof value === 'object') return JSON.stringify(value);
++  if (typeof value === 'number') return value.toLocaleString('ru-RU');
++  return String(value);
++}
++
++function fieldLabel(key: string): string {
++  return FIELD_LABELS[key] || key;
++}
++
++/** Список полей для показа: только те, что реально изменились (для update), либо все значимые поля (для insert/delete). */
++function getDiffRows(entry: AuditLogEntry): { key: string; before?: string; after?: string }[] {
++  const old: Record<string, unknown> = entry.oldData || {};
++  const next: Record<string, unknown> = entry.changedData || {};
++  const allKeys = new Set([...Object.keys(old), ...Object.keys(next)]);
++  const rows: { key: string; before?: string; after?: string }[] = [];
++
++  for (const key of allKeys) {
++    if (HIDDEN_FIELDS.has(key)) continue;
++    const beforeVal = old[key];
++    const afterVal = next[key];
++
++    if (entry.action === 'update') {
++      // Показываем только то, что реально поменялось.
++      if (JSON.stringify(beforeVal) === JSON.stringify(afterVal)) continue;
++      rows.push({ key, before: formatValue(beforeVal), after: formatValue(afterVal) });
++    } else if (entry.action === 'insert') {
++      if (afterVal === undefined) continue;
++      rows.push({ key, after: formatValue(afterVal) });
++    } else {
++      if (beforeVal === undefined) continue;
++      rows.push({ key, before: formatValue(beforeVal) });
++    }
++  }
++  return rows;
++}
++
+ export default function AdminAuditLog() {
+   const [items, setItems] = useState<AuditLogEntry[]>([]);
+   const [loading, setLoading] = useState(true);
+@@ -45,6 +134,8 @@ export default function AdminAuditLog() {
+     fetchAuditLog().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+   }, []);
+ 
++  const diffRows = viewing ? getDiffRows(viewing) : [];
++
+   return (
+     <div className="flex flex-col gap-4">
+       <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+@@ -114,11 +205,41 @@ export default function AdminAuditLog() {
+                   <p className="font-semibold">{new Date(viewing.createdAt).toLocaleString('ru-RU')}</p>
+                 </div>
+               </div>
++
+               <div>
+-                <p className="text-xs text-muted-foreground mb-1.5">Данные записи на момент изменения</p>
+-                <pre className="bg-muted/40 rounded-lg p-3 text-xs overflow-x-auto whitespace-pre-wrap break-all">
+-                  {JSON.stringify(viewing.changedData, null, 2)}
+-                </pre>
++                <p className="text-xs text-muted-foreground mb-1.5">
++                  {viewing.action === 'update' ? 'Что изменилось' : viewing.action === 'insert' ? 'Что было создано' : 'Что было удалено'}
++                </p>
++                {diffRows.length === 0 ? (
++                  <p className="text-sm text-muted-foreground bg-muted/40 rounded-lg p-3">
++                    Изменения затронули только служебные поля — показывать нечего.
++                  </p>
++                ) : viewing.action === 'update' ? (
++                  <div className="flex flex-col gap-1.5">
++                    {diffRows.map((row) => (
++                      <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2 items-center bg-muted/40 rounded-lg p-3">
++                        <div className="min-w-0">
++                          <p className="text-xs text-muted-foreground mb-0.5">{fieldLabel(row.key)}</p>
++                          <p className="text-destructive line-through break-words">{row.before}</p>
++                        </div>
++                        <span className="text-muted-foreground">→</span>
++                        <div className="min-w-0">
++                          <p className="text-xs text-muted-foreground mb-0.5">&nbsp;</p>
++                          <p className="font-medium text-green-700 break-words">{row.after}</p>
++                        </div>
++                      </div>
++                    ))}
++                  </div>
++                ) : (
++                  <div className="flex flex-col gap-1.5">
++                    {diffRows.map((row) => (
++                      <div key={row.key} className="bg-muted/40 rounded-lg p-3">
++                        <p className="text-xs text-muted-foreground mb-0.5">{fieldLabel(row.key)}</p>
++                        <p className="font-medium break-words">{row.before ?? row.after}</p>
++                      </div>
++                    ))}
++                  </div>
++                )}
+               </div>
+             </div>
+           )}
+diff --git a/src/types/index.ts b/src/types/index.ts
+index 141b6ff..79b4ab4 100644
+--- a/src/types/index.ts
++++ b/src/types/index.ts
+@@ -143,6 +143,7 @@ export interface AuditLogEntry {
+   tableName: string;
+   recordId: string | null;
+   action: 'insert' | 'update' | 'delete';
++  oldData: Record<string, unknown> | null;
+   changedData: Record<string, unknown> | null;
+   createdAt: string;
+ }

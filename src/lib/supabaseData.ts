@@ -865,6 +865,7 @@ function rowToAuditLogEntry(row: any): AuditLogEntry {
     tableName: row.table_name,
     recordId: row.record_id,
     action: row.action,
+    oldData: row.old_data,
     changedData: row.changed_data,
     createdAt: row.created_at,
   };

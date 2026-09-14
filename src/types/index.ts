@@ -143,6 +143,7 @@ export interface AuditLogEntry {
   tableName: string;
   recordId: string | null;
   action: 'insert' | 'update' | 'delete';
+  oldData: Record<string, unknown> | null;
   changedData: Record<string, unknown> | null;
   createdAt: string;
 }
