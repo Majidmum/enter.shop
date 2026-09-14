@@ -26,7 +26,7 @@ async function buildUserFromSession(
     name: profile?.full_name || supabaseUser.email?.split('@')[0] || '',
     email: supabaseUser.email || '',
     phone: profile?.phone,
-    role: (profile?.role as 'user' | 'admin') || 'user',
+    role: (profile?.role as 'user' | 'admin' | 'manager') || 'user',
   };
 }
 

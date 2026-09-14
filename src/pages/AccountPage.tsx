@@ -22,7 +22,7 @@ const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
 
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState<Tab>('orders');
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, loading, logout } = useAuthStore();
   // RLS сам ограничивает результат только заказами этого пользователя —
   // фильтровать на клиенте не нужно.
   const [myOrders, setMyOrders] = useState<Order[]>([]);
@@ -32,6 +32,18 @@ export default function AccountPage() {
     if (!isAuthenticated) return;
     fetchOrders().then(setMyOrders).catch(() => setMyOrders([])).finally(() => setOrdersLoading(false));
   }, [isAuthenticated]);
+
+  // Пока сессия Supabase ещё восстанавливается после перезагрузки страницы —
+  // ничего не решаем. Без этой проверки, при перезагрузке страницы,
+  // за долю секунды (пока сессия ещё не восстановилась) человека уже
+  // ошибочно выкидывало на /login, хотя сессия на деле была верной.
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] w-full items-center justify-center text-sm text-muted-foreground">
+        Загрузка...
+      </div>
+    );
+  }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 

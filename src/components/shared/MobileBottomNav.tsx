@@ -12,7 +12,7 @@ export default function MobileBottomNav() {
   const favCount = useFavoritesStore((s) => s.items.length);
   const user = useAuthStore((s) => s.user);
 
-  const profileHref = user?.role === 'admin' ? '/admin' : '/account';
+  const profileHref = (user?.role === 'admin' || user?.role === 'manager') ? '/admin' : '/account';
   const navItems = [
     { icon: Home, label: t('common.home'), href: '/' },
     { icon: Grid3X3, label: t('common.catalog'), href: '/catalog' },

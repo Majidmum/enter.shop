@@ -405,7 +405,7 @@ export default function Header() {
             </Button>
           </Link>
 
-          <Link to={!isAuthenticated ? '/login' : user?.role === 'admin' ? '/admin' : '/account'}>
+          <Link to={!isAuthenticated ? '/login' : (user?.role === 'admin' || user?.role === 'manager') ? '/admin' : '/account'}>
             <Button variant="ghost" className="h-9 gap-1.5 px-2 lg:px-3">
               <User className="h-5 w-5 shrink-0" />
               <span className="hidden lg:inline text-sm font-medium">

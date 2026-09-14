@@ -34,8 +34,8 @@ export default function LoginPage() {
     if (ok) {
       const { user } = useAuthStore.getState();
       toast.success('Вход выполнен успешно!');
-      // Администратор → панель управления, пользователь → аккаунт
-      navigate(user?.role === 'admin' ? '/admin' : '/account');
+      // Администратор или менеджер → панель управления, обычный покупатель → аккаунт
+      navigate((user?.role === 'admin' || user?.role === 'manager') ? '/admin' : '/account');
     } else {
       toast.error('Неверный email или пароль');
     }
