@@ -62,7 +62,7 @@ export default function AdminOrders() {
 
       {/* Table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -116,6 +116,45 @@ export default function AdminOrders() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {filtered.map((order) => (
+            <div key={order.id} className="p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-primary">{order.orderNumber}</span>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewing(order)}>
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{order.date}</p>
+              <div>
+                <p className="font-medium text-sm">{order.customerName}</p>
+                <p className="text-xs text-muted-foreground">{order.customerPhone}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{order.items.length} поз.</span>
+                <span className="font-semibold">{order.total.toLocaleString()} сом.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className={order.deliveryMethod === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}>
+                  {order.deliveryMethod === 'delivery' ? 'Доставка' : 'Самовывоз'}
+                </Badge>
+                <Select value={order.status} onValueChange={(v) => handleStatus(order.id, v as OrderStatus)}>
+                  <SelectTrigger className={`h-8 text-xs flex-1 font-medium ${ORDER_STATUS_COLORS[order.status]}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s} className="text-xs">{ORDER_STATUS_LABELS[s]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Заказы не найдены</div>
         )}

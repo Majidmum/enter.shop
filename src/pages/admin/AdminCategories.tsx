@@ -88,7 +88,7 @@ export default function AdminCategories() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -129,6 +129,32 @@ export default function AdminCategories() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {sortedItems.map((c) => (
+            <div key={c.id} className={`p-4 flex items-center gap-3 ${c.parentId ? 'pl-8' : ''}`}>
+              {c.parentId && <span className="text-muted-foreground shrink-0">↳</span>}
+              <div className="h-11 w-11 rounded-lg overflow-hidden bg-muted shrink-0">
+                <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={c.parentId ? 'text-sm' : 'font-medium'}>{c.name}</p>
+                <p className="text-xs text-muted-foreground font-mono">{c.slug}</p>
+              </div>
+              <Badge className="bg-primary/10 text-primary shrink-0">{c.productCount}</Badge>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(c.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!loading && items.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Категорий пока нет</div>
         )}

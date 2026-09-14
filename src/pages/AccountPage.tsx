@@ -105,34 +105,56 @@ export default function AccountPage() {
               {ordersLoading ? (
                 <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
               ) : myOrders.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm whitespace-nowrap">
-                    <thead>
-                      <tr className="bg-muted/50">
-                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заказ №</th>
-                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Дата</th>
-                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
-                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Сумма</th>
-                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Статус</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {myOrders.map((order) => (
-                        <tr key={order.id} className="border-t border-border hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 font-medium text-primary">{order.orderNumber}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{order.date}</td>
-                          <td className="px-4 py-3">{order.items.reduce((s, i) => s + i.quantity, 0)} шт.</td>
-                          <td className="px-4 py-3 font-semibold">{order.total.toLocaleString()} сом.</td>
-                          <td className="px-4 py-3">
-                            <Badge className={ORDER_STATUS_COLORS[order.status]}>
-                              {ORDER_STATUS_LABELS[order.status]}
-                            </Badge>
-                          </td>
+                <>
+                  {/* Десктоп — таблица */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-sm whitespace-nowrap">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заказ №</th>
+                          <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Дата</th>
+                          <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
+                          <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Сумма</th>
+                          <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Статус</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {myOrders.map((order) => (
+                          <tr key={order.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                            <td className="px-4 py-3 font-medium text-primary">{order.orderNumber}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{order.date}</td>
+                            <td className="px-4 py-3">{order.items.reduce((s, i) => s + i.quantity, 0)} шт.</td>
+                            <td className="px-4 py-3 font-semibold">{order.total.toLocaleString()} сом.</td>
+                            <td className="px-4 py-3">
+                              <Badge className={ORDER_STATUS_COLORS[order.status]}>
+                                {ORDER_STATUS_LABELS[order.status]}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Мобильный — карточки, таблица на узком экране нечитаема */}
+                  <div className="md:hidden flex flex-col divide-y divide-border">
+                    {myOrders.map((order) => (
+                      <div key={order.id} className="p-4 flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-primary">{order.orderNumber}</span>
+                          <Badge className={ORDER_STATUS_COLORS[order.status]}>
+                            {ORDER_STATUS_LABELS[order.status]}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{order.date}</p>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{order.items.reduce((s, i) => s + i.quantity, 0)} шт.</span>
+                          <span className="font-semibold">{order.total.toLocaleString()} сом.</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="flex flex-col items-center py-12 gap-3">
                   <Package className="h-12 w-12 text-muted" />

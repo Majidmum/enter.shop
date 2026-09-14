@@ -187,7 +187,7 @@ export default function AdminProducts() {
 
       {/* Table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -242,6 +242,43 @@ export default function AdminProducts() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {filtered.map((p) => (
+            <div key={p.id} className="p-4 flex gap-3">
+              <div className="h-14 w-14 rounded-lg overflow-hidden bg-muted shrink-0">
+                <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium leading-tight">{p.name}</p>
+                  <Badge className={`shrink-0 ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {p.status === 'active' ? 'Активен' : 'Неактивен'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">{p.sku} · {p.categoryName} · {p.brandName}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold">{p.price.toLocaleString()} сом.</span>
+                    <span className={`text-xs ${p.stock > 0 ? 'text-green-600' : 'text-destructive'}`}>
+                      {p.stock > 0 ? `${p.stock} шт.` : 'нет в наличии'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(p.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Товары не найдены</div>
         )}

@@ -40,7 +40,7 @@ export default function AdminCustomers() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -77,6 +77,27 @@ export default function AdminCustomers() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {filtered.map((c) => (
+            <div key={c.id} className="p-4 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium">{c.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{c.email}</p>
+                <p className="text-xs text-muted-foreground">{c.phone || '—'} · {c.registeredAt}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-primary/10 text-primary">{c.orderCount} заказ.</Badge>
+                  <span className="text-sm font-semibold">{c.totalSpent.toLocaleString()} сом.</span>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewing(c)}>
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
         {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Клиенты не найдены</div>
         )}
