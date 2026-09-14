@@ -46,7 +46,7 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
 
-      <nav className="flex-1 p-2 overflow-y-auto">
+      <nav className="flex-1 p-2">
         <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Навигация</p>
         {visibleNavItems.map((item) => {
           const active = isActive(item);
@@ -121,7 +121,7 @@ export default function AdminLayout() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 bg-sidebar-background sticky top-0 h-screen">
+      <aside className="hidden md:flex flex-col w-60 shrink-0 bg-sidebar-background">
         <SidebarNav />
       </aside>
 
