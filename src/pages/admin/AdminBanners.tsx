@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, ArrowUp, ArrowDown, Upload, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, ArrowUp, ArrowDown, Upload, X, Image as ImageIcon, Columns2, Layers, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +9,15 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchBanners, createBanner, updateBanner, deleteBanner } from '@/lib/supabaseData';
 import { compressImageFile } from '@/lib/imageCompress';
-import type { Banner } from '@/types';
+import type { Banner, BannerLayout } from '@/types';
 import { toast } from 'sonner';
+
+const BANNER_LAYOUTS: { value: BannerLayout; label: string; description: string; icon: typeof ImageIcon }[] = [
+  { value: 'full', label: 'Фото на всю ширину', description: 'без текста поверх', icon: ImageIcon },
+  { value: 'split', label: 'Фото + текст раздельно', description: 'фото и текст рядом', icon: Columns2 },
+  { value: 'overlay', label: 'Текст поверх фото', description: 'с затемнением', icon: Layers },
+  { value: 'solid', label: 'Только текст', description: 'цветной фон, без фото', icon: Type },
+];
 
 export default function AdminBanners() {
   const [items, setItems] = useState<Banner[]>([]);
@@ -30,14 +37,15 @@ export default function AdminBanners() {
 
   const openNew = () => {
     setEditing(null);
-    setDraft({ title: '', subtitle: '', buttonText: 'Подробнее', buttonLink: '/', order: items.length + 1, status: 'active', image: '' });
+    setDraft({ title: '', subtitle: '', buttonText: 'Подробнее', buttonLink: '/', layout: 'split', order: items.length + 1, status: 'active', image: '' });
     setOpen(true);
   };
   const openEdit = (b: Banner) => { setEditing(b); setDraft({ ...b }); setOpen(true); };
 
   const handleSave = async () => {
     if (!draft.title) { toast.error('Введите заголовок баннера'); return; }
-    if (!draft.image) { toast.error('Загрузите изображение баннера'); return; }
+    const layout = (draft.layout as BannerLayout) || 'split';
+    if (layout !== 'solid' && !draft.image) { toast.error('Загрузите изображение баннера'); return; }
 
     setSaving(true);
     try {
@@ -48,6 +56,7 @@ export default function AdminBanners() {
           buttonText: draft.buttonText,
           buttonLink: draft.buttonLink,
           image: draft.image,
+          layout,
           status: draft.status as 'active' | 'inactive',
         });
         setItems((prev) => prev.map((b) => b.id === editing.id ? updated : b));
@@ -59,6 +68,7 @@ export default function AdminBanners() {
           buttonText: draft.buttonText || 'Подробнее',
           buttonLink: draft.buttonLink || '/',
           image: draft.image,
+          layout,
           order: items.length + 1,
           status: (draft.status as 'active' | 'inactive') || 'active',
         });
@@ -187,7 +197,28 @@ export default function AdminBanners() {
           <DialogHeader><DialogTitle>{editing ? 'Редактировать баннер' : 'Добавить баннер'}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <div>
-              <Label>Изображение баннера *</Label>
+              <Label>Макет баннера</Label>
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                {BANNER_LAYOUTS.map((l) => (
+                  <button
+                    key={l.value}
+                    type="button"
+                    onClick={() => setDraft({ ...draft, layout: l.value })}
+                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-center transition-colors ${
+                      (draft.layout || 'split') === l.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <l.icon className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs font-medium leading-tight">{l.label}</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">{l.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label>Изображение баннера {draft.layout !== 'solid' && '*'}</Label>
               <div className="mt-1 border-2 border-dashed border-border rounded-lg p-3 bg-muted/30">
                 {draft.image ? (
                   <div className="relative w-full h-32">
@@ -204,7 +235,9 @@ export default function AdminBanners() {
                   <label className="block cursor-pointer">
                     <div className="flex flex-col items-center justify-center gap-1 py-6">
                       <Upload className="h-6 w-6 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Нажмите, чтобы загрузить фото</span>
+                      <span className="text-sm text-muted-foreground">
+                        {draft.layout === 'solid' ? 'Фото необязательно для этого макета' : 'Нажмите, чтобы загрузить фото'}
+                      </span>
                     </div>
                     <input
                       type="file"

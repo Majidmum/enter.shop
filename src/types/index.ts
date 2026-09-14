@@ -113,6 +113,8 @@ export interface Promotion {
   status: 'active' | 'inactive';
 }
 
+export type BannerLayout = 'full' | 'split' | 'overlay' | 'solid';
+
 export interface Banner {
   id: string;
   title: string;
@@ -120,6 +122,7 @@ export interface Banner {
   buttonText: string;
   buttonLink: string;
   image: string;
+  layout: BannerLayout;
   order: number;
   status: 'active' | 'inactive';
 }

@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, Order, OrderStatus, PromoCampaign, AuditLogEntry, StaffMember } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, BannerLayout, Order, OrderStatus, PromoCampaign, AuditLogEntry, StaffMember } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -601,6 +601,7 @@ function rowToBanner(row: any): Banner {
     buttonText: row.button_text || '',
     buttonLink: row.button_link || '/',
     image: row.image || '',
+    layout: row.layout || 'split',
     order: row.sort_order,
     status: row.status,
   };
@@ -630,6 +631,7 @@ export interface BannerInput {
   buttonText?: string;
   buttonLink?: string;
   image?: string;
+  layout?: BannerLayout;
   order?: number;
   status?: 'active' | 'inactive';
 }
@@ -641,6 +643,7 @@ function bannerToDbPatch(input: Partial<BannerInput>) {
   if (input.buttonText !== undefined) patch.button_text = input.buttonText;
   if (input.buttonLink !== undefined) patch.button_link = input.buttonLink;
   if (input.image !== undefined) patch.image = input.image;
+  if (input.layout !== undefined) patch.layout = input.layout;
   if (input.order !== undefined) patch.sort_order = input.order;
   if (input.status !== undefined) patch.status = input.status;
   return patch;

@@ -98,14 +98,14 @@ export default function HomePage() {
       <section className="container mx-auto px-4 pt-4 md:pt-6">
         <div className="relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
           {activeBanners.map((banner, i) => {
-            const hasText = !!banner.title?.trim();
             const shouldLoad = seenBannerIdx.has(i);
+            const layout = banner.layout || 'split';
             return (
               <div
                 key={banner.id}
                 className={`absolute inset-0 transition-opacity duration-700 ${i === bannerIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
               >
-                {hasText ? (
+                {layout === 'split' ? (
                   <div className="relative w-full h-full md:flex">
                     {/* Фото — своя панель */}
                     <div className="relative w-full h-full md:w-1/2 bg-secondary">
@@ -153,10 +153,55 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
+                ) : layout === 'overlay' ? (
+                  // Текст прямо поверх фото с затемнением, на всех экранах одинаково
+                  <div className="relative w-full h-full bg-secondary">
+                    {shouldLoad && (
+                      <img
+                        src={banner.image}
+                        alt={banner.title}
+                        className="w-full h-full object-cover"
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        {...{ fetchpriority: i === 0 ? 'high' : 'low' } as any}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                    <div className="absolute inset-0 flex flex-col justify-end gap-3 px-5 py-6 md:px-12 md:py-10 md:max-w-xl">
+                      <p className="text-2xl md:text-4xl font-black text-white leading-tight text-balance">
+                        {banner.title}
+                      </p>
+                      {banner.subtitle && (
+                        <p className="text-sm md:text-base text-white/80">{banner.subtitle}</p>
+                      )}
+                      <div className="flex flex-wrap gap-3">
+                        <Link to={banner.buttonLink}>
+                          <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold rounded-full">
+                            {banner.buttonText || 'Подробнее'} <ArrowRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ) : layout === 'solid' ? (
+                  // Без фото — просто цветной фон с текстом, для текстовых объявлений
+                  <div className="relative w-full h-full bg-gradient-to-br from-secondary to-primary/80 flex flex-col justify-center gap-4 px-6 md:px-14 text-center md:text-left items-center md:items-start">
+                    <p className="text-2xl md:text-4xl font-black text-white leading-tight text-balance max-w-xl">
+                      {banner.title}
+                    </p>
+                    {banner.subtitle && (
+                      <p className="text-sm md:text-base text-white/80 max-w-md">{banner.subtitle}</p>
+                    )}
+                    <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                      <Link to={banner.buttonLink}>
+                        <Button className="bg-primary hover:bg-primary/90 text-white px-6 font-semibold rounded-full">
+                          {banner.buttonText || 'Подробнее'} <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 ) : (
-                  // Баннер без заголовка — готовая картинка сама несёт весь смысл
-                  // (например, дизайн с уже вписанным текстом). Показываем на всю
-                  // ширину, без текстового наложения.
+                  // full — готовая картинка сама несёт весь смысл (например, дизайн
+                  // с уже вписанным текстом). Показываем на всю ширину, без текста.
                   <Link to={banner.buttonLink || '#'} className="block w-full h-full">
                     {shouldLoad && (
                       <img
