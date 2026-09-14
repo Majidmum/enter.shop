@@ -41,6 +41,8 @@ import AdminPromotions from '@/pages/admin/AdminPromotions';
 import AdminOfficePackages from '@/pages/admin/AdminOfficePackages';
 import AdminBanners from '@/pages/admin/AdminBanners';
 import AdminPromoCampaigns from '@/pages/admin/AdminPromoCampaigns';
+import AdminStaff from '@/pages/admin/AdminStaff';
+import AdminAuditLog from '@/pages/admin/AdminAuditLog';
 import AdminReviews from '@/pages/admin/AdminReviews';
 import AdminSettings from '@/pages/admin/AdminSettings';
 
@@ -94,6 +96,8 @@ const App: React.FC = () => {
           <Route path="office" element={<AdminOfficePackages />} />
           <Route path="banners" element={<AdminBanners />} />
           <Route path="promo-campaigns" element={<AdminPromoCampaigns />} />
+          <Route path="staff" element={<AdminStaff />} />
+          <Route path="audit-log" element={<AdminAuditLog />} />
           <Route path="reviews" element={<AdminReviews />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

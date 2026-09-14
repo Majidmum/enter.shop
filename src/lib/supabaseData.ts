@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, Order, OrderStatus, PromoCampaign } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, Order, OrderStatus, PromoCampaign, AuditLogEntry, StaffMember } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -849,6 +849,67 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
     .single();
   if (error) throw error;
   return rowToOrder(data);
+}
+
+// ============================================================================
+// ============================================================================
+// ЖУРНАЛ ИЗМЕНЕНИЙ И УПРАВЛЕНИЕ СОТРУДНИКАМИ (только для настоящего admin)
+// ============================================================================
+
+function rowToAuditLogEntry(row: any): AuditLogEntry {
+  return {
+    id: row.id,
+    actorId: row.actor_id,
+    actorName: row.actor_name || 'Система',
+    actorRole: row.actor_role || '—',
+    tableName: row.table_name,
+    recordId: row.record_id,
+    action: row.action,
+    changedData: row.changed_data,
+    createdAt: row.created_at,
+  };
+}
+
+/** Журнал изменений — видно только настоящему админу (ограничено RLS). */
+export async function fetchAuditLog(limit = 200): Promise<AuditLogEntry[]> {
+  const { data, error } = await supabase
+    .from('admin_audit_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data || []).map(rowToAuditLogEntry);
+}
+
+function rowToStaffMember(row: any): StaffMember {
+  return {
+    id: row.id,
+    fullName: row.full_name || '—',
+    email: row.email || '',
+    role: row.role || 'user',
+  };
+}
+
+/** Все зарегистрированные пользователи — для поиска по email и назначения роли. */
+export async function fetchAllStaffCandidates(): Promise<StaffMember[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, role')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(rowToStaffMember);
+}
+
+/** Назначить/снять роль менеджера — доступно только настоящему админу (защищено триггером в базе). */
+export async function setUserRole(userId: string, role: 'user' | 'manager'): Promise<StaffMember> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId)
+    .select('id, full_name, email, role')
+    .single();
+  if (error) throw error;
+  return rowToStaffMember(data);
 }
 
 // ============================================================================

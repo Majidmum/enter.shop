@@ -135,6 +135,25 @@ export interface PromoCampaign {
   status: 'active' | 'inactive';
 }
 
+export interface AuditLogEntry {
+  id: string;
+  actorId: string | null;
+  actorName: string;
+  actorRole: string;
+  tableName: string;
+  recordId: string | null;
+  action: 'insert' | 'update' | 'delete';
+  changedData: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface StaffMember {
+  id: string;
+  fullName: string;
+  email: string;
+  role: 'user' | 'admin' | 'manager';
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
@@ -157,7 +176,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'manager';
 }
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {

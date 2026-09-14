@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Tag, ShoppingBag, Users, Star, Megaphone, Image,
-  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight, Building2,
+  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight, Building2, UserCog, History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
-  { href: '/admin', label: 'Дашборд', icon: LayoutDashboard, exact: true },
+  { href: '/admin', label: 'Дашборд', icon: LayoutDashboard, exact: true, adminOnly: true },
   { href: '/admin/products', label: 'Товары', icon: Package },
   { href: '/admin/categories', label: 'Категории', icon: Tag },
   { href: '/admin/orders', label: 'Заказы', icon: ShoppingBag },
@@ -20,13 +20,16 @@ const navItems = [
   { href: '/admin/banners',    label: 'Баннеры',     icon: Image },
   { href: '/admin/promo-campaigns', label: 'Рекламные акции', icon: Megaphone },
   { href: '/admin/reviews',    label: 'Отзывы',     icon: Star },
-  { href: '/admin/settings', label: 'Настройки', icon: Settings },
+  { href: '/admin/staff', label: 'Сотрудники', icon: UserCog, adminOnly: true },
+  { href: '/admin/audit-log', label: 'Журнал изменений', icon: History, adminOnly: true },
+  { href: '/admin/settings', label: 'Настройки', icon: Settings, adminOnly: true },
 ];
 
 function SidebarNav({ onClose }: { onClose?: () => void }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || user?.role === 'admin');
 
   const isActive = (item: typeof navItems[0]) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href);
@@ -45,7 +48,7 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
 
       <nav className="flex-1 p-2 overflow-y-auto">
         <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Навигация</p>
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const active = isActive(item);
           return (
             <Link
@@ -102,9 +105,17 @@ export default function AdminLayout() {
     return <Navigate to="/login" replace />;
   }
 
-  // Вошёл, но не администратор → в личный кабинет, панель не для него.
-  if (user?.role !== 'admin') {
+  // Вошёл, но не сотрудник (не админ и не менеджер) → в личный кабинет, панель не для него.
+  if (user?.role !== 'admin' && user?.role !== 'manager') {
     return <Navigate to="/account" replace />;
+  }
+
+  // Дашборд, "Сотрудники" и "Журнал изменений" — только для настоящего админа.
+  // Менеджер получает доступ ко всей остальной админке.
+  const isDashboardPath = pathname === '/admin' || pathname === '/admin/';
+  const isAdminOnlyPath = pathname.startsWith('/admin/staff') || pathname.startsWith('/admin/audit-log') || pathname.startsWith('/admin/settings');
+  if (user?.role === 'manager' && (isDashboardPath || isAdminOnlyPath)) {
+    return <Navigate to="/admin/products" replace />;
   }
 
   return (
