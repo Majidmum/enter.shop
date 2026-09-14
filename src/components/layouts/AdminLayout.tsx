@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Tag, ShoppingBag, Users, Star, Megaphone, Image,
-  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight, Building2, UserCog, History,
+  Settings, LogOut, Laptop, Menu, Truck, Bookmark, ChevronRight, ChevronLeft, Building2, UserCog, History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -25,7 +25,7 @@ const navItems = [
   { href: '/admin/settings', label: 'Настройки', icon: Settings, adminOnly: true },
 ];
 
-function SidebarNav({ onClose }: { onClose?: () => void }) {
+function SidebarNav({ onClose, collapsed = false, onToggleCollapse }: { onClose?: () => void; collapsed?: boolean; onToggleCollapse?: () => void }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
@@ -36,18 +36,20 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 p-4 border-b border-sidebar-border">
+      <div className={`flex items-center gap-2 p-4 border-b border-sidebar-border ${collapsed ? 'justify-center px-2' : ''}`}>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
           <Laptop className="h-4 w-4 text-white" />
         </div>
-        <div>
-          <span className="text-sm font-bold text-sidebar-foreground">ENTER<span className="text-primary">.TJ</span></span>
-          <p className="text-[10px] text-sidebar-foreground/50">Панель управления</p>
-        </div>
+        {!collapsed && (
+          <div className="min-w-0">
+            <span className="text-sm font-bold text-sidebar-foreground">ENTER<span className="text-primary">.TJ</span></span>
+            <p className="text-[10px] text-sidebar-foreground/50">Панель управления</p>
+          </div>
+        )}
       </div>
 
-      <nav className="flex-1 p-2">
-        <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Навигация</p>
+      <nav className="flex-1 p-2 overflow-y-auto">
+        {!collapsed && <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Навигация</p>}
         {visibleNavItems.map((item) => {
           const active = isActive(item);
           return (
@@ -55,29 +57,41 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
               key={item.href}
               to={item.href}
               onClick={onClose}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium mb-0.5 transition-colors min-h-10 ${
+              title={collapsed ? item.label : undefined}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium mb-0.5 transition-colors min-h-10 ${collapsed ? 'justify-center px-0' : ''} ${
                 active
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                   : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               }`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1 min-w-0 truncate">{item.label}</span>
-              {active && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" />}
+              {!collapsed && <span className="flex-1 min-w-0 truncate">{item.label}</span>}
+              {!collapsed && active && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" />}
             </Link>
           );
         })}
       </nav>
 
+      {onToggleCollapse && (
+        <button
+          onClick={onToggleCollapse}
+          className={`hidden md:flex items-center gap-2.5 px-3 py-2.5 mx-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors ${collapsed ? 'justify-center px-0' : ''}`}
+        >
+          <ChevronLeft className={`h-4 w-4 shrink-0 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+          {!collapsed && 'Свернуть меню'}
+        </button>
+      )}
+
       <div className="p-3 border-t border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors mb-1">
-          <Truck className="h-4 w-4" /> В магазин
+        <Link to="/" title={collapsed ? 'В магазин' : undefined} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors mb-1 ${collapsed ? 'justify-center px-0' : ''}`}>
+          <Truck className="h-4 w-4 shrink-0" /> {!collapsed && 'В магазин'}
         </Link>
         <button
           onClick={() => { logout(); navigate('/login'); }}
-          className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
+          title={collapsed ? 'Выйти' : undefined}
+          className={`flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors ${collapsed ? 'justify-center px-0' : ''}`}
         >
-          <LogOut className="h-4 w-4" /> Выйти
+          <LogOut className="h-4 w-4 shrink-0" /> {!collapsed && 'Выйти'}
         </button>
       </div>
     </div>
@@ -86,8 +100,17 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('enter-tj-admin-sidebar-collapsed') === '1');
   const { pathname } = useLocation();
   const { user, isAuthenticated, loading } = useAuthStore();
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('enter-tj-admin-sidebar-collapsed', next ? '1' : '0');
+      return next;
+    });
+  };
 
   const currentPage = navItems.find((i) => i.exact ? pathname === i.href : pathname.startsWith(i.href))?.label || 'Admin';
 
@@ -120,9 +143,9 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 bg-sidebar-background">
-        <SidebarNav />
+      {/* Desktop Sidebar — прилипает и остаётся на весь экран, не скроллится со страницей */}
+      <aside className={`hidden md:flex flex-col shrink-0 bg-sidebar-background sticky top-0 h-screen transition-[width] duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
+        <SidebarNav collapsed={collapsed} onToggleCollapse={toggleCollapse} />
       </aside>
 
       {/* Main */}
