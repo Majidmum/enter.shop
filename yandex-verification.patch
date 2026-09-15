@@ -1,0 +1,12 @@
+diff --git a/index.html b/index.html
+index c1fb77e..0fa2094 100644
+--- a/index.html
++++ b/index.html
+@@ -9,6 +9,7 @@
+     <meta property="og:title" content="ENTER.TJ — Компьютерная техника и офисная мебель в Душанбе" />
+     <meta property="og:description" content="Ноутбуки, ПК, мониторы, принтеры, офисная мебель с доставкой по Душанбе и Таджикистану." />
+     <meta property="og:type" content="website" />
++    <meta name="yandex-verification" content="be4501b73ec1f082" />
+ 
+     <!-- Шрифт Inter: preconnect + обычная ссылка вместо @import в CSS —
+          @import блокирует рендеринг страницы, пока не скачается и не
