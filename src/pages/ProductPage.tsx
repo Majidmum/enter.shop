@@ -164,8 +164,8 @@ export default function ProductPage() {
       <div className="mt-5 sm:mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         {/* Gallery */}
         <div className="flex flex-col gap-3">
-          <div className="w-full h-[340px] sm:h-[420px] md:h-[460px] rounded-2xl overflow-hidden bg-muted relative">
-            <img src={displayImages[activeImg] || displayImages[0]} alt={product.name} className="w-full h-full object-cover" />
+          <div className="aspect-square w-full max-w-[480px] mx-auto md:max-w-full rounded-2xl overflow-hidden bg-muted relative flex items-center justify-center">
+            <img src={displayImages[activeImg] || displayImages[0]} alt={product.name} className="w-full h-full object-contain" />
             {product.discount && (
               <Badge className="absolute top-3 left-3 bg-destructive text-white">-{product.discount}%</Badge>
             )}
