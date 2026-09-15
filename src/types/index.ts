@@ -21,6 +21,16 @@ export interface ProductSpec {
   value: string;
 }
 
+export interface ProductColor {
+  id: string;
+  productId: string;
+  name: string;
+  hex: string;
+  price: number;
+  images: string[];
+  order: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -43,6 +53,8 @@ export interface Product {
   status: 'active' | 'inactive';
   isNew?: boolean;
   isFeatured?: boolean;
+  /** Варианты цвета — необязательны. Если есть, на странице товара показывается переключатель. */
+  colors?: ProductColor[];
 }
 
 export interface Review {

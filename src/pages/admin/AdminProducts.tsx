@@ -13,12 +13,14 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   fetchProducts, createProduct, updateProduct, deleteProduct,
   fetchCategories, fetchBrands, fetchPromotions, updatePromotion,
+  createProductColor, updateProductColor, deleteProductColor,
 } from '@/lib/supabaseData';
 import type { Product, Category, Brand, Promotion } from '@/types';
 import { compressImageFile } from '@/lib/imageCompress';
 import { toast } from 'sonner';
 
 type ProductDraft = Partial<Product> & { name: string; price: number };
+type ColorDraft = { id?: string; tempId?: string; name: string; hex: string; price: number; images: string[] };
 
 export default function AdminProducts() {
   const [items, setItems] = useState<Product[]>([]);
@@ -38,6 +40,7 @@ export default function AdminProducts() {
   // Какие акции отмечены для этого товара в форме — не хранится на самом товаре,
   // это отражение того, в productIds каких акций сейчас/будет этот товар.
   const [selectedPromoIds, setSelectedPromoIds] = useState<string[]>([]);
+  const [colorDrafts, setColorDrafts] = useState<ColorDraft[]>([]);
 
   const load = () => {
     setLoading(true);
@@ -61,6 +64,7 @@ export default function AdminProducts() {
     setDraft({ name: '', price: 0, status: 'active', stock: 0, categoryId: categories[0]?.id || '', brandId: brands[0]?.id || '', specs: [] });
     setUploadedImages([]);
     setSelectedPromoIds([]);
+    setColorDrafts([]);
     setOpen(true);
   };
 
@@ -69,6 +73,7 @@ export default function AdminProducts() {
     setDraft({ ...p });
     setUploadedImages(p.images || []);
     setSelectedPromoIds(promotions.filter((promo) => promo.productIds.includes(p.id)).map((promo) => promo.id));
+    setColorDrafts((p.colors || []).map((c) => ({ id: c.id, name: c.name, hex: c.hex, price: c.price, images: c.images })));
     setOpen(true);
   };
 
@@ -93,9 +98,34 @@ export default function AdminProducts() {
     setPromotions((prev) => prev.map((p) => updated.find((u) => u.id === p.id) || p));
   };
 
+  /** Создаёт новые цвета, обновляет изменившиеся, удаляет убранные из формы. */
+  const syncProductColors = async (productId: string) => {
+    const existingColors = editing?.colors || [];
+
+    const toDelete = existingColors.filter((c) => !colorDrafts.some((d) => d.id === c.id));
+    const toCreate = colorDrafts.filter((d) => !d.id);
+    const toUpdate = colorDrafts.filter((d) => {
+      if (!d.id) return false;
+      const original = existingColors.find((c) => c.id === d.id);
+      if (!original) return false;
+      return original.name !== d.name || original.hex !== d.hex || original.price !== d.price
+        || JSON.stringify(original.images) !== JSON.stringify(d.images);
+    });
+
+    await Promise.all([
+      ...toDelete.map((c) => deleteProductColor(c.id)),
+      ...toCreate.map((d) => createProductColor({ productId, name: d.name, hex: d.hex, price: d.price, images: d.images })),
+      ...toUpdate.map((d) => updateProductColor(d.id!, { name: d.name, hex: d.hex, price: d.price, images: d.images })),
+    ]);
+  };
+
   const handleSave = async () => {
     if (!draft.name || !draft.price) { toast.error('Заполните обязательные поля'); return; }
     if (uploadedImages.length === 0) { toast.error('Добавьте хотя бы одно изображение'); return; }
+    if (colorDrafts.some((c) => !c.name.trim() || !c.price)) {
+      toast.error('У каждого добавленного цвета укажите название и цену');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -115,7 +145,7 @@ export default function AdminProducts() {
           specs: (draft.specs || []).filter((s) => s.label.trim() && s.value.trim()),
         });
         await syncProductPromotions(updated.id);
-        setItems((prev) => prev.map((p) => p.id === editing.id ? updated : p));
+        await syncProductColors(updated.id);
         toast.success('Товар обновлён');
       } else {
         const created = await createProduct({
@@ -133,10 +163,11 @@ export default function AdminProducts() {
           specs: (draft.specs || []).filter((s) => s.label.trim() && s.value.trim()),
         });
         await syncProductPromotions(created.id);
-        setItems((prev) => [created, ...prev]);
+        await syncProductColors(created.id);
         toast.success('Товар добавлен');
       }
       setOpen(false);
+      load(); // подтягиваем товар со свежими цветами — их не было в ответе create/update
     } catch (e: any) {
       toast.error(e.message || 'Не удалось сохранить товар');
     } finally {
@@ -346,6 +377,98 @@ export default function AdminProducts() {
               <div className="flex items-center justify-between rounded-lg border border-border p-3">
                 <Label className="cursor-pointer">Популярный</Label>
                 <Switch checked={!!draft.isFeatured} onCheckedChange={(v) => setDraft({ ...draft, isFeatured: v })} />
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <Label>Цвета товара</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setColorDrafts((prev) => [...prev, {
+                    tempId: `new-${Date.now()}`,
+                    name: '',
+                    hex: '#000000',
+                    price: draft.price || 0,
+                    images: [],
+                  }])}
+                >
+                  <Plus className="h-3 w-3 mr-1" /> Добавить цвет
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                Необязательно. Если добавить хотя бы один цвет — на странице товара появится переключатель, при выборе меняются фото и цена.
+              </p>
+              <div className="flex flex-col gap-3">
+                {colorDrafts.map((c, idx) => (
+                  <div key={c.id || c.tempId} className="rounded-lg border border-border p-3 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={c.hex}
+                        onChange={(e) => setColorDrafts((prev) => prev.map((x, i) => i === idx ? { ...x, hex: e.target.value } : x))}
+                        className="h-9 w-9 rounded-md border border-border shrink-0 cursor-pointer"
+                      />
+                      <Input
+                        placeholder="Название цвета (например: Оранжевый)"
+                        className="flex-1"
+                        value={c.name}
+                        onChange={(e) => setColorDrafts((prev) => prev.map((x, i) => i === idx ? { ...x, name: e.target.value } : x))}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Цена"
+                        className="w-28 shrink-0"
+                        value={c.price || ''}
+                        onChange={(e) => setColorDrafts((prev) => prev.map((x, i) => i === idx ? { ...x, price: Number(e.target.value) } : x))}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10"
+                        onClick={() => setColorDrafts((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {c.images.map((img, imgIdx) => (
+                        <div key={imgIdx} className="relative h-14 w-14">
+                          <img src={img} alt="" className="h-full w-full object-cover rounded-md" />
+                          <button
+                            type="button"
+                            onClick={() => setColorDrafts((prev) => prev.map((x, i) => i === idx ? { ...x, images: x.images.filter((_, ii) => ii !== imgIdx) } : x))}
+                            className="absolute -top-1.5 -right-1.5 bg-destructive text-white rounded-full p-0.5"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="h-14 w-14 flex items-center justify-center rounded-md border-2 border-dashed border-border cursor-pointer text-muted-foreground hover:border-primary/40 transition-colors">
+                        <Plus className="h-4 w-4" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            Array.from(e.target.files || []).forEach((file) => {
+                              compressImageFile(file)
+                                .then((compressed) => setColorDrafts((prev) => prev.map((x, i) => i === idx ? { ...x, images: [...x.images, compressed] } : x)))
+                                .catch(() => toast.error('Не удалось обработать изображение'));
+                            });
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+                {colorDrafts.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Цвета не добавлены — товар будет как обычно, без переключателя</p>
+                )}
               </div>
             </div>
             <div className="md:col-span-2">

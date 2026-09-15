@@ -26,6 +26,7 @@ export default function ProductPage() {
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
+  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [productReviews, setProductReviews] = useState<Review[]>([]);
   const [reviewName, setReviewName] = useState('');
@@ -47,6 +48,7 @@ export default function ProductPage() {
     if (!product) return;
     fetchApprovedReviews(product.id).then(setProductReviews);
     if (user?.name) setReviewName(user.name);
+    if (product.colors && product.colors.length > 0) setSelectedColorId(product.colors[0].id);
   }, [product?.id]);
 
   const addToCart = useCartStore((s) => s.addItem);
@@ -72,13 +74,22 @@ export default function ProductPage() {
   const fav = isFavorite(product.id);
   const similar = products.filter((p) => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4);
 
+  const selectedColor = product.colors?.find((c) => c.id === selectedColorId);
+  const displayImages = selectedColor && selectedColor.images.length > 0 ? selectedColor.images : product.images;
+  const displayPrice = selectedColor ? selectedColor.price : product.price;
+  // Товар с ценой/фото/названием выбранного цвета — чтобы в корзине и заказе
+  // была именно та цена и то фото, что человек видел на экране при выборе.
+  const effectiveProduct = selectedColor
+    ? { ...product, price: selectedColor.price, images: selectedColor.images.length > 0 ? selectedColor.images : product.images, name: `${product.name} — ${selectedColor.name}` }
+    : product;
+
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    addToCart(effectiveProduct, quantity);
     toast.success(t('product.added_to_cart', { name: product.name }));
   };
 
   const handleBuyNow = () => {
-    addToCart(product, quantity);
+    addToCart(effectiveProduct, quantity);
     window.location.href = '/checkout';
   };
 
@@ -154,14 +165,14 @@ export default function ProductPage() {
         {/* Gallery */}
         <div className="flex flex-col gap-3">
           <div className="aspect-square w-full rounded-2xl overflow-hidden bg-muted relative">
-            <img src={product.images[activeImg]} alt={product.name} className="w-full h-full object-cover" />
+            <img src={displayImages[activeImg] || displayImages[0]} alt={product.name} className="w-full h-full object-cover" />
             {product.discount && (
               <Badge className="absolute top-3 left-3 bg-destructive text-white">-{product.discount}%</Badge>
             )}
           </div>
-          {product.images.length > 1 && (
+          {displayImages.length > 1 && (
             <div className="flex gap-2 overflow-x-auto">
-              {product.images.map((img, i) => (
+              {displayImages.map((img, i) => (
                 <button key={i} onClick={() => setActiveImg(i)}
                   className={`h-20 w-20 sm:h-16 sm:w-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-primary' : 'border-border'}`}>
                   <img src={img} alt="" className="w-full h-full object-cover" />
@@ -195,14 +206,37 @@ export default function ProductPage() {
 
           {/* Price */}
           <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
-            <span className="text-2xl md:text-3xl font-bold text-foreground">{product.price.toLocaleString()} {t('common.currency')}</span>
-            {product.oldPrice && (
+            <span className="text-2xl md:text-3xl font-bold text-foreground">{displayPrice.toLocaleString()} {t('common.currency')}</span>
+            {product.oldPrice && !selectedColor && (
               <span className="text-lg text-muted-foreground line-through">{product.oldPrice.toLocaleString()} {t('common.currency')}</span>
             )}
-            {product.discount && (
+            {product.discount && !selectedColor && (
               <Badge className="bg-destructive/10 text-destructive">{t('product.discount_badge', { amount: (product.oldPrice! - product.price).toLocaleString() })}</Badge>
             )}
           </div>
+
+          {/* Цвета — переключатель фото и цены, если у товара есть варианты */}
+          {product.colors && product.colors.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">
+                {t('product.color_label')}: <span className="text-foreground font-medium">{selectedColor?.name}</span>
+              </p>
+              <div className="flex items-center gap-2">
+                {product.colors.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => { setSelectedColorId(c.id); setActiveImg(0); }}
+                    title={c.name}
+                    className={`h-9 w-9 rounded-full border-2 transition-all ${
+                      selectedColorId === c.id ? 'border-primary scale-110' : 'border-border hover:border-primary/40'
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Availability */}
           <div className="flex items-center gap-2">

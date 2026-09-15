@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, BannerLayout, Order, OrderStatus, PromoCampaign, AuditLogEntry, StaffMember } from '@/types';
+import type { Product, Category, Brand, ProductSpec, Review, Promotion, Customer, Banner, BannerLayout, Order, OrderStatus, PromoCampaign, AuditLogEntry, StaffMember, ProductColor } from '@/types';
 
 // ============================================================================
 // КАТЕГОРИИ
@@ -121,6 +121,18 @@ export async function deleteBrand(id: string): Promise<void> {
 // ТОВАРЫ
 // ============================================================================
 
+function rowToProductColor(row: any): ProductColor {
+  return {
+    id: row.id,
+    productId: row.product_id,
+    name: row.name,
+    hex: row.hex || '#000000',
+    price: Number(row.price),
+    images: row.images || [],
+    order: row.sort_order,
+  };
+}
+
 function rowToProduct(row: any): Product {
   return {
     id: row.id,
@@ -144,10 +156,13 @@ function rowToProduct(row: any): Product {
     status: row.status,
     isNew: row.is_new || undefined,
     isFeatured: row.is_featured || undefined,
+    colors: (row.product_colors || [])
+      .map(rowToProductColor)
+      .sort((a: ProductColor, b: ProductColor) => a.order - b.order),
   };
 }
 
-const PRODUCT_SELECT = '*, categories(name, slug), brands(name)';
+const PRODUCT_SELECT = '*, categories(name, slug), brands(name), product_colors(*)';
 
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
@@ -914,6 +929,48 @@ export async function setUserRole(userId: string, role: 'user' | 'manager'): Pro
     .single();
   if (error) throw error;
   return rowToStaffMember(data);
+}
+
+// ============================================================================
+// ============================================================================
+// ЦВЕТА ТОВАРА (варианты со своим фото и ценой, общий остаток на товар)
+// ============================================================================
+
+export interface ProductColorInput {
+  productId: string;
+  name: string;
+  hex?: string;
+  price: number;
+  images?: string[];
+  order?: number;
+}
+
+function productColorToDbPatch(input: Partial<ProductColorInput>) {
+  const patch: Record<string, unknown> = {};
+  if (input.productId !== undefined) patch.product_id = input.productId;
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.hex !== undefined) patch.hex = input.hex;
+  if (input.price !== undefined) patch.price = input.price;
+  if (input.images !== undefined) patch.images = input.images;
+  if (input.order !== undefined) patch.sort_order = input.order;
+  return patch;
+}
+
+export async function createProductColor(input: ProductColorInput): Promise<ProductColor> {
+  const { data, error } = await supabase.from('product_colors').insert(productColorToDbPatch(input)).select().single();
+  if (error) throw error;
+  return rowToProductColor(data);
+}
+
+export async function updateProductColor(id: string, patch: Partial<ProductColorInput>): Promise<ProductColor> {
+  const { data, error } = await supabase.from('product_colors').update(productColorToDbPatch(patch)).eq('id', id).select().single();
+  if (error) throw error;
+  return rowToProductColor(data);
+}
+
+export async function deleteProductColor(id: string): Promise<void> {
+  const { error } = await supabase.from('product_colors').delete().eq('id', id);
+  if (error) throw error;
 }
 
 // ============================================================================

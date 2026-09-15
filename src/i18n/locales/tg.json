@@ -113,6 +113,7 @@
     "not_found_title": "Мол ёфт нашуд",
     "back_to_catalog": "Бозгашт ба каталог",
     "brand_label": "Бренд",
+    "color_label": "Ранг",
     "reviews_count": "({{count}} тафсир)",
     "discount_badge": "Тахфиф {{amount}} сомонӣ",
     "in_stock": "Дар мавҷудӣ ({{count}} дона)",
