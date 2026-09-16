@@ -36,11 +36,15 @@ export default function HomePage() {
     setSeenBannerIdx((prev) => (prev.has(bannerIdx) ? prev : new Set(prev).add(bannerIdx)));
   }, [bannerIdx]);
 
-  // "Популярные товары" — на основе реальной оценки и количества отзывов,
-  // а не ручного флажка. Чем выше рейтинг и чем больше отзывов — тем выше в списке.
+  // "Популярные товары" — сначала товары, отмеченные админом как "Популярный"
+  // (переключатель в форме товара), а если таких меньше 8 — достраиваем
+  // списком по реальной оценке и количеству отзывов.
   const popularProducts = [...displayProducts]
     .filter((p) => p.status === 'active')
-    .sort((a, b) => (b.rating - a.rating) || (b.reviewCount - a.reviewCount))
+    .sort((a, b) => {
+      if (!!b.isFeatured !== !!a.isFeatured) return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
+      return (b.rating - a.rating) || (b.reviewCount - a.reviewCount);
+    })
     .slice(0, 8);
 
   // "Новинки" — управляется администратором вручную (переключатель в форме товара)
