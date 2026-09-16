@@ -1,15 +1,11 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Phone, MapPin, Instagram, Send, MessageCircle, Laptop } from 'lucide-react';
+import { fetchCategories } from '@/lib/supabaseData';
+import type { Category } from '@/types';
 
 const footerLinks = {
-  catalog: [
-    { label: 'Ноутбуки', href: '/category/laptops' },
-    { label: 'Мониторы', href: '/category/monitors' },
-    { label: 'Принтеры', href: '/category/printers' },
-    { label: 'Офисные кресла', href: '/category/office-chairs' },
-    { label: 'Аксессуары', href: '/category/accessories' },
-  ],
   info: [
     { key: 'header.nav_about', href: '/about' },
     { key: 'header.nav_delivery', href: '/delivery' },
@@ -21,6 +17,14 @@ const footerLinks = {
 
 export default function Footer() {
   const { t } = useTranslation();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    // В подвале раньше были вымышленные категории-заглушки из шаблона
+    // (ноутбуки/мониторы/принтеры с несуществующими slug) — теперь берём
+    // настоящие категории верхнего уровня прямо из базы.
+    fetchCategories().then((all) => setCategories(all.filter((c) => !c.parentId).slice(0, 5)));
+  }, []);
 
   return (
     <footer className="bg-secondary text-white/80">
@@ -57,13 +61,18 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-white mb-4">{t('common.catalog')}</h4>
             <ul className="space-y-2">
-              {footerLinks.catalog.map((link) => (
-                <li key={link.href}>
-                  <Link to={link.href} className="text-sm text-white/60 hover:text-primary transition-colors">
-                    {link.label}
+              {categories.map((cat) => (
+                <li key={cat.id}>
+                  <Link to={`/category/${cat.slug}`} className="text-sm text-white/60 hover:text-primary transition-colors">
+                    {cat.name}
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link to="/catalog" className="text-sm text-white/60 hover:text-primary transition-colors">
+                  {t('common.view_all')}
+                </Link>
+              </li>
             </ul>
           </div>
 
