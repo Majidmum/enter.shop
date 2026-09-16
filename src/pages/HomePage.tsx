@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ProductCard from '@/components/shared/ProductCard';
+import ProductScrollRow from '@/components/shared/ProductScrollRow';
 import { fetchProducts, fetchBrands, fetchActiveBanners, fetchActivePromotions } from '@/lib/supabaseData';
 import { applyActivePromotions } from '@/lib/promotions';
 import PageMeta from '@/components/common/PageMeta';
@@ -277,9 +277,7 @@ export default function HomePage() {
           {productsLoading ? (
             <ProductGridSkeleton count={4} className="lg:grid-cols-4" />
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {popularProducts.map((p) => <ProductCard key={p.id} product={p} />)}
-            </div>
+            <ProductScrollRow products={popularProducts} fadeVariant="muted" />
           )}
         </div>
       </section>
@@ -318,9 +316,7 @@ export default function HomePage() {
         {productsLoading ? (
           <ProductGridSkeleton count={4} className="lg:grid-cols-4" />
         ) : newProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {newProducts.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
+          <ProductScrollRow products={newProducts} />
         ) : (
           <p className="text-sm text-muted-foreground">{t('home.new_products_empty')}</p>
         )}
