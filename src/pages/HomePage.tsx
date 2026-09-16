@@ -1,27 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Star, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/shared/ProductCard';
-import { fetchProducts, fetchBrands, fetchApprovedReviews, fetchActiveBanners, fetchActivePromotions } from '@/lib/supabaseData';
+import { fetchProducts, fetchBrands, fetchActiveBanners, fetchActivePromotions } from '@/lib/supabaseData';
 import { applyActivePromotions } from '@/lib/promotions';
 import PageMeta from '@/components/common/PageMeta';
 import { ProductGridSkeleton } from '@/components/shared/Skeletons';
-import type { Product, Brand, Review, Banner, Promotion } from '@/types';
+import type { Product, Brand, Banner, Promotion } from '@/types';
 
 export default function HomePage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [activeBanners, setActiveBanners] = useState<Banner[]>([]);
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchBrands(), fetchApprovedReviews(), fetchActiveBanners(), fetchActivePromotions()])
-      .then(([p, b, r, banners, promos]) => { setProducts(p); setBrands(b); setApprovedReviews(r.slice(0, 4)); setActiveBanners(banners); setActivePromotions(promos); })
+    Promise.all([fetchProducts(), fetchBrands(), fetchActiveBanners(), fetchActivePromotions()])
+      .then(([p, b, banners, promos]) => { setProducts(p); setBrands(b); setActiveBanners(banners); setActivePromotions(promos); })
       .finally(() => setProductsLoading(false));
   }, []);
 
@@ -384,27 +383,6 @@ export default function HomePage() {
           </div>
         </section>
       )}
-
-      {/* Reviews */}
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-8">{t('home.reviews_title')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {approvedReviews.map((r) => (
-            <div key={r.id} className="rounded-xl bg-card border border-border card-shadow p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`} />
-                ))}
-              </div>
-              <p className="text-sm text-foreground line-clamp-3">{r.text}</p>
-              <div className="mt-auto pt-2 border-t border-border">
-                <p className="text-xs font-semibold text-foreground">{r.authorName}</p>
-                <p className="text-xs text-muted-foreground">{r.productName}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Instagram CTA */}
       <section className="bg-gradient-primary py-10">

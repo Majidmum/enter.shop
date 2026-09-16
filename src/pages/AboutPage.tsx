@@ -10,12 +10,6 @@ const stats = [
   { value: 2000, suffix: '+', label: 'Товаров в каталоге' },
 ];
 
-const team = [
-  { name: 'Алишер Назаров', role: 'CEO и основатель', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
-  { name: 'Дилноза Раупова', role: 'Директор по продажам', img: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&q=80' },
-  { name: 'Фаррух Исмоилов', role: 'Технический специалист', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' },
-];
-
 function StatCounter({ value, suffix, label }: { value: number; suffix: string; label: string }) {
   const { ref, value: current } = useCountUp<HTMLDivElement>(value);
   return (
@@ -101,22 +95,6 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="container mx-auto px-4 py-14">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">Наша команда</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
-          {team.map((member) => (
-            <div key={member.name} className="bg-card border border-border rounded-xl p-6 card-shadow text-center">
-              <div className="h-20 w-20 rounded-full overflow-hidden mx-auto mb-4">
-                <img src={member.img} alt={member.name} className="w-full h-full object-cover" />
-              </div>
-              <h3 className="font-bold">{member.name}</h3>
-              <p className="text-sm text-primary mt-1">{member.role}</p>
-            </div>
-          ))}
         </div>
       </section>
 
