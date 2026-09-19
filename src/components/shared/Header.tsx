@@ -12,6 +12,7 @@ import { useTheme } from '@/components/theme-provider';
 import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromoCampaigns } from '@/lib/supabaseData';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import { useCityStore } from '@/store/cityStore';
+import CallbackModal from '@/components/shared/CallbackModal';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
 import type { Category, Brand, Product, PromoCampaign } from '@/types';
 
@@ -72,6 +73,7 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { city, reopen } = useCityStore();
+  const [callbackOpen, setCallbackOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -157,6 +159,9 @@ export default function Header() {
           </button>
           <div className="flex items-center gap-4">
             <a href="tel:+992555000070" className="hover:text-white transition-colors">+992 555 000 070</a>
+            <button type="button" onClick={() => setCallbackOpen(true)} className="hover:text-white transition-colors">
+              Заказать звонок
+            </button>
             <Link to="/delivery" className="hover:text-white transition-colors">{t('header.delivery')}</Link>
           </div>
         </div>
@@ -498,6 +503,7 @@ export default function Header() {
           </form>
         </div>
       )}
+      <CallbackModal open={callbackOpen} onOpenChange={setCallbackOpen} />
     </header>
   );
 }

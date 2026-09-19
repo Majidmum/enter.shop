@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Phone, ArrowUp } from 'lucide-react';
+import { Phone, ArrowUp, PhoneIncoming } from 'lucide-react';
+import CallbackModal from '@/components/shared/CallbackModal';
 
 /**
  * Плавающие кнопки в правом нижнем углу — всегда видимая кнопка звонка,
+ * кнопка "заказать звонок" (для тех, кто не хочет звонить сам — актуально
+ * и на мобильном, где кнопка в шапке не видна, она там только на десктопе),
  * и кнопка "наверх", которая появляется только после прокрутки страницы вниз.
  * На мобильном приподняты над плавающей нижней навигацией, чтобы не перекрывались.
  */
 export default function FloatingActions() {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [callbackOpen, setCallbackOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -28,6 +32,14 @@ export default function FloatingActions() {
           <ArrowUp className="h-5 w-5" />
         </button>
       )}
+      <button
+        type="button"
+        onClick={() => setCallbackOpen(true)}
+        aria-label="Заказать звонок"
+        className="h-11 w-11 flex items-center justify-center rounded-full bg-card border border-border shadow-lg text-foreground hover:bg-muted transition-colors"
+      >
+        <PhoneIncoming className="h-5 w-5" />
+      </button>
       <a
         href="tel:+992555000070"
         aria-label="Позвонить в ENTER.TJ"
@@ -35,6 +47,7 @@ export default function FloatingActions() {
       >
         <Phone className="h-6 w-6" />
       </a>
+      <CallbackModal open={callbackOpen} onOpenChange={setCallbackOpen} />
     </div>
   );
 }

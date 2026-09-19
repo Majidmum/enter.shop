@@ -1,0 +1,184 @@
+diff --git a/src/components/shared/CallbackModal.tsx b/src/components/shared/CallbackModal.tsx
+new file mode 100644
+index 0000000..1244bd1
+--- /dev/null
++++ b/src/components/shared/CallbackModal.tsx
+@@ -0,0 +1,94 @@
++import { useState } from 'react';
++import { Phone } from 'lucide-react';
++import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
++import { Input } from '@/components/ui/input';
++import { Button } from '@/components/ui/button';
++import { Label } from '@/components/ui/label';
++import { toast } from 'sonner';
++import { sendContactFormToTelegram } from '@/lib/telegram';
++import { supabase } from '@/db/supabase';
++
++interface CallbackModalProps {
++  open: boolean;
++  onOpenChange: (open: boolean) => void;
++}
++
++/**
++ * Форма "Заказать звонок" — минимум полей (имя, телефон), чтобы не отпугивать.
++ * Уходит мгновенным уведомлением в Telegram (тот же способ, что у формы на
++ * странице "Контакты") и сохраняется в contact_requests для истории.
++ */
++export default function CallbackModal({ open, onOpenChange }: CallbackModalProps) {
++  const [name, setName] = useState('');
++  const [phone, setPhone] = useState('');
++  const [loading, setLoading] = useState(false);
++
++  const handleSubmit = async () => {
++    if (!phone.trim()) {
++      toast.error('Укажите номер телефона');
++      return;
++    }
++
++    setLoading(true);
++    try {
++      const requestData = {
++        name: name.trim() || 'Не указано',
++        phone: phone.trim(),
++        message: 'Заказ обратного звонка',
++      };
++
++      // Уведомление уходит сразу в Telegram — это основной канал, на который
++      // реально смотрит админ. Запись в базу — просто для истории, не критична.
++      const sent = await sendContactFormToTelegram(requestData);
++
++      const { error } = await supabase.from('contact_requests').insert({
++        name: requestData.name,
++        phone: requestData.phone,
++        message: requestData.message,
++      });
++      if (error) console.error('Не удалось сохранить заявку на звонок в базу:', error);
++
++      if (sent) {
++        toast.success('Заявка принята! Мы перезвоним вам в ближайшее время.');
++      } else {
++        toast.success('Заявка сохранена. Мы свяжемся с вами в ближайшее время.');
++      }
++      setName('');
++      setPhone('');
++      onOpenChange(false);
++    } catch {
++      toast.error('Не удалось отправить заявку. Попробуйте позвонить нам напрямую.');
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  return (
++    <Dialog open={open} onOpenChange={onOpenChange}>
++      <DialogContent className="max-w-sm">
++        <DialogHeader>
++          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
++            <Phone className="h-6 w-6 text-primary" />
++          </div>
++          <DialogTitle className="text-center">Заказать звонок</DialogTitle>
++          <DialogDescription className="text-center">
++            Оставьте номер — мы перезвоним в ближайшее время
++          </DialogDescription>
++        </DialogHeader>
++        <div className="flex flex-col gap-3 mt-2">
++          <div>
++            <Label>Ваше имя</Label>
++            <Input className="mt-1" placeholder="Как к вам обращаться?" value={name} onChange={(e) => setName(e.target.value)} />
++          </div>
++          <div>
++            <Label>Номер телефона *</Label>
++            <Input className="mt-1" placeholder="+992 9XX XXX XXX" value={phone} onChange={(e) => setPhone(e.target.value)} />
++          </div>
++          <Button onClick={handleSubmit} disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white font-semibold mt-1">
++            {loading ? 'Отправляем...' : 'Заказать звонок'}
++          </Button>
++        </div>
++      </DialogContent>
++    </Dialog>
++  );
++}
+diff --git a/src/components/shared/FloatingActions.tsx b/src/components/shared/FloatingActions.tsx
+index dccb586..cfd3753 100644
+--- a/src/components/shared/FloatingActions.tsx
++++ b/src/components/shared/FloatingActions.tsx
+@@ -1,13 +1,17 @@
+ import { useState, useEffect } from 'react';
+-import { Phone, ArrowUp } from 'lucide-react';
++import { Phone, ArrowUp, PhoneIncoming } from 'lucide-react';
++import CallbackModal from '@/components/shared/CallbackModal';
+ 
+ /**
+  * Плавающие кнопки в правом нижнем углу — всегда видимая кнопка звонка,
++ * кнопка "заказать звонок" (для тех, кто не хочет звонить сам — актуально
++ * и на мобильном, где кнопка в шапке не видна, она там только на десктопе),
+  * и кнопка "наверх", которая появляется только после прокрутки страницы вниз.
+  * На мобильном приподняты над плавающей нижней навигацией, чтобы не перекрывались.
+  */
+ export default function FloatingActions() {
+   const [showScrollTop, setShowScrollTop] = useState(false);
++  const [callbackOpen, setCallbackOpen] = useState(false);
+ 
+   useEffect(() => {
+     const onScroll = () => setShowScrollTop(window.scrollY > 400);
+@@ -28,6 +32,14 @@ export default function FloatingActions() {
+           <ArrowUp className="h-5 w-5" />
+         </button>
+       )}
++      <button
++        type="button"
++        onClick={() => setCallbackOpen(true)}
++        aria-label="Заказать звонок"
++        className="h-11 w-11 flex items-center justify-center rounded-full bg-card border border-border shadow-lg text-foreground hover:bg-muted transition-colors"
++      >
++        <PhoneIncoming className="h-5 w-5" />
++      </button>
+       <a
+         href="tel:+992555000070"
+         aria-label="Позвонить в ENTER.TJ"
+@@ -35,6 +47,7 @@ export default function FloatingActions() {
+       >
+         <Phone className="h-6 w-6" />
+       </a>
++      <CallbackModal open={callbackOpen} onOpenChange={setCallbackOpen} />
+     </div>
+   );
+ }
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index d6791e6..af175b6 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -12,6 +12,7 @@ import { useTheme } from '@/components/theme-provider';
+ import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromoCampaigns } from '@/lib/supabaseData';
+ import { getCategoryIcon } from '@/lib/categoryIcons';
+ import { useCityStore } from '@/store/cityStore';
++import CallbackModal from '@/components/shared/CallbackModal';
+ import { SUPPORTED_LANGUAGES } from '@/i18n/config';
+ import type { Category, Brand, Product, PromoCampaign } from '@/types';
+ 
+@@ -72,6 +73,7 @@ export default function Header() {
+   const [mobileOpen, setMobileOpen] = useState(false);
+   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+   const { city, reopen } = useCityStore();
++  const [callbackOpen, setCallbackOpen] = useState(false);
+   const [catOpen, setCatOpen] = useState(false);
+   const [categories, setCategories] = useState<Category[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
+@@ -157,6 +159,9 @@ export default function Header() {
+           </button>
+           <div className="flex items-center gap-4">
+             <a href="tel:+992555000070" className="hover:text-white transition-colors">+992 555 000 070</a>
++            <button type="button" onClick={() => setCallbackOpen(true)} className="hover:text-white transition-colors">
++              Заказать звонок
++            </button>
+             <Link to="/delivery" className="hover:text-white transition-colors">{t('header.delivery')}</Link>
+           </div>
+         </div>
+@@ -498,6 +503,7 @@ export default function Header() {
+           </form>
+         </div>
+       )}
++      <CallbackModal open={callbackOpen} onOpenChange={setCallbackOpen} />
+     </header>
+   );
+ }
