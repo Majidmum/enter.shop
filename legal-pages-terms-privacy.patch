@@ -1,0 +1,258 @@
+diff --git a/public/sitemap.xml b/public/sitemap.xml
+index 6ea5d05..383caef 100644
+--- a/public/sitemap.xml
++++ b/public/sitemap.xml
+@@ -35,6 +35,16 @@
+     <changefreq>monthly</changefreq>
+     <priority>0.5</priority>
+   </url>
++  <url>
++    <loc>https://enter.tj/terms</loc>
++    <changefreq>yearly</changefreq>
++    <priority>0.3</priority>
++  </url>
++  <url>
++    <loc>https://enter.tj/privacy</loc>
++    <changefreq>yearly</changefreq>
++    <priority>0.3</priority>
++  </url>
+   <url>
+     <loc>https://enter.tj/delivery</loc>
+     <changefreq>monthly</changefreq>
+diff --git a/src/App.tsx b/src/App.tsx
+index 2d7bb1d..d527d2f 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -23,6 +23,8 @@ import RegisterPage from '@/pages/RegisterPage';
+ import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+ import ResetPasswordPage from '@/pages/ResetPasswordPage';
+ import AboutPage from '@/pages/AboutPage';
++import TermsPage from '@/pages/TermsPage';
++import PrivacyPage from '@/pages/PrivacyPage';
+ import DeliveryPage from '@/pages/DeliveryPage';
+ import ContactsPage from '@/pages/ContactsPage';
+ import SalePage from '@/pages/SalePage';
+@@ -69,6 +71,8 @@ const App: React.FC = () => {
+           <Route path="favorites" element={<FavoritesPage />} />
+           <Route path="account" element={<AccountPage />} />
+           <Route path="about" element={<AboutPage />} />
++          <Route path="terms" element={<TermsPage />} />
++          <Route path="privacy" element={<PrivacyPage />} />
+           <Route path="delivery" element={<DeliveryPage />} />
+           <Route path="contacts" element={<ContactsPage />} />
+           <Route path="sale" element={<SalePage />} />
+diff --git a/src/components/shared/Footer.tsx b/src/components/shared/Footer.tsx
+index 1c873d9..f5eb431 100644
+--- a/src/components/shared/Footer.tsx
++++ b/src/components/shared/Footer.tsx
+@@ -112,8 +112,12 @@ export default function Footer() {
+       </div>
+ 
+       <div className="border-t border-white/10">
+-        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2">
++        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-3">
+           <p className="text-xs text-white/40">{t('footer.copyright')}</p>
++          <div className="flex items-center gap-4">
++            <Link to="/terms" className="text-xs text-white/40 hover:text-white/70 transition-colors">Публичная оферта</Link>
++            <Link to="/privacy" className="text-xs text-white/40 hover:text-white/70 transition-colors">Конфиденциальность</Link>
++          </div>
+           <p className="text-xs text-white/40">{t('footer.tagline')}</p>
+         </div>
+       </div>
+diff --git a/src/pages/PrivacyPage.tsx b/src/pages/PrivacyPage.tsx
+new file mode 100644
+index 0000000..bfbafee
+--- /dev/null
++++ b/src/pages/PrivacyPage.tsx
+@@ -0,0 +1,73 @@
++import PageMeta from '@/components/common/PageMeta';
++import Breadcrumb from '@/components/shared/Breadcrumb';
++
++export default function PrivacyPage() {
++  return (
++    <div className="container mx-auto px-4 py-6 pb-20 md:pb-6 max-w-3xl">
++      <PageMeta
++        title="Политика конфиденциальности — ENTER.TJ"
++        description="Как ENTER.TJ собирает, использует и защищает персональные данные покупателей."
++        canonicalPath="/privacy"
++      />
++      <Breadcrumb items={[{ label: 'Политика конфиденциальности' }]} />
++      <h1 className="text-2xl font-bold mt-4 mb-2">Политика конфиденциальности</h1>
++      <p className="text-sm text-muted-foreground mb-6">Последнее обновление: сентябрь 2026</p>
++
++      <div className="flex flex-col gap-6 text-sm leading-relaxed text-foreground">
++        <section>
++          <h2 className="font-semibold text-base mb-2">1. Какие данные мы собираем</h2>
++          <p>
++            При регистрации и оформлении заказа на сайте ENTER.TJ мы можем собирать: имя, номер телефона,
++            адрес электронной почты, адрес доставки. Эти данные предоставляются Покупателем добровольно при
++            заполнении форм на сайте.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">2. Как мы используем данные</h2>
++          <p>
++            Собранные данные используются исключительно для обработки и доставки заказов, связи с
++            Покупателем по вопросам заказа, а также — при согласии Покупателя — для информирования об акциях
++            и новых товарах. Мы не продаём и не передаём персональные данные третьим лицам, за исключением
++            служб доставки в объёме, необходимом для доставки заказа.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">3. Хранение и защита данных</h2>
++          <p>
++            Данные хранятся на защищённых серверах с ограниченным доступом. Мы принимаем разумные технические
++            и организационные меры для защиты персональных данных от несанкционированного доступа, изменения
++            или удаления.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">4. Файлы cookie</h2>
++          <p>
++            Сайт может использовать файлы cookie для сохранения предпочтений (например, выбранного языка или
++            товаров в корзине) и улучшения работы сайта. Отключение cookie в браузере может ограничить
++            некоторые функции сайта.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">5. Права пользователя</h2>
++          <p>
++            Покупатель вправе запросить у Продавца информацию о хранимых персональных данных, а также
++            потребовать их исправления или удаления, обратившись по контактам, указанным на странице
++            «Контакты».
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">6. Изменения политики</h2>
++          <p>
++            Продавец вправе вносить изменения в настоящую политику конфиденциальности. Актуальная версия
++            всегда доступна на этой странице.
++          </p>
++        </section>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/pages/TermsPage.tsx b/src/pages/TermsPage.tsx
+new file mode 100644
+index 0000000..4dbd24d
+--- /dev/null
++++ b/src/pages/TermsPage.tsx
+@@ -0,0 +1,90 @@
++import PageMeta from '@/components/common/PageMeta';
++import Breadcrumb from '@/components/shared/Breadcrumb';
++
++export default function TermsPage() {
++  return (
++    <div className="container mx-auto px-4 py-6 pb-20 md:pb-6 max-w-3xl">
++      <PageMeta
++        title="Публичная оферта — ENTER.TJ"
++        description="Условия использования сайта и оформления заказов в интернет-магазине ENTER.TJ."
++        canonicalPath="/terms"
++      />
++      <Breadcrumb items={[{ label: 'Публичная оферта' }]} />
++      <h1 className="text-2xl font-bold mt-4 mb-2">Публичная оферта</h1>
++      <p className="text-sm text-muted-foreground mb-6">Последнее обновление: сентябрь 2026</p>
++
++      <div className="flex flex-col gap-6 text-sm leading-relaxed text-foreground">
++        <section>
++          <h2 className="font-semibold text-base mb-2">1. Общие положения</h2>
++          <p>
++            Настоящий документ является публичной офертой интернет-магазина ENTER.TJ (далее — «Продавец»)
++            и определяет условия продажи товаров через сайт enter.tj любому дееспособному физическому или
++            юридическому лицу (далее — «Покупатель»). Оформление заказа на сайте означает полное и
++            безоговорочное согласие Покупателя с условиями настоящей оферты.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">2. Товары и цены</h2>
++          <p>
++            Информация о товарах (наименование, характеристики, цена, фотографии) размещается на сайте
++            Продавцом. Продавец вправе изменять ассортимент, цены и условия акций без предварительного
++            уведомления. Цена товара фиксируется на момент подтверждения заказа.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">3. Оформление заказа</h2>
++          <p>
++            Заказ оформляется через сайт путём добавления товара в корзину и заполнения контактных данных.
++            После оформления заказа с Покупателем может связаться сотрудник Продавца для подтверждения
++            деталей заказа, адреса и способа доставки.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">4. Оплата</h2>
++          <p>
++            Оплата производится способом, выбранным Покупателем при оформлении заказа, из числа доступных
++            на сайте на момент заказа (наличными при получении, банковским переводом или онлайн-способами,
++            если они активны).
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">5. Доставка</h2>
++          <p>
++            Условия и сроки доставки указаны на странице «Доставка». Продавец вправе уточнить у Покупателя
++            детали доставки перед отправкой заказа.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">6. Возврат и обмен</h2>
++          <p>
++            Покупатель вправе вернуть товар надлежащего качества в течение 14 дней с момента получения, при
++            условии сохранения товарного вида, упаковки и потребительских свойств. Возврат товара
++            ненадлежащего качества осуществляется в соответствии с гарантийными условиями производителя.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">7. Ответственность сторон</h2>
++          <p>
++            Продавец не несёт ответственности за ущерб, причинённый Покупателю вследствие неправильного
++            использования товаров, приобретённых на сайте. Продавец не несёт ответственности за временную
++            недоступность сайта по техническим причинам.
++          </p>
++        </section>
++
++        <section>
++          <h2 className="font-semibold text-base mb-2">8. Контакты</h2>
++          <p>
++            По всем вопросам, связанным с настоящей офертой, обращайтесь по контактам, указанным на странице
++            «Контакты».
++          </p>
++        </section>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/routes.tsx b/src/routes.tsx
+index bdd2290..c116639 100644
+--- a/src/routes.tsx
++++ b/src/routes.tsx
+@@ -17,6 +17,8 @@ import RegisterPage from '@/pages/RegisterPage';
+ import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+ import ResetPasswordPage from '@/pages/ResetPasswordPage';
+ import AboutPage from '@/pages/AboutPage';
++import TermsPage from '@/pages/TermsPage';
++import PrivacyPage from '@/pages/PrivacyPage';
+ import DeliveryPage from '@/pages/DeliveryPage';
+ import ContactsPage from '@/pages/ContactsPage';
+ import SalePage from '@/pages/SalePage';
+@@ -67,6 +69,8 @@ export const routes: RouteConfig[] = [
+   { name: 'Forgot Password',  path: '/forgot-password',    element: <ForgotPasswordPage />, public: true },
+   { name: 'Reset Password',   path: '/reset-password',     element: <ResetPasswordPage />,  public: true },
+   { name: 'About',            path: '/about',              element: <AboutPage />,        public: true },
++  { name: 'Terms',            path: '/terms',               element: <TermsPage />,        public: true },
++  { name: 'Privacy',          path: '/privacy',             element: <PrivacyPage />,      public: true },
+   { name: 'Delivery',         path: '/delivery',           element: <DeliveryPage />,     public: true },
+   { name: 'Contacts',         path: '/contacts',           element: <ContactsPage />,     public: true },
+   { name: 'Sale',             path: '/sale',               element: <SalePage />,         public: true },

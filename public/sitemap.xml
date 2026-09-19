@@ -36,6 +36,16 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://enter.tj/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://enter.tj/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://enter.tj/delivery</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

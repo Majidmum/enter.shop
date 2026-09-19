@@ -112,8 +112,12 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">{t('footer.copyright')}</p>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="text-xs text-white/40 hover:text-white/70 transition-colors">Публичная оферта</Link>
+            <Link to="/privacy" className="text-xs text-white/40 hover:text-white/70 transition-colors">Конфиденциальность</Link>
+          </div>
           <p className="text-xs text-white/40">{t('footer.tagline')}</p>
         </div>
       </div>

@@ -23,6 +23,8 @@ import RegisterPage from '@/pages/RegisterPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import AboutPage from '@/pages/AboutPage';
+import TermsPage from '@/pages/TermsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
 import DeliveryPage from '@/pages/DeliveryPage';
 import ContactsPage from '@/pages/ContactsPage';
 import SalePage from '@/pages/SalePage';
@@ -69,6 +71,8 @@ const App: React.FC = () => {
           <Route path="favorites" element={<FavoritesPage />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="about" element={<AboutPage />} />
+          <Route path="terms" element={<TermsPage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
           <Route path="delivery" element={<DeliveryPage />} />
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="sale" element={<SalePage />} />

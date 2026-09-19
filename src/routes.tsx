@@ -17,6 +17,8 @@ import RegisterPage from '@/pages/RegisterPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import AboutPage from '@/pages/AboutPage';
+import TermsPage from '@/pages/TermsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
 import DeliveryPage from '@/pages/DeliveryPage';
 import ContactsPage from '@/pages/ContactsPage';
 import SalePage from '@/pages/SalePage';
@@ -67,6 +69,8 @@ export const routes: RouteConfig[] = [
   { name: 'Forgot Password',  path: '/forgot-password',    element: <ForgotPasswordPage />, public: true },
   { name: 'Reset Password',   path: '/reset-password',     element: <ResetPasswordPage />,  public: true },
   { name: 'About',            path: '/about',              element: <AboutPage />,        public: true },
+  { name: 'Terms',            path: '/terms',               element: <TermsPage />,        public: true },
+  { name: 'Privacy',          path: '/privacy',             element: <PrivacyPage />,      public: true },
   { name: 'Delivery',         path: '/delivery',           element: <DeliveryPage />,     public: true },
   { name: 'Contacts',         path: '/contacts',           element: <ContactsPage />,     public: true },
   { name: 'Sale',             path: '/sale',               element: <SalePage />,         public: true },
