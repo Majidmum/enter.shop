@@ -1,0 +1,22 @@
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 7acd57c..6d50769 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -318,12 +318,13 @@ export default function HomePage() {
+           )}
+         </div>
+ 
+-        {/* Карточка "Супер цена" — товар со скидкой >20% рядом с баннером на
+-            десктопе, под баннером на телефоне. Если подходящих товаров
+-            несколько — карточка сама переключает их по кругу, с точками
++        {/* Карточка "Супер цена" — товар со скидкой >20% рядом с баннером.
++            На мобильном и планшете скрыта (по просьбе — убрать акции у баннера
++            на телефоне), показывается только на десктопе (lg+). Если подходящих
++            товаров несколько — карточка сама переключает их по кругу, с точками
+             снизу, отдельно от точек баннера. По образцу asaxiy.uz. */}
+         {discountProducts.length > 0 && activePromo && (
+-          <div className="flex flex-col gap-2 lg:w-[300px] lg:shrink-0">
++          <div className="hidden lg:flex lg:flex-col gap-2 lg:w-[300px] lg:shrink-0">
+             <Link
+               key={activePromo.product.id}
+               to={`/product/${activePromo.product.slug}`}
