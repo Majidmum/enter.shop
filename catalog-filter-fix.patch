@@ -1,0 +1,78 @@
+diff --git a/src/pages/CatalogPage.tsx b/src/pages/CatalogPage.tsx
+index 4845697..65fe3c6 100644
+--- a/src/pages/CatalogPage.tsx
++++ b/src/pages/CatalogPage.tsx
+@@ -25,6 +25,10 @@ export default function CatalogPage() {
+   const { t } = useTranslation();
+   const [searchParams] = useSearchParams();
+   const searchQuery = searchParams.get('search') || '';
++  // "Смотреть все" из блоков "Популярные"/"Новинки" на главной ведёт сюда с
++  // ?filter=featured / ?filter=new — раньше это игнорировалось и открывался
++  // весь каталог. Значение фиксируется один раз при заходе на страницу.
++  const [filterParam] = useState(() => searchParams.get('filter'));
+   const [products, setProducts] = useState<Product[]>([]);
+   const [categories, setCategories] = useState<Category[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
+@@ -38,7 +42,15 @@ export default function CatalogPage() {
+   }, []);
+ 
+   const [page, setPage] = useState(1);
+-  const [sort, setSort] = useState<SortOption>('featured');
++  const [sort, setSort] = useState<SortOption>(() => {
++    const sortParam = searchParams.get('sort');
++    if (sortParam === 'rating' || sortParam === 'new' || sortParam === 'price-asc' || sortParam === 'price-desc' || sortParam === 'featured') {
++      return sortParam;
++    }
++    const filterParam = searchParams.get('filter');
++    if (filterParam === 'new') return 'new';
++    return 'featured';
++  });
+   const [selCategories, setSelCategories] = useState<string[]>([]);
+   const [selBrands, setSelBrands] = useState<string[]>(() => {
+     const brandParam = searchParams.get('brand');
+@@ -71,6 +83,8 @@ export default function CatalogPage() {
+     list = list.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+     if (onlyInStock) list = list.filter((p) => p.stock > 0);
+     if (onlyDiscount) list = list.filter((p) => !!p.discount);
++    if (filterParam === 'new') list = list.filter((p) => p.isNew);
++    if (filterParam === 'featured') list = list.filter((p) => p.isFeatured);
+ 
+     switch (sort) {
+       case 'price-asc': list.sort((a, b) => a.price - b.price); break;
+@@ -80,7 +94,7 @@ export default function CatalogPage() {
+       default: list.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
+     }
+     return list;
+-  }, [products, activePromotions, searchQuery, selCategories, selBrands, priceRange, onlyInStock, onlyDiscount, sort]);
++  }, [products, activePromotions, searchQuery, selCategories, selBrands, priceRange, onlyInStock, onlyDiscount, filterParam, sort]);
+ 
+   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+@@ -185,7 +199,13 @@ export default function CatalogPage() {
+       />
+       <Breadcrumb items={[{ label: t('common.catalog') }]} />
+       <h1 className="text-2xl font-bold mt-4 mb-6">
+-        {searchQuery ? t('catalog.search_title', { query: searchQuery }) : t('catalog.title')}
++        {searchQuery
++          ? t('catalog.search_title', { query: searchQuery })
++          : filterParam === 'new'
++          ? t('home.new_products')
++          : filterParam === 'featured'
++          ? t('home.popular_products')
++          : t('catalog.title')}
+       </h1>
+ 
+       <div className="flex gap-6">
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 6d50769..5cf3808 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -414,7 +414,7 @@ export default function HomePage() {
+               
+               <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.popular_products')}</h2>
+             </div>
+-            <Link to="/catalog?sort=rating" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
++            <Link to="/catalog?filter=featured" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
+               {t('common.view_all')} <ArrowRight className="h-4 w-4" />
+             </Link>
+           </div>

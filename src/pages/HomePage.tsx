@@ -414,7 +414,7 @@ export default function HomePage() {
               
               <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('home.popular_products')}</h2>
             </div>
-            <Link to="/catalog?sort=rating" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
+            <Link to="/catalog?filter=featured" className="flex items-center gap-1 text-sm text-primary hover:underline font-medium shrink-0">
               {t('common.view_all')} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
