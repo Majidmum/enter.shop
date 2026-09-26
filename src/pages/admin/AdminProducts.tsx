@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Pencil, Trash2, X, Check, Upload } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, X, Check, Upload, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import {
 } from '@/lib/supabaseData';
 import type { Product, Category, Brand, Promotion } from '@/types';
 import { uploadImageToStorage } from '@/lib/storageUpload';
+import { supabase } from '@/db/supabase';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import { toast } from 'sonner';
@@ -46,6 +47,7 @@ export default function AdminProducts() {
   // это отражение того, в productIds каких акций сейчас/будет этот товар.
   const [selectedPromoIds, setSelectedPromoIds] = useState<string[]>([]);
   const [colorDrafts, setColorDrafts] = useState<ColorDraft[]>([]);
+  const [aiFillBusy, setAiFillBusy] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -122,6 +124,81 @@ export default function AdminProducts() {
       ...toCreate.map((d) => createProductColor({ productId, name: d.name, hex: d.hex, price: d.price, images: d.images })),
       ...toUpdate.map((d) => updateProductColor(d.id!, { name: d.name, hex: d.hex, price: d.price, images: d.images })),
     ]);
+  };
+
+  // Кнопка "Заполнить через ИИ" — просит серверную функцию /api/ai-fill-product
+  // сгенерировать описание и характеристики по названию/категории/бренду
+  // товара. Ничего не перезаписывает у уже заполненных полей: описание
+  // подставляется, только если оно ещё пустое, а характеристики добавляются
+  // только те, которых ещё нет (или дозаполняют пустое значение уже
+  // добавленного вручную параметра) — так админ не потеряет то, что уже
+  // написал сам, и всегда может поправить результат перед сохранением.
+  const handleAiFill = async () => {
+    if (!draft.name?.trim()) { toast.error('Сначала укажите название товара'); return; }
+    setAiFillBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Сессия истекла, войдите заново'); return; }
+
+      const categoryName = categories.find((c) => c.id === draft.categoryId)?.name || '';
+      const brandName = brands.find((b) => b.id === draft.brandId)?.name || '';
+
+      const res = await fetch('/api/ai-fill-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          name: draft.name,
+          categoryName,
+          brandName,
+          price: draft.price,
+          existingDescription: draft.description || '',
+          existingSpecLabels: (draft.specs || []).map((s) => s.label).filter(Boolean),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Не удалось получить ответ от ИИ');
+      }
+
+      const data: { description?: string; specs?: { label: string; value: string }[] } = await res.json();
+
+      let filledDescription = false;
+      let addedSpecs = 0;
+      let filledSpecs = 0;
+
+      setDraft((prev) => {
+        const next = { ...prev };
+        if (!next.description?.trim() && data.description) {
+          next.description = data.description;
+          filledDescription = true;
+        }
+        const merged = [...(next.specs || [])];
+        for (const spec of data.specs || []) {
+          const key = spec.label.trim().toLowerCase();
+          const idx = merged.findIndex((s) => s.label.trim().toLowerCase() === key);
+          if (idx === -1) {
+            merged.push({ label: spec.label, value: spec.value });
+            addedSpecs += 1;
+          } else if (!merged[idx].value.trim()) {
+            merged[idx] = { ...merged[idx], value: spec.value };
+            filledSpecs += 1;
+          }
+        }
+        next.specs = merged;
+        return next;
+      });
+
+      if (!filledDescription && addedSpecs === 0 && filledSpecs === 0) {
+        toast.info('Описание и характеристики уже заполнены — ИИ не стал их менять');
+      } else {
+        toast.success('Заполнено через ИИ — проверьте текст перед сохранением');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось выполнить автозаполнение');
+    } finally {
+      setAiFillBusy(false);
+    }
   };
 
   const handleSave = async () => {
@@ -578,7 +655,25 @@ export default function AdminProducts() {
               )}
             </div>
             <div className="md:col-span-2">
-              <Label>Описание</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Описание</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={aiFillBusy || !draft.name?.trim()}
+                  onClick={handleAiFill}
+                  title="Заполнить описание и характеристики через ИИ по названию товара"
+                >
+                  {aiFillBusy ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 mr-1" />
+                  )}
+                  {aiFillBusy ? 'Заполняю...' : 'Заполнить через ИИ'}
+                </Button>
+              </div>
               <Textarea className="mt-1" rows={3} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
             </div>
             <div className="md:col-span-2">

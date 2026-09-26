@@ -1,0 +1,290 @@
+diff --git a/api/ai-fill-product.js b/api/ai-fill-product.js
+new file mode 100644
+index 0000000..6e5850d
+--- /dev/null
++++ b/api/ai-fill-product.js
+@@ -0,0 +1,148 @@
++// Serverless-функция (Vercel): автозаполнение описания и характеристик
++// товара через ИИ (Anthropic Claude) — кнопка "Заполнить через ИИ" в
++// карточке товара в админке.
++//
++// Зачем отдельная функция, а не вызов Anthropic прямо из браузера: ключ
++// API нельзя класть в клиентский код (VITE_*) — он попадёт в собранный
++// бандл и его сможет увидеть/использовать кто угодно. Поэтому ключ живёт
++// только в переменной окружения Vercel (ANTHROPIC_API_KEY, без префикса
++// VITE_) и используется только здесь, на сервере.
++//
++// Доступ только для админов/менеджеров: функция принимает access_token
++// текущей сессии Supabase, проверяет им пользователя и его роль в
++// public.profiles — иначе кто угодно смог бы дергать эндпоинт и расходовать
++// оплаченные токены Anthropic.
++
++import { createClient } from '@supabase/supabase-js';
++
++const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
++const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
++const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
++const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
++
++const SYSTEM_PROMPT = `Ты — помощник интернет-магазина ENTER.TJ (компьютерная техника, электроника и офисная мебель, город Душанбе, Таджикистан). По названию товара составляешь короткое продающее описание и список технических характеристик на русском языке.
++
++Отвечай СТРОГО одним валидным JSON-объектом, без markdown-разметки, без пояснений до или после. Формат:
++{"description": "строка", "specs": [{"label": "строка", "value": "строка"}, ...]}
++
++Правила:
++- "description": 2–4 предложения, по делу, без воды и превосходных степеней вроде "лучший в мире". Пиши так, как будто описываешь товар для карточки в интернет-магазине.
++- "specs": от 4 до 8 пар параметр/значение, релевантных именно этой категории товара (для ноутбука/ПК — процессор, оперативная память, накопитель, экран, видеокарта; для мебели — материал, размеры, вес, максимальная нагрузка; для техники/периферии — подключение, совместимость, комплектация и т.п.). Если категория не позволяет определить специфичные параметры — предложи разумные общие (материал, цвет, комплектация, страна производитель).
++- Не выдумывай точные цифры (частоту процессора, ёмкость батареи и т.п.), если не уверен — используй общую формулировку без точного числа или пропусти этот параметр.
++- Если админ уже указал часть характеристик (см. "already filled labels" в запросе) — не дублируй их своими вариантами с другой формулировкой, предлагай остальные.`;
++
++export default async function handler(req, res) {
++  if (req.method !== 'POST') {
++    res.status(405).json({ error: 'Method not allowed' });
++    return;
++  }
++
++  try {
++    if (!ANTHROPIC_API_KEY) {
++      res.status(500).json({ error: 'ИИ-сервис не настроен: отсутствует ANTHROPIC_API_KEY в переменных окружения Vercel' });
++      return;
++    }
++    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
++      res.status(500).json({ error: 'Supabase env vars are not configured' });
++      return;
++    }
++
++    // Проверяем, что запрос пришёл от залогиненного админа/менеджера
++    const authHeader = req.headers.authorization || '';
++    const token = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '';
++    if (!token) {
++      res.status(401).json({ error: 'Не авторизовано' });
++      return;
++    }
++
++    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
++    const { data: userData, error: userError } = await supabase.auth.getUser(token);
++    if (userError || !userData?.user) {
++      res.status(401).json({ error: 'Сессия недействительна, войдите заново' });
++      return;
++    }
++
++    const { data: profile } = await supabase
++      .from('profiles')
++      .select('role')
++      .eq('id', userData.user.id)
++      .maybeSingle();
++
++    if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
++      res.status(403).json({ error: 'Доступно только администраторам и менеджерам' });
++      return;
++    }
++
++    const body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
++    const name = typeof body.name === 'string' ? body.name.trim() : '';
++    if (!name) {
++      res.status(400).json({ error: 'Не указано название товара' });
++      return;
++    }
++    const categoryName = typeof body.categoryName === 'string' ? body.categoryName.trim() : '';
++    const brandName = typeof body.brandName === 'string' ? body.brandName.trim() : '';
++    const price = typeof body.price === 'number' && body.price > 0 ? body.price : undefined;
++    const existingDescription = typeof body.existingDescription === 'string' ? body.existingDescription.trim() : '';
++    const existingSpecLabels = Array.isArray(body.existingSpecLabels)
++      ? body.existingSpecLabels.filter((l) => typeof l === 'string' && l.trim()).slice(0, 30)
++      : [];
++
++    const userLines = [
++      `Название товара: ${name}`,
++      categoryName && `Категория: ${categoryName}`,
++      brandName && `Бренд: ${brandName}`,
++      price && `Цена: ${price} сомони`,
++      existingDescription && `Уже есть черновик описания (можешь опираться на него, но не копируй дословно): ${existingDescription}`,
++      existingSpecLabels.length > 0 && `already filled labels (не дублировать): ${existingSpecLabels.join(', ')}`,
++    ].filter(Boolean);
++
++    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
++      method: 'POST',
++      headers: {
++        'content-type': 'application/json',
++        'x-api-key': ANTHROPIC_API_KEY,
++        'anthropic-version': '2023-06-01',
++      },
++      body: JSON.stringify({
++        model: ANTHROPIC_MODEL,
++        max_tokens: 1024,
++        system: SYSTEM_PROMPT,
++        messages: [{ role: 'user', content: userLines.join('\n') }],
++      }),
++    });
++
++    if (!anthropicRes.ok) {
++      const errText = await anthropicRes.text().catch(() => '');
++      console.error('Anthropic API error', anthropicRes.status, errText);
++      res.status(502).json({ error: 'Сервис ИИ временно недоступен, попробуйте позже' });
++      return;
++    }
++
++    const anthropicData = await anthropicRes.json();
++    const rawText = anthropicData?.content?.[0]?.text || '';
++
++    let parsed;
++    try {
++      // Модель иногда оборачивает JSON в ```json ... ``` несмотря на инструкцию — на всякий случай снимаем обёртку.
++      const cleaned = rawText.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
++      parsed = JSON.parse(cleaned);
++    } catch (e) {
++      console.error('Failed to parse AI response as JSON', rawText);
++      res.status(502).json({ error: 'Не удалось разобрать ответ ИИ, попробуйте ещё раз' });
++      return;
++    }
++
++    const description = typeof parsed.description === 'string' ? parsed.description.trim() : '';
++    const specs = Array.isArray(parsed.specs)
++      ? parsed.specs
++          .filter((s) => s && typeof s.label === 'string' && typeof s.value === 'string' && s.label.trim() && s.value.trim())
++          .map((s) => ({ label: s.label.trim(), value: s.value.trim() }))
++          .slice(0, 12)
++      : [];
++
++    res.status(200).json({ description, specs });
++  } catch (e) {
++    console.error('ai-fill-product error', e);
++    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
++  }
++}
+diff --git a/src/pages/admin/AdminProducts.tsx b/src/pages/admin/AdminProducts.tsx
+index 63f47b3..e2beaa3 100644
+--- a/src/pages/admin/AdminProducts.tsx
++++ b/src/pages/admin/AdminProducts.tsx
+@@ -1,5 +1,5 @@
+ import { useState, useEffect } from 'react';
+-import { Plus, Search, Pencil, Trash2, X, Check, Upload } from 'lucide-react';
++import { Plus, Search, Pencil, Trash2, X, Check, Upload, Sparkles, Loader2 } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Badge } from '@/components/ui/badge';
+@@ -17,6 +17,7 @@ import {
+ } from '@/lib/supabaseData';
+ import type { Product, Category, Brand, Promotion } from '@/types';
+ import { uploadImageToStorage } from '@/lib/storageUpload';
++import { supabase } from '@/db/supabase';
+ import { useBulkSelection } from '@/hooks/useBulkSelection';
+ import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import { toast } from 'sonner';
+@@ -46,6 +47,7 @@ export default function AdminProducts() {
+   // это отражение того, в productIds каких акций сейчас/будет этот товар.
+   const [selectedPromoIds, setSelectedPromoIds] = useState<string[]>([]);
+   const [colorDrafts, setColorDrafts] = useState<ColorDraft[]>([]);
++  const [aiFillBusy, setAiFillBusy] = useState(false);
+ 
+   const load = () => {
+     setLoading(true);
+@@ -124,6 +126,81 @@ export default function AdminProducts() {
+     ]);
+   };
+ 
++  // Кнопка "Заполнить через ИИ" — просит серверную функцию /api/ai-fill-product
++  // сгенерировать описание и характеристики по названию/категории/бренду
++  // товара. Ничего не перезаписывает у уже заполненных полей: описание
++  // подставляется, только если оно ещё пустое, а характеристики добавляются
++  // только те, которых ещё нет (или дозаполняют пустое значение уже
++  // добавленного вручную параметра) — так админ не потеряет то, что уже
++  // написал сам, и всегда может поправить результат перед сохранением.
++  const handleAiFill = async () => {
++    if (!draft.name?.trim()) { toast.error('Сначала укажите название товара'); return; }
++    setAiFillBusy(true);
++    try {
++      const { data: { session } } = await supabase.auth.getSession();
++      if (!session) { toast.error('Сессия истекла, войдите заново'); return; }
++
++      const categoryName = categories.find((c) => c.id === draft.categoryId)?.name || '';
++      const brandName = brands.find((b) => b.id === draft.brandId)?.name || '';
++
++      const res = await fetch('/api/ai-fill-product', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
++        body: JSON.stringify({
++          name: draft.name,
++          categoryName,
++          brandName,
++          price: draft.price,
++          existingDescription: draft.description || '',
++          existingSpecLabels: (draft.specs || []).map((s) => s.label).filter(Boolean),
++        }),
++      });
++
++      if (!res.ok) {
++        const err = await res.json().catch(() => ({}));
++        throw new Error(err.error || 'Не удалось получить ответ от ИИ');
++      }
++
++      const data: { description?: string; specs?: { label: string; value: string }[] } = await res.json();
++
++      let filledDescription = false;
++      let addedSpecs = 0;
++      let filledSpecs = 0;
++
++      setDraft((prev) => {
++        const next = { ...prev };
++        if (!next.description?.trim() && data.description) {
++          next.description = data.description;
++          filledDescription = true;
++        }
++        const merged = [...(next.specs || [])];
++        for (const spec of data.specs || []) {
++          const key = spec.label.trim().toLowerCase();
++          const idx = merged.findIndex((s) => s.label.trim().toLowerCase() === key);
++          if (idx === -1) {
++            merged.push({ label: spec.label, value: spec.value });
++            addedSpecs += 1;
++          } else if (!merged[idx].value.trim()) {
++            merged[idx] = { ...merged[idx], value: spec.value };
++            filledSpecs += 1;
++          }
++        }
++        next.specs = merged;
++        return next;
++      });
++
++      if (!filledDescription && addedSpecs === 0 && filledSpecs === 0) {
++        toast.info('Описание и характеристики уже заполнены — ИИ не стал их менять');
++      } else {
++        toast.success('Заполнено через ИИ — проверьте текст перед сохранением');
++      }
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось выполнить автозаполнение');
++    } finally {
++      setAiFillBusy(false);
++    }
++  };
++
+   const handleSave = async () => {
+     if (!draft.name || !draft.price) { toast.error('Заполните обязательные поля'); return; }
+     if (uploadedImages.length === 0) { toast.error('Добавьте хотя бы одно изображение'); return; }
+@@ -578,7 +655,25 @@ export default function AdminProducts() {
+               )}
+             </div>
+             <div className="md:col-span-2">
+-              <Label>Описание</Label>
++              <div className="flex items-center justify-between mb-1">
++                <Label>Описание</Label>
++                <Button
++                  type="button"
++                  variant="outline"
++                  size="sm"
++                  className="h-7 text-xs"
++                  disabled={aiFillBusy || !draft.name?.trim()}
++                  onClick={handleAiFill}
++                  title="Заполнить описание и характеристики через ИИ по названию товара"
++                >
++                  {aiFillBusy ? (
++                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
++                  ) : (
++                    <Sparkles className="h-3 w-3 mr-1" />
++                  )}
++                  {aiFillBusy ? 'Заполняю...' : 'Заполнить через ИИ'}
++                </Button>
++              </div>
+               <Textarea className="mt-1" rows={3} value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+             </div>
+             <div className="md:col-span-2">
