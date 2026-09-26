@@ -1,0 +1,196 @@
+diff --git a/api/feed.xml.js b/api/feed.xml.js
+new file mode 100644
+index 0000000..43de53f
+--- /dev/null
++++ b/api/feed.xml.js
+@@ -0,0 +1,100 @@
++// Serverless-функция (Vercel): фид товаров для Google Merchant Center.
++//
++// Доступен по адресу https://enter.tj/api/feed.xml — именно эту ссылку нужно
++// указать в Merchant Center как "Схема получения" (Fetch), чтобы Google сам
++// периодически забирал свежий список товаров прямо из базы. Ничего не нужно
++// генерировать заранее и вручную перезаливать — при каждом запросе фид
++// собирается из актуальных данных Supabase.
++//
++// Формат — стандартный RSS 2.0 с пространством имён g: (Google Merchant
++// Center feed spec): https://support.google.com/merchants/answer/7052112
++
++import { createClient } from '@supabase/supabase-js';
++
++const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
++const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
++
++const SITE_URL = 'https://enter.tj';
++const CURRENCY = 'TJS';
++
++function escapeXml(value) {
++  return String(value ?? '')
++    .replace(/&/g, '&amp;')
++    .replace(/</g, '&lt;')
++    .replace(/>/g, '&gt;')
++    .replace(/"/g, '&quot;')
++    .replace(/'/g, '&apos;');
++}
++
++// Описание в базе может содержать перенос строк/HTML из старых товаров —
++// для фида нужен чистый текст.
++function stripHtml(value) {
++  return String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
++}
++
++function buildItemXml(p) {
++  const link = `${SITE_URL}/product/${p.slug}`;
++  const imageLink = `${SITE_URL}/api/product-image?id=${p.id}&i=0`;
++  const availability = p.stock > 0 ? 'in_stock' : 'out_of_stock';
++  const description = stripHtml(p.description) || p.name;
++  const brand = p.brands?.name || 'ENTER.TJ';
++  const category = p.categories?.name;
++
++  return `    <item>
++      <g:id>${escapeXml(p.id)}</g:id>
++      <title>${escapeXml(p.name)}</title>
++      <description>${escapeXml(description.slice(0, 5000))}</description>
++      <link>${escapeXml(link)}</link>
++      <g:image_link>${escapeXml(imageLink)}</g:image_link>
++      <g:availability>${availability}</g:availability>
++      <g:price>${p.price} ${CURRENCY}</g:price>
++      <g:brand>${escapeXml(brand)}</g:brand>
++      <g:condition>new</g:condition>
++      <g:identifier_exists>no</g:identifier_exists>
++      ${category ? `<g:product_type>${escapeXml(category)}</g:product_type>` : ''}
++    </item>`;
++}
++
++export default async function handler(req, res) {
++  try {
++    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
++      res.status(500).send('Supabase env vars are not configured');
++      return;
++    }
++
++    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
++    const { data, error } = await supabase
++      .from('products')
++      .select('id, name, slug, price, stock, status, description, images, categories(name), brands(name)')
++      .eq('status', 'active')
++      .order('created_at', { ascending: false });
++
++    if (error) {
++      res.status(500).send(`Supabase error: ${error.message}`);
++      return;
++    }
++
++    const products = (data || []).filter((p) => Array.isArray(p.images) && p.images.length > 0);
++
++    const itemsXml = products.map(buildItemXml).join('\n');
++
++    const xml = `<?xml version="1.0" encoding="UTF-8"?>
++<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
++  <channel>
++    <title>ENTER.TJ — товары</title>
++    <link>${SITE_URL}</link>
++    <description>Фид товаров ENTER.TJ для Google Merchant Center</description>
++${itemsXml}
++  </channel>
++</rss>
++`;
++
++    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
++    // Google сам ходит за фидом по расписанию — держим короткий кэш на
++    // случай ручных проверок, но не устариваем данные надолго.
++    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
++    res.status(200).send(xml);
++  } catch (err) {
++    res.status(500).send('Internal error');
++  }
++}
+diff --git a/api/product-image.js b/api/product-image.js
+new file mode 100644
+index 0000000..a30ddd6
+--- /dev/null
++++ b/api/product-image.js
+@@ -0,0 +1,84 @@
++// Serverless-функция (Vercel): отдаёт фото товара по обычной ссылке.
++//
++// Зачем это нужно: фотографии товаров сейчас хранятся в базе Supabase как
++// base64-строки (data:image/jpeg;base64,...), а не как ссылки на файлы. Для
++// сайта это работает, но Google Merchant Center (и вообще любой внешний
++// сервис) не может использовать base64 в качестве image_link — ему обязательно
++// нужен настоящий URL, который можно скачать HTTP-запросом.
++//
++// Эта функция — мост между ними: принимает id товара и номер фото,
++// разбирает base64 из строки в базе и отдаёт как обычную картинку с
++// правильным Content-Type. Ссылка вида
++//   https://enter.tj/api/product-image?id=<id товара>&i=0
++// работает как обычная ссылка на фото и не требует переноса всех фото в
++// Supabase Storage.
++//
++// Кэшируется на CDN Vercel на неделю — значит при повторных запросах (а
++// Google обращается к фото регулярно) сама база Supabase почти не
++// нагружается, что дополнительно снижает расход egress-трафика.
++
++import { createClient } from '@supabase/supabase-js';
++
++const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
++const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
++
++export default async function handler(req, res) {
++  try {
++    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
++      res.status(500).send('Supabase env vars are not configured');
++      return;
++    }
++
++    const id = typeof req.query.id === 'string' ? req.query.id : '';
++    const index = Number.parseInt(typeof req.query.i === 'string' ? req.query.i : '0', 10) || 0;
++
++    if (!id) {
++      res.status(400).send('Missing "id" parameter');
++      return;
++    }
++
++    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
++    const { data, error } = await supabase
++      .from('products')
++      .select('images')
++      .eq('id', id)
++      .maybeSingle();
++
++    if (error || !data) {
++      res.status(404).send('Product not found');
++      return;
++    }
++
++    const images = Array.isArray(data.images) ? data.images : [];
++    const raw = images[index];
++
++    if (!raw) {
++      res.status(404).send('Image not found');
++      return;
++    }
++
++    // Фото могли когда-то загрузить и как обычную ссылку (не base64) —
++    // в этом случае просто перенаправляем на неё.
++    if (!raw.startsWith('data:')) {
++      res.writeHead(302, { Location: raw });
++      res.end();
++      return;
++    }
++
++    const match = /^data:([^;]+);base64,(.+)$/.exec(raw);
++    if (!match) {
++      res.status(422).send('Unsupported image format');
++      return;
++    }
++
++    const [, mime, base64] = match;
++    const buffer = Buffer.from(base64, 'base64');
++
++    res.setHeader('Content-Type', mime);
++    // Кэш на CDN Vercel на неделю + разрешаем браузеру кэшировать сутки.
++    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
++    res.status(200).send(buffer);
++  } catch (err) {
++    res.status(500).send('Internal error');
++  }
++}

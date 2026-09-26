@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/supabaseData';
-import { compressImageFile } from '@/lib/imageCompress';
+import { uploadImageToStorage } from '@/lib/storageUpload';
 import type { Brand } from '@/types';
 import { toast } from 'sonner';
 
@@ -180,9 +180,9 @@ export default function AdminBrands() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        compressImageFile(file, 400, 0.85)
-                          .then((compressed) => setDraft((prev) => ({ ...prev, logo: compressed })))
-                          .catch(() => toast.error('Не удалось обработать изображение'));
+                        uploadImageToStorage(file, 'brands', 400, 0.85)
+                          .then((url) => setDraft((prev) => ({ ...prev, logo: url })))
+                          .catch(() => toast.error('Не удалось загрузить изображение'));
                       }}
                     />
                   </label>

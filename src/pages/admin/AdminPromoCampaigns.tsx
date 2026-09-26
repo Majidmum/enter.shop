@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchPromoCampaigns, createPromoCampaign, updatePromoCampaign, deletePromoCampaign } from '@/lib/supabaseData';
-import { compressImageFile } from '@/lib/imageCompress';
+import { uploadImageToStorage } from '@/lib/storageUpload';
 import type { PromoCampaign } from '@/types';
 import { toast } from 'sonner';
 
@@ -207,9 +207,9 @@ export default function AdminPromoCampaigns() {
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      compressImageFile(file)
-                        .then((compressed) => setDraft((prev) => ({ ...prev, image: compressed })))
-                        .catch(() => toast.error('Не удалось обработать изображение'));
+                      uploadImageToStorage(file, 'promotions')
+                        .then((url) => setDraft((prev) => ({ ...prev, image: url })))
+                        .catch(() => toast.error('Не удалось загрузить изображение'));
                     }} />
                   </label>
                 )}

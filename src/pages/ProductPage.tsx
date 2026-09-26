@@ -9,7 +9,7 @@ import ProductCard from '@/components/shared/ProductCard';
 import ReviewCard from '@/components/shared/ReviewCard';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import { fetchProducts, fetchApprovedReviews, createReview, fetchActivePromotions } from '@/lib/supabaseData';
-import { compressImageFile } from '@/lib/imageCompress';
+import { uploadImageToStorage } from '@/lib/storageUpload';
 import { applyActivePromotions } from '@/lib/promotions';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
@@ -410,9 +410,9 @@ export default function ProductPage() {
                         className="hidden"
                         onChange={(e) => {
                           Array.from(e.target.files || []).forEach((file) => {
-                            compressImageFile(file, 1000, 0.8)
-                              .then((compressed) => setReviewImages((prev) => [...prev, compressed]))
-                              .catch(() => toast.error('Не удалось обработать изображение'));
+                            uploadImageToStorage(file, 'reviews', 1000, 0.8)
+                              .then((url) => setReviewImages((prev) => [...prev, url]))
+                              .catch(() => toast.error('Не удалось загрузить изображение'));
                           });
                           e.target.value = '';
                         }}

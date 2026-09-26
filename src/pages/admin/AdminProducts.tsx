@@ -16,7 +16,7 @@ import {
   createProductColor, updateProductColor, deleteProductColor,
 } from '@/lib/supabaseData';
 import type { Product, Category, Brand, Promotion } from '@/types';
-import { compressImageFile } from '@/lib/imageCompress';
+import { uploadImageToStorage } from '@/lib/storageUpload';
 import { toast } from 'sonner';
 
 type ProductDraft = Partial<Product> & { name: string; price: number };
@@ -456,9 +456,9 @@ export default function AdminProducts() {
                           className="hidden"
                           onChange={(e) => {
                             Array.from(e.target.files || []).forEach((file) => {
-                              compressImageFile(file)
-                                .then((compressed) => setColorDrafts((prev) => prev.map((x, i) => i === idx ? { ...x, images: [...x.images, compressed] } : x)))
-                                .catch(() => toast.error('Не удалось обработать изображение'));
+                              uploadImageToStorage(file, 'products')
+                                .then((url) => setColorDrafts((prev) => prev.map((x, i) => i === idx ? { ...x, images: [...x.images, url] } : x)))
+                                .catch(() => toast.error('Не удалось загрузить изображение'));
                             });
                           }}
                         />
@@ -587,9 +587,9 @@ export default function AdminProducts() {
                         className="hidden"
                         onChange={(e) => {
                           Array.from(e.target.files || []).forEach((file) => {
-                            compressImageFile(file)
-                              .then((compressed) => setUploadedImages((prev) => [...prev, compressed]))
-                              .catch(() => toast.error('Не удалось обработать изображение'));
+                            uploadImageToStorage(file, 'products')
+                              .then((url) => setUploadedImages((prev) => [...prev, url]))
+                              .catch(() => toast.error('Не удалось загрузить изображение'));
                           });
                         }}
                       />
@@ -609,9 +609,9 @@ export default function AdminProducts() {
                       className="hidden"
                       onChange={(e) => {
                         Array.from(e.target.files || []).forEach((file) => {
-                          compressImageFile(file)
-                            .then((compressed) => setUploadedImages((prev) => [...prev, compressed]))
-                            .catch(() => toast.error('Не удалось обработать изображение'));
+                          uploadImageToStorage(file, 'products')
+                            .then((url) => setUploadedImages((prev) => [...prev, url]))
+                            .catch(() => toast.error('Не удалось загрузить изображение'));
                         });
                       }}
                     />

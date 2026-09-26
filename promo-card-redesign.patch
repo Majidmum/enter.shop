@@ -1,0 +1,191 @@
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 5cc3316..73d8380 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -1,13 +1,15 @@
+ import { useState, useEffect } from 'react';
+-import { Link } from 'react-router-dom';
++import { Link, useNavigate } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+-import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Building2, Tag, Sparkles, Laptop } from 'lucide-react';
++import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Headphones, Building2, Tag, Sparkles, Laptop, Star } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import ProductScrollRow from '@/components/shared/ProductScrollRow';
+ import { fetchProducts, fetchBrands, fetchActiveBanners, fetchActivePromotions } from '@/lib/supabaseData';
+ import { applyActivePromotions } from '@/lib/promotions';
+ import PageMeta from '@/components/common/PageMeta';
+ import { ProductGridSkeleton } from '@/components/shared/Skeletons';
++import { useCartStore } from '@/store/cartStore';
++import { toast } from 'sonner';
+ import type { Product, Brand, Banner, Promotion } from '@/types';
+ 
+ // Баннеры всё равно управляются админом через базу (Supabase), но сам запрос
+@@ -40,6 +42,8 @@ function writeCachedBanners(banners: Banner[]) {
+ 
+ export default function HomePage() {
+   const { t } = useTranslation();
++  const navigate = useNavigate();
++  const addToCart = useCartStore((s) => s.addItem);
+   const [products, setProducts] = useState<Product[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
+   const [productsLoading, setProductsLoading] = useState(true);
+@@ -87,11 +91,11 @@ export default function HomePage() {
+   // "Новинки" — управляется администратором вручную (переключатель в форме товара)
+   const newProducts = displayProducts.filter((p) => p.isNew && p.status === 'active').slice(0, 8);
+ 
+-  // Товары со скидкой выше 20% — показываются рядом с баннером (на десктопе)
+-  // или сразу под ним (на телефоне), по образцу карточек больших скидок asaxiy.uz.
+-  // Скидка берётся из поля discount (заполняется акцией), а если его нет —
+-  // считается прямо по цене/старой цене, которые админ мог вписать в товаре
+-  // вручную, без участия акций.
++  // Товар(ы) со скидкой выше 20% — одна карточка рядом с баннером (на десктопе)
++  // или под ним (на телефоне), с собственной автопрокруткой и точками, по
++  // образцу карточки "Супер цена" на asaxiy.uz. Скидка берётся из поля
++  // discount (заполняется акцией), а если его нет — считается прямо по
++  // цене/старой цене, которые админ мог вписать в товаре вручную.
+   const getEffectiveDiscount = (p: Product): number => {
+     if (p.discount) return p.discount;
+     if (p.oldPrice && p.oldPrice > p.price) {
+@@ -105,7 +109,24 @@ export default function HomePage() {
+     .map((p) => ({ product: p, effectiveDiscount: getEffectiveDiscount(p) }))
+     .filter((x) => x.effectiveDiscount >= 20)
+     .sort((a, b) => b.effectiveDiscount - a.effectiveDiscount)
+-    .slice(0, 2);
++    .slice(0, 6);
++
++  const [promoIdx, setPromoIdx] = useState(0);
++
++  useEffect(() => {
++    if (discountProducts.length <= 1) return;
++    const t = setInterval(() => setPromoIdx((i) => (i + 1) % discountProducts.length), 4500);
++    return () => clearInterval(t);
++  }, [discountProducts.length]);
++
++  const activePromo = discountProducts[promoIdx % Math.max(discountProducts.length, 1)];
++
++  const handleBuyNow = (e: React.MouseEvent, product: Product) => {
++    e.preventDefault();
++    addToCart(product);
++    toast.success(`${product.name} добавлен в корзину`);
++    navigate('/checkout');
++  };
+ 
+   useEffect(() => {
+     const t = setInterval(() => setBannerIdx((i) => (i + 1) % activeBanners.length), 5000);
+@@ -156,7 +177,7 @@ export default function HomePage() {
+       <h1 className="sr-only">ENTER.TJ — компьютерная техника и офисная мебель в Душанбе</h1>
+ 
+       <section className="container mx-auto px-4 pt-4 md:pt-6">
+-        <div className="flex flex-col lg:flex-row gap-3">
++        <div className="flex flex-col lg:flex-row lg:items-stretch gap-3">
+         <div className={`relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px] ${discountProducts.length > 0 ? 'lg:flex-1 lg:min-w-0' : ''}`}>
+           {activeBanners.map((banner, i) => {
+             const shouldLoad = seenBannerIdx.has(i);
+@@ -297,48 +318,70 @@ export default function HomePage() {
+           )}
+         </div>
+ 
+-        {/* Товары со скидкой > 20% — рядом с баннером на десктопе (вертикальный стек),
+-            под баннером на телефоне (горизонтальный ряд), по образцу asaxiy.uz */}
+-        {discountProducts.length > 0 && (
+-          <div className="flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-visible lg:w-[280px] lg:shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+-            {discountProducts.map(({ product: p, effectiveDiscount }) => (
+-              <Link
+-                key={p.id}
+-                to={`/product/${p.slug}`}
+-                className="group relative flex shrink-0 w-[150px] sm:w-[170px] lg:w-full lg:flex-1 flex-col lg:flex-row lg:items-center gap-0 lg:gap-3 rounded-2xl bg-muted hover:bg-muted/70 transition-colors overflow-hidden lg:p-3"
+-              >
+-                <span className="absolute top-2 left-2 z-10 rounded-full bg-red-500 text-white text-xs font-bold px-2 py-0.5">
+-                  -{effectiveDiscount}%
+-                </span>
+-                <div className="relative w-full aspect-square lg:aspect-auto lg:h-20 lg:w-20 lg:shrink-0 lg:rounded-xl overflow-hidden bg-background">
++        {/* Карточка "Супер цена" — товар со скидкой >20% рядом с баннером на
++            десктопе, под баннером на телефоне. Если подходящих товаров
++            несколько — карточка сама переключает их по кругу, с точками
++            снизу, отдельно от точек баннера. По образцу asaxiy.uz. */}
++        {discountProducts.length > 0 && activePromo && (
++          <div className="flex flex-col gap-2 lg:w-[300px] lg:shrink-0">
++            <Link
++              key={activePromo.product.id}
++              to={`/product/${activePromo.product.slug}`}
++              className="group relative flex flex-1 flex-col rounded-2xl bg-white dark:bg-card border border-border shadow-sm p-4 min-h-[220px] sm:min-h-[280px] md:min-h-[360px] lg:min-h-0"
++            >
++              <span className="absolute top-3 left-3 z-10 rounded-full bg-red-500 text-white text-xs font-bold px-2.5 py-1">
++                -{activePromo.effectiveDiscount}%
++              </span>
++              <div className="flex flex-1 flex-col items-center justify-center text-center gap-2">
++                <div className="w-full max-w-[180px] aspect-square flex items-center justify-center">
+                   <img
+-                    src={p.images[0]}
+-                    alt={p.name}
+-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
++                    src={activePromo.product.images[0]}
++                    alt={activePromo.product.name}
++                    className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                     loading="lazy"
+                   />
+-                  {/* На телефоне текст ложится поверх фото снизу, как в баннере */}
+-                  <div className="lg:hidden absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pt-6 pb-2 px-2.5">
+-                    <p className="text-xs font-medium text-white line-clamp-1">{p.name}</p>
+-                    <div className="flex items-baseline gap-1.5">
+-                      <span className="text-sm font-bold text-white">{p.price.toLocaleString('ru-RU')} с.</span>
+-                      {p.oldPrice && (
+-                        <span className="text-[10px] text-white/70 line-through">{p.oldPrice.toLocaleString('ru-RU')} с.</span>
+-                      )}
+-                    </div>
+-                  </div>
+                 </div>
+-                <div className="hidden lg:flex flex-col min-w-0 py-2 pr-2">
+-                  <p className="text-sm font-medium text-foreground line-clamp-2 leading-snug">{p.name}</p>
+-                  <div className="mt-1 flex items-baseline gap-2">
+-                    <span className="text-base font-bold text-primary">{p.price.toLocaleString('ru-RU')} с.</span>
+-                    {p.oldPrice && (
+-                      <span className="text-xs text-muted-foreground line-through">{p.oldPrice.toLocaleString('ru-RU')} с.</span>
+-                    )}
+-                  </div>
++                <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
++                  {activePromo.product.name}
++                </h3>
++                <div className="flex flex-col items-center gap-0.5">
++                  {activePromo.product.oldPrice && (
++                    <span className="text-xs text-muted-foreground line-through">
++                      {activePromo.product.oldPrice.toLocaleString('ru-RU')} сом.
++                    </span>
++                  )}
++                  <span className="text-xl font-bold text-primary">
++                    {activePromo.product.price.toLocaleString('ru-RU')} сом.
++                  </span>
+                 </div>
+-              </Link>
+-            ))}
++                {activePromo.product.reviewCount > 0 && (
++                  <div className="flex items-center gap-1">
++                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
++                    <span className="text-xs text-muted-foreground">
++                      {activePromo.product.rating} ({activePromo.product.reviewCount})
++                    </span>
++                  </div>
++                )}
++              </div>
++              <Button
++                onClick={(e) => handleBuyNow(e, activePromo.product)}
++                disabled={activePromo.product.stock === 0}
++                className="w-full mt-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-full"
++              >
++                Купить в один клик
++              </Button>
++            </Link>
++            {discountProducts.length > 1 && (
++              <div className="flex justify-center gap-2">
++                {discountProducts.map((_, i) => (
++                  <button
++                    key={i}
++                    onClick={() => setPromoIdx(i)}
++                    className={`h-2 rounded-full transition-all ${i === promoIdx ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30'}`}
++                  />
++                ))}
++              </div>
++            )}
+           </div>
+         )}
+         </div>
