@@ -341,27 +341,23 @@ export default function HomePage() {
                     loading="lazy"
                   />
                 </div>
-                <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
+                <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug min-h-[2.4em]">
                   {activePromo.product.name}
                 </h3>
-                <div className="flex flex-col items-center gap-0.5">
-                  {activePromo.product.oldPrice && (
-                    <span className="text-xs text-muted-foreground line-through">
-                      {activePromo.product.oldPrice.toLocaleString('ru-RU')} сом.
-                    </span>
-                  )}
+                <div className="flex flex-col items-center gap-0.5 min-h-[1.2em]">
+                  <span className={`text-xs text-muted-foreground line-through ${activePromo.product.oldPrice ? '' : 'invisible'}`}>
+                    {(activePromo.product.oldPrice || 0).toLocaleString('ru-RU')} сом.
+                  </span>
                   <span className="text-xl font-bold text-primary">
                     {activePromo.product.price.toLocaleString('ru-RU')} сом.
                   </span>
                 </div>
-                {activePromo.product.reviewCount > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs text-muted-foreground">
-                      {activePromo.product.rating} ({activePromo.product.reviewCount})
-                    </span>
-                  </div>
-                )}
+                <div className={`flex items-center gap-1 min-h-[1.2em] ${activePromo.product.reviewCount > 0 ? '' : 'invisible'}`}>
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs text-muted-foreground">
+                    {activePromo.product.rating} ({activePromo.product.reviewCount})
+                  </span>
+                </div>
               </div>
               <Button
                 onClick={(e) => handleBuyNow(e, activePromo.product)}
@@ -371,17 +367,18 @@ export default function HomePage() {
                 Купить в один клик
               </Button>
             </Link>
-            {discountProducts.length > 1 && (
-              <div className="flex justify-center gap-2">
-                {discountProducts.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPromoIdx(i)}
-                    className={`h-2 rounded-full transition-all ${i === promoIdx ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30'}`}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Точки всегда занимают одну и ту же высоту (h-2), даже если товар
+                всего один (тогда просто невидимы) — иначе карточка меняла бы
+                размер в зависимости от того, есть точки или нет. */}
+            <div className={`flex justify-center gap-2 h-2 ${discountProducts.length > 1 ? '' : 'invisible'}`}>
+              {(discountProducts.length > 1 ? discountProducts : [discountProducts[0]]).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPromoIdx(i)}
+                  className={`h-2 rounded-full transition-all ${i === promoIdx ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30'}`}
+                />
+              ))}
+            </div>
           </div>
         )}
         </div>
