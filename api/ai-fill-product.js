@@ -55,7 +55,13 @@ export default async function handler(req, res) {
       return;
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Клиент создаём с Authorization-заголовком пользователя (не только anon key) —
+    // иначе последующий запрос к profiles идёт как анонимный, RLS-политика
+    // "пользователь видит только свою строку" (auth.uid() = id) ничего не
+    // находит, и функция ошибочно решает, что роли нет.
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData?.user) {
       res.status(401).json({ error: 'Сессия недействительна, войдите заново' });
