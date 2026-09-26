@@ -8,8 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { fetchPromoCampaigns, createPromoCampaign, updatePromoCampaign, deletePromoCampaign } from '@/lib/supabaseData';
 import { uploadImageToStorage } from '@/lib/storageUpload';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import type { PromoCampaign } from '@/types';
 import { toast } from 'sonner';
 
@@ -20,6 +23,9 @@ export default function AdminPromoCampaigns() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PromoCampaign | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulk = useBulkSelection();
   const [draft, setDraft] = useState<Partial<PromoCampaign>>({});
 
   const load = () => {
@@ -87,6 +93,37 @@ export default function AdminPromoCampaigns() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deletePromoCampaign(id)));
+      setItems((prev) => prev.filter((c) => !ids.includes(c.id)));
+      toast.success(`Удалено акций: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить некоторые акции');
+    } finally {
+      setBulkBusy(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const handleBulkStatus = async (status: 'active' | 'inactive') => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      const updated = await Promise.all(ids.map((id) => updatePromoCampaign(id, { status })));
+      setItems((prev) => prev.map((c) => updated.find((u) => u.id === c.id) || c));
+      toast.success(status === 'active' ? `Включено акций: ${ids.length}` : `Выключено акций: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить некоторые акции');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const moveItem = async (id: string, dir: 'up' | 'down') => {
     const idx = items.findIndex((c) => c.id === id);
     if (dir === 'up' && idx === 0) return;
@@ -120,6 +157,13 @@ export default function AdminPromoCampaigns() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={items.length > 0 && items.every((c) => bulk.isSelected(c.id))}
+                    onCheckedChange={() => bulk.toggleAll(items.map((c) => c.id))}
+                    aria-label="Выбрать все"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Порядок</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Превью</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заголовок</th>
@@ -130,7 +174,10 @@ export default function AdminPromoCampaigns() {
             </thead>
             <tbody>
               {items.map((c, idx) => (
-                <tr key={c.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                <tr key={c.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.title}`} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-1">
                       <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveItem(c.id, 'up')} disabled={idx === 0}>
@@ -179,7 +226,10 @@ export default function AdminPromoCampaigns() {
         {/* Мобильный — карточки вместо таблицы */}
         <div className="md:hidden flex flex-col divide-y divide-border">
           {items.map((c, idx) => (
-            <div key={c.id} className="p-4 flex gap-3">
+            <div key={c.id} className={`p-4 flex gap-3 ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
+              <div className="shrink-0 flex items-center">
+                <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.title}`} />
+              </div>
               <div className="h-16 w-24 rounded-lg overflow-hidden bg-muted shrink-0">
                 {c.image && <img src={c.image} alt={c.title} className="w-full h-full object-cover" />}
               </div>
@@ -224,6 +274,15 @@ export default function AdminPromoCampaigns() {
           <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
+
+      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
+        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" />
+          Удалить
+        </Button>
+      </BulkActionsBar>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
@@ -304,6 +363,19 @@ export default function AdminPromoCampaigns() {
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные акции?</AlertDialogTitle>
+            <AlertDialogDescription>Будет удалено акций: {bulk.count}. Они пропадут со страницы рекламных акций.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

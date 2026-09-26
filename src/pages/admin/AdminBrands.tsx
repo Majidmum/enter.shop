@@ -8,8 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/supabaseData';
 import { uploadImageToStorage } from '@/lib/storageUpload';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import type { Brand } from '@/types';
 import { toast } from 'sonner';
 
@@ -20,6 +23,9 @@ export default function AdminBrands() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Brand | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulk = useBulkSelection();
   const [draft, setDraft] = useState<Partial<Brand>>({});
 
   const load = () => {
@@ -74,6 +80,37 @@ export default function AdminBrands() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deleteBrand(id)));
+      setItems((prev) => prev.filter((b) => !ids.includes(b.id)));
+      toast.success(`Удалено брендов: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить некоторые бренды');
+    } finally {
+      setBulkBusy(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const handleBulkStatus = async (status: 'active' | 'inactive') => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      const updated = await Promise.all(ids.map((id) => updateBrand(id, { status })));
+      setItems((prev) => prev.map((b) => updated.find((u) => u.id === b.id) || b));
+      toast.success(status === 'active' ? `Включено брендов: ${ids.length}` : `Выключено брендов: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить некоторые бренды');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
@@ -87,6 +124,13 @@ export default function AdminBrands() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={items.length > 0 && items.every((b) => bulk.isSelected(b.id))}
+                    onCheckedChange={() => bulk.toggleAll(items.map((b) => b.id))}
+                    aria-label="Выбрать все"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Бренд</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Описание</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
@@ -96,7 +140,10 @@ export default function AdminBrands() {
             </thead>
             <tbody>
               {items.map((b) => (
-                <tr key={b.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                <tr key={b.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.name}`} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {b.logo ? (
@@ -139,8 +186,9 @@ export default function AdminBrands() {
         {/* Мобильный — карточки вместо таблицы */}
         <div className="md:hidden flex flex-col divide-y divide-border">
           {items.map((b) => (
-            <div key={b.id} className="p-4 flex flex-col gap-2">
+            <div key={b.id} className={`p-4 flex flex-col gap-2 ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
               <div className="flex items-center gap-3">
+                <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.name}`} className="shrink-0" />
                 {b.logo ? (
                   <div className="h-8 w-16 rounded bg-white border border-border flex items-center justify-center p-1 shrink-0">
                     <img src={b.logo} alt={b.name} className="h-full object-contain" />
@@ -180,6 +228,15 @@ export default function AdminBrands() {
           <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
+
+      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
+        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" />
+          Удалить
+        </Button>
+      </BulkActionsBar>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
@@ -260,6 +317,19 @@ export default function AdminBrands() {
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные бренды?</AlertDialogTitle>
+            <AlertDialogDescription>Будет удалено брендов: {bulk.count}. Товары этих брендов нужно будет обновить.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -7,8 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/supabaseData';
 import { uploadImageToStorage } from '@/lib/storageUpload';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import type { Category } from '@/types';
 import { toast } from 'sonner';
 
@@ -19,6 +22,9 @@ export default function AdminCategories() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulk = useBulkSelection();
   const [draft, setDraft] = useState<Partial<Category>>({ name: '', slug: '' });
 
   const load = () => {
@@ -79,6 +85,22 @@ export default function AdminCategories() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deleteCategory(id)));
+      setItems((prev) => prev.filter((c) => !ids.includes(c.id)));
+      toast.success(`Удалено категорий: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить некоторые категории');
+    } finally {
+      setBulkBusy(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
@@ -92,6 +114,13 @@ export default function AdminCategories() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={sortedItems.length > 0 && sortedItems.every((c) => bulk.isSelected(c.id))}
+                    onCheckedChange={() => bulk.toggleAll(sortedItems.map((c) => c.id))}
+                    aria-label="Выбрать все"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Категория</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Slug</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
@@ -100,7 +129,10 @@ export default function AdminCategories() {
             </thead>
             <tbody>
               {sortedItems.map((c) => (
-                <tr key={c.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                <tr key={c.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.name}`} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className={`flex items-center gap-3 ${c.parentId ? 'pl-6' : ''}`}>
                       {c.parentId && <span className="text-muted-foreground">↳</span>}
@@ -133,7 +165,8 @@ export default function AdminCategories() {
         {/* Мобильный — карточки вместо таблицы */}
         <div className="md:hidden flex flex-col divide-y divide-border">
           {sortedItems.map((c) => (
-            <div key={c.id} className={`p-4 flex items-center gap-3 ${c.parentId ? 'pl-8' : ''}`}>
+            <div key={c.id} className={`p-4 flex items-center gap-3 ${c.parentId ? 'pl-8' : ''} ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
+              <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.name}`} className="shrink-0" />
               {c.parentId && <span className="text-muted-foreground shrink-0">↳</span>}
               <div className="h-11 w-11 rounded-lg overflow-hidden bg-muted shrink-0">
                 <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
@@ -162,6 +195,13 @@ export default function AdminCategories() {
           <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
+
+      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
+        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" />
+          Удалить
+        </Button>
+      </BulkActionsBar>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
@@ -248,6 +288,19 @@ export default function AdminCategories() {
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные категории?</AlertDialogTitle>
+            <AlertDialogDescription>Будет удалено категорий: {bulk.count}. Товары этих категорий нужно будет переназначить.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

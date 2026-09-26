@@ -1,0 +1,1260 @@
+diff --git a/src/components/admin/BulkActionsBar.tsx b/src/components/admin/BulkActionsBar.tsx
+new file mode 100644
+index 0000000..717f1ef
+--- /dev/null
++++ b/src/components/admin/BulkActionsBar.tsx
+@@ -0,0 +1,30 @@
++import type { ReactNode } from 'react';
++import { X } from 'lucide-react';
++import { Button } from '@/components/ui/button';
++
++interface BulkActionsBarProps {
++  count: number;
++  onClear: () => void;
++  children: ReactNode;
++}
++
++/**
++ * Плашка массовых действий — появляется, когда в списке выбрана хотя бы
++ * одна строка чекбоксом. Липнет к низу экрана (над мобильной навигацией),
++ * чтобы её было видно, даже если список длинный и прокручен вниз.
++ */
++export default function BulkActionsBar({ count, onClear, children }: BulkActionsBarProps) {
++  if (count === 0) return null;
++
++  return (
++    <div className="sticky bottom-3 md:bottom-4 z-30 mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 card-shadow">
++      <span className="text-sm font-medium shrink-0">Выбрано: {count}</span>
++      <div className="flex flex-wrap items-center gap-2 ml-auto">
++        {children}
++        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClear} aria-label="Отменить выбор">
++          <X className="h-4 w-4" />
++        </Button>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/hooks/useBulkSelection.ts b/src/hooks/useBulkSelection.ts
+new file mode 100644
+index 0000000..367e989
+--- /dev/null
++++ b/src/hooks/useBulkSelection.ts
+@@ -0,0 +1,32 @@
++import { useState, useCallback } from 'react';
++
++/**
++ * Общая логика выбора нескольких строк в списке (админка) — чтобы потом
++ * применить массовое действие (удалить, включить/выключить и т.д.) сразу
++ * ко всем выбранным, а не по одной.
++ */
++export function useBulkSelection() {
++  const [selected, setSelected] = useState<Set<string>>(new Set());
++
++  const toggle = useCallback((id: string) => {
++    setSelected((prev) => {
++      const next = new Set(prev);
++      if (next.has(id)) next.delete(id);
++      else next.add(id);
++      return next;
++    });
++  }, []);
++
++  /** Выбрать/снять выбор со всех переданных id одним кликом (чекбокс в шапке таблицы). */
++  const toggleAll = useCallback((ids: string[]) => {
++    setSelected((prev) => {
++      const allSelected = ids.length > 0 && ids.every((id) => prev.has(id));
++      return allSelected ? new Set() : new Set(ids);
++    });
++  }, []);
++
++  const clear = useCallback(() => setSelected(new Set()), []);
++  const isSelected = useCallback((id: string) => selected.has(id), [selected]);
++
++  return { selected, toggle, toggleAll, clear, isSelected, count: selected.size };
++}
+diff --git a/src/pages/admin/AdminBanners.tsx b/src/pages/admin/AdminBanners.tsx
+index 3846d82..90fae56 100644
+--- a/src/pages/admin/AdminBanners.tsx
++++ b/src/pages/admin/AdminBanners.tsx
+@@ -7,8 +7,11 @@ import { Label } from '@/components/ui/label';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { fetchBanners, createBanner, updateBanner, deleteBanner } from '@/lib/supabaseData';
+ import { uploadImageToStorage } from '@/lib/storageUpload';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import type { Banner, BannerLayout } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -26,6 +29,9 @@ export default function AdminBanners() {
+   const [open, setOpen] = useState(false);
+   const [editing, setEditing] = useState<Banner | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+   const [draft, setDraft] = useState<Partial<Banner>>({});
+ 
+   const load = () => {
+@@ -96,6 +102,37 @@ export default function AdminBanners() {
+     }
+   };
+ 
++  const handleBulkDelete = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      await Promise.all(ids.map((id) => deleteBanner(id)));
++      setItems((prev) => prev.filter((b) => !ids.includes(b.id)));
++      toast.success(`Удалено баннеров: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить некоторые баннеры');
++    } finally {
++      setBulkBusy(false);
++      setBulkDeleteOpen(false);
++    }
++  };
++
++  const handleBulkStatus = async (status: 'active' | 'inactive') => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => updateBanner(id, { status })));
++      setItems((prev) => prev.map((b) => updated.find((u) => u.id === b.id) || b));
++      toast.success(status === 'active' ? `Включено баннеров: ${ids.length}` : `Выключено баннеров: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить некоторые баннеры');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   const moveItem = async (id: string, dir: 'up' | 'down') => {
+     const idx = items.findIndex((b) => b.id === id);
+     if (dir === 'up' && idx === 0) return;
+@@ -129,6 +166,13 @@ export default function AdminBanners() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={items.length > 0 && items.every((b) => bulk.isSelected(b.id))}
++                    onCheckedChange={() => bulk.toggleAll(items.map((b) => b.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Порядок</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Превью</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заголовок</th>
+@@ -139,7 +183,10 @@ export default function AdminBanners() {
+             </thead>
+             <tbody>
+               {items.map((b, idx) => (
+-                <tr key={b.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={b.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.title}`} />
++                  </td>
+                   <td className="px-4 py-3">
+                     <div className="flex flex-col gap-1">
+                       <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveItem(b.id, 'up')} disabled={idx === 0}>
+@@ -188,7 +235,10 @@ export default function AdminBanners() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {items.map((b, idx) => (
+-            <div key={b.id} className="p-4 flex gap-3">
++            <div key={b.id} className={`p-4 flex gap-3 ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
++              <div className="shrink-0 flex items-center">
++                <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.title}`} />
++              </div>
+               <div className="h-16 w-28 rounded-lg overflow-hidden bg-muted shrink-0">
+                 {b.image && <img src={b.image} alt={b.title} className="w-full h-full object-cover" />}
+               </div>
+@@ -234,6 +284,15 @@ export default function AdminBanners() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
++        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
++          <Trash2 className="h-3.5 w-3.5 mr-1" />
++          Удалить
++        </Button>
++      </BulkActionsBar>
++
+       <Dialog open={open} onOpenChange={setOpen}>
+         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
+           <DialogHeader><DialogTitle>{editing ? 'Редактировать баннер' : 'Добавить баннер'}</DialogTitle></DialogHeader>
+@@ -347,6 +406,19 @@ export default function AdminBanners() {
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
++
++      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить выбранные баннеры?</AlertDialogTitle>
++            <AlertDialogDescription>Будет удалено баннеров: {bulk.count}. Они будут удалены с главной страницы.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
+     </div>
+   );
+ }
+diff --git a/src/pages/admin/AdminBrands.tsx b/src/pages/admin/AdminBrands.tsx
+index f55f516..cfb3b7d 100644
+--- a/src/pages/admin/AdminBrands.tsx
++++ b/src/pages/admin/AdminBrands.tsx
+@@ -8,8 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/supabaseData';
+ import { uploadImageToStorage } from '@/lib/storageUpload';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import type { Brand } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -20,6 +23,9 @@ export default function AdminBrands() {
+   const [saving, setSaving] = useState(false);
+   const [editing, setEditing] = useState<Brand | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+   const [draft, setDraft] = useState<Partial<Brand>>({});
+ 
+   const load = () => {
+@@ -74,6 +80,37 @@ export default function AdminBrands() {
+     }
+   };
+ 
++  const handleBulkDelete = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      await Promise.all(ids.map((id) => deleteBrand(id)));
++      setItems((prev) => prev.filter((b) => !ids.includes(b.id)));
++      toast.success(`Удалено брендов: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить некоторые бренды');
++    } finally {
++      setBulkBusy(false);
++      setBulkDeleteOpen(false);
++    }
++  };
++
++  const handleBulkStatus = async (status: 'active' | 'inactive') => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => updateBrand(id, { status })));
++      setItems((prev) => prev.map((b) => updated.find((u) => u.id === b.id) || b));
++      toast.success(status === 'active' ? `Включено брендов: ${ids.length}` : `Выключено брендов: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить некоторые бренды');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   return (
+     <div className="flex flex-col gap-4">
+       <div className="flex justify-end">
+@@ -87,6 +124,13 @@ export default function AdminBrands() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={items.length > 0 && items.every((b) => bulk.isSelected(b.id))}
++                    onCheckedChange={() => bulk.toggleAll(items.map((b) => b.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Бренд</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Описание</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
+@@ -96,7 +140,10 @@ export default function AdminBrands() {
+             </thead>
+             <tbody>
+               {items.map((b) => (
+-                <tr key={b.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={b.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.name}`} />
++                  </td>
+                   <td className="px-4 py-3">
+                     <div className="flex items-center gap-3">
+                       {b.logo ? (
+@@ -139,8 +186,9 @@ export default function AdminBrands() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {items.map((b) => (
+-            <div key={b.id} className="p-4 flex flex-col gap-2">
++            <div key={b.id} className={`p-4 flex flex-col gap-2 ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
+               <div className="flex items-center gap-3">
++                <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.name}`} className="shrink-0" />
+                 {b.logo ? (
+                   <div className="h-8 w-16 rounded bg-white border border-border flex items-center justify-center p-1 shrink-0">
+                     <img src={b.logo} alt={b.name} className="h-full object-contain" />
+@@ -181,6 +229,15 @@ export default function AdminBrands() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
++        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
++          <Trash2 className="h-3.5 w-3.5 mr-1" />
++          Удалить
++        </Button>
++      </BulkActionsBar>
++
+       <Dialog open={open} onOpenChange={setOpen}>
+         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+           <DialogHeader><DialogTitle>{editing ? 'Редактировать бренд' : 'Добавить бренд'}</DialogTitle></DialogHeader>
+@@ -263,6 +320,19 @@ export default function AdminBrands() {
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
++
++      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить выбранные бренды?</AlertDialogTitle>
++            <AlertDialogDescription>Будет удалено брендов: {bulk.count}. Товары этих брендов нужно будет обновить.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
+     </div>
+   );
+ }
+diff --git a/src/pages/admin/AdminCategories.tsx b/src/pages/admin/AdminCategories.tsx
+index 71c6acd..1dc4529 100644
+--- a/src/pages/admin/AdminCategories.tsx
++++ b/src/pages/admin/AdminCategories.tsx
+@@ -7,8 +7,11 @@ import { Label } from '@/components/ui/label';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/supabaseData';
+ import { uploadImageToStorage } from '@/lib/storageUpload';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import type { Category } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -19,6 +22,9 @@ export default function AdminCategories() {
+   const [saving, setSaving] = useState(false);
+   const [editing, setEditing] = useState<Category | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+   const [draft, setDraft] = useState<Partial<Category>>({ name: '', slug: '' });
+ 
+   const load = () => {
+@@ -79,6 +85,22 @@ export default function AdminCategories() {
+     }
+   };
+ 
++  const handleBulkDelete = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      await Promise.all(ids.map((id) => deleteCategory(id)));
++      setItems((prev) => prev.filter((c) => !ids.includes(c.id)));
++      toast.success(`Удалено категорий: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить некоторые категории');
++    } finally {
++      setBulkBusy(false);
++      setBulkDeleteOpen(false);
++    }
++  };
++
+   return (
+     <div className="flex flex-col gap-4">
+       <div className="flex justify-end">
+@@ -92,6 +114,13 @@ export default function AdminCategories() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={sortedItems.length > 0 && sortedItems.every((c) => bulk.isSelected(c.id))}
++                    onCheckedChange={() => bulk.toggleAll(sortedItems.map((c) => c.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Категория</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Slug</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товары</th>
+@@ -100,7 +129,10 @@ export default function AdminCategories() {
+             </thead>
+             <tbody>
+               {sortedItems.map((c) => (
+-                <tr key={c.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={c.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.name}`} />
++                  </td>
+                   <td className="px-4 py-3">
+                     <div className={`flex items-center gap-3 ${c.parentId ? 'pl-6' : ''}`}>
+                       {c.parentId && <span className="text-muted-foreground">↳</span>}
+@@ -133,7 +165,8 @@ export default function AdminCategories() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {sortedItems.map((c) => (
+-            <div key={c.id} className={`p-4 flex items-center gap-3 ${c.parentId ? 'pl-8' : ''}`}>
++            <div key={c.id} className={`p-4 flex items-center gap-3 ${c.parentId ? 'pl-8' : ''} ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
++              <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.name}`} className="shrink-0" />
+               {c.parentId && <span className="text-muted-foreground shrink-0">↳</span>}
+               <div className="h-11 w-11 rounded-lg overflow-hidden bg-muted shrink-0">
+                 <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
+@@ -163,6 +196,13 @@ export default function AdminCategories() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
++          <Trash2 className="h-3.5 w-3.5 mr-1" />
++          Удалить
++        </Button>
++      </BulkActionsBar>
++
+       <Dialog open={open} onOpenChange={setOpen}>
+         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+           <DialogHeader><DialogTitle>{editing ? 'Редактировать категорию' : 'Добавить категорию'}</DialogTitle></DialogHeader>
+@@ -251,6 +291,19 @@ export default function AdminCategories() {
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
++
++      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить выбранные категории?</AlertDialogTitle>
++            <AlertDialogDescription>Будет удалено категорий: {bulk.count}. Товары этих категорий нужно будет переназначить.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
+     </div>
+   );
+ }
+diff --git a/src/pages/admin/AdminOrders.tsx b/src/pages/admin/AdminOrders.tsx
+index c2c873f..488bc64 100644
+--- a/src/pages/admin/AdminOrders.tsx
++++ b/src/pages/admin/AdminOrders.tsx
+@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Badge } from '@/components/ui/badge';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+ import { fetchOrders, updateOrderStatus } from '@/lib/supabaseData';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type Order, type OrderStatus } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -17,6 +20,9 @@ export default function AdminOrders() {
+   const [search, setSearch] = useState('');
+   const [statusFilter, setStatusFilter] = useState('all');
+   const [viewing, setViewing] = useState<Order | null>(null);
++  const [bulkStatus, setBulkStatus] = useState<OrderStatus>('confirmed');
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+ 
+   useEffect(() => {
+     fetchOrders().then(setOrders).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+@@ -40,6 +46,21 @@ export default function AdminOrders() {
+     }
+   };
+ 
++  const handleBulkStatus = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => updateOrderStatus(id, bulkStatus)));
++      setOrders((prev) => prev.map((o) => updated.find((u) => u.id === o.id) || o));
++      toast.success(`Статус обновлён для заказов: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить статус некоторых заказов');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   return (
+     <div className="flex flex-col gap-4">
+       {/* Toolbar */}
+@@ -66,6 +87,13 @@ export default function AdminOrders() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={filtered.length > 0 && filtered.every((o) => bulk.isSelected(o.id))}
++                    onCheckedChange={() => bulk.toggleAll(filtered.map((o) => o.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заказ №</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Дата</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Клиент</th>
+@@ -78,7 +106,10 @@ export default function AdminOrders() {
+             </thead>
+             <tbody>
+               {filtered.map((order) => (
+-                <tr key={order.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={order.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(order.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox checked={bulk.isSelected(order.id)} onCheckedChange={() => bulk.toggle(order.id)} aria-label={`Выбрать заказ ${order.orderNumber}`} />
++                  </td>
+                   <td className="px-4 py-3 font-medium text-primary">{order.orderNumber}</td>
+                   <td className="px-4 py-3 text-muted-foreground">{order.date}</td>
+                   <td className="px-4 py-3">
+@@ -120,9 +151,12 @@ export default function AdminOrders() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {filtered.map((order) => (
+-            <div key={order.id} className="p-4 flex flex-col gap-2">
++            <div key={order.id} className={`p-4 flex flex-col gap-2 ${bulk.isSelected(order.id) ? 'bg-primary/5' : ''}`}>
+               <div className="flex items-center justify-between gap-2">
+-                <span className="font-medium text-primary">{order.orderNumber}</span>
++                <div className="flex items-center gap-2 min-w-0">
++                  <Checkbox checked={bulk.isSelected(order.id)} onCheckedChange={() => bulk.toggle(order.id)} aria-label={`Выбрать заказ ${order.orderNumber}`} className="shrink-0" />
++                  <span className="font-medium text-primary truncate">{order.orderNumber}</span>
++                </div>
+                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewing(order)}>
+                   <Eye className="h-3.5 w-3.5" />
+                 </Button>
+@@ -163,6 +197,20 @@ export default function AdminOrders() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as OrderStatus)}>
++          <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
++          <SelectContent>
++            {STATUS_OPTIONS.map((s) => (
++              <SelectItem key={s} value={s} className="text-xs">{ORDER_STATUS_LABELS[s]}</SelectItem>
++            ))}
++          </SelectContent>
++        </Select>
++        <Button size="sm" disabled={bulkBusy} onClick={handleBulkStatus} className="bg-primary hover:bg-primary/90 text-white">
++          Применить
++        </Button>
++      </BulkActionsBar>
++
+       {/* Order detail dialog */}
+       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[90dvh] overflow-y-auto">
+diff --git a/src/pages/admin/AdminProducts.tsx b/src/pages/admin/AdminProducts.tsx
+index 5e3b409..63f47b3 100644
+--- a/src/pages/admin/AdminProducts.tsx
++++ b/src/pages/admin/AdminProducts.tsx
+@@ -17,6 +17,8 @@ import {
+ } from '@/lib/supabaseData';
+ import type { Product, Category, Brand, Promotion } from '@/types';
+ import { uploadImageToStorage } from '@/lib/storageUpload';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import { toast } from 'sonner';
+ 
+ type ProductDraft = Partial<Product> & { name: string; price: number };
+@@ -35,6 +37,9 @@ export default function AdminProducts() {
+   const [open, setOpen] = useState(false);
+   const [editing, setEditing] = useState<Product | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+   const [draft, setDraft] = useState<ProductDraft>({ name: '', price: 0, status: 'active' });
+   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+   // Какие акции отмечены для этого товара в форме — не хранится на самом товаре,
+@@ -188,6 +193,54 @@ export default function AdminProducts() {
+     }
+   };
+ 
++  const handleBulkDelete = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      await Promise.all(ids.map((id) => deleteProduct(id)));
++      setItems((prev) => prev.filter((p) => !ids.includes(p.id)));
++      toast.success(`Удалено товаров: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить некоторые товары');
++    } finally {
++      setBulkBusy(false);
++      setBulkDeleteOpen(false);
++    }
++  };
++
++  const handleBulkStatus = async (status: 'active' | 'inactive') => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => updateProduct(id, { status })));
++      setItems((prev) => prev.map((p) => updated.find((u) => u.id === p.id) || p));
++      toast.success(status === 'active' ? `Включено товаров: ${ids.length}` : `Выключено товаров: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить некоторые товары');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
++  const handleBulkFlag = async (field: 'isFeatured' | 'isNew', value: boolean) => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const patch = field === 'isFeatured' ? { isFeatured: value } : { isNew: value };
++      const updated = await Promise.all(ids.map((id) => updateProduct(id, patch)));
++      setItems((prev) => prev.map((p) => updated.find((u) => u.id === p.id) || p));
++      const label = field === 'isFeatured' ? 'популярным' : 'новинкой';
++      toast.success(value ? `Отмечено ${label}: ${ids.length}` : `Снята отметка у ${ids.length} товаров`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить некоторые товары');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   return (
+     <div className="flex flex-col gap-4">
+       {/* Toolbar */}
+@@ -222,6 +275,13 @@ export default function AdminProducts() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={filtered.length > 0 && filtered.every((p) => bulk.isSelected(p.id))}
++                    onCheckedChange={() => bulk.toggleAll(filtered.map((p) => p.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Товар</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Категория</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Бренд</th>
+@@ -233,7 +293,10 @@ export default function AdminProducts() {
+             </thead>
+             <tbody>
+               {filtered.map((p) => (
+-                <tr key={p.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={p.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(p.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox checked={bulk.isSelected(p.id)} onCheckedChange={() => bulk.toggle(p.id)} aria-label={`Выбрать ${p.name}`} />
++                  </td>
+                   <td className="px-4 py-3">
+                     <div className="flex items-center gap-3">
+                       <div className="h-9 w-9 rounded-lg overflow-hidden bg-muted shrink-0">
+@@ -277,7 +340,10 @@ export default function AdminProducts() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {filtered.map((p) => (
+-            <div key={p.id} className="p-4 flex gap-3">
++            <div key={p.id} className={`p-4 flex gap-3 ${bulk.isSelected(p.id) ? 'bg-primary/5' : ''}`}>
++              <div className="shrink-0 flex items-center">
++                <Checkbox checked={bulk.isSelected(p.id)} onCheckedChange={() => bulk.toggle(p.id)} aria-label={`Выбрать ${p.name}`} />
++              </div>
+               <div className="h-14 w-14 rounded-lg overflow-hidden bg-muted shrink-0">
+                 <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+               </div>
+@@ -318,6 +384,19 @@ export default function AdminProducts() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkFlag('isFeatured', true)}>Популярный</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkFlag('isFeatured', false)}>Не популярный</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkFlag('isNew', true)}>Новинка</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkFlag('isNew', false)}>Не новинка</Button>
++        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
++          <Trash2 className="h-3.5 w-3.5 mr-1" />
++          Удалить
++        </Button>
++      </BulkActionsBar>
++
+       {/* Edit/Add dialog */}
+       <Dialog open={open} onOpenChange={setOpen}>
+         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[90dvh] overflow-y-auto">
+@@ -645,6 +724,19 @@ export default function AdminProducts() {
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
++
++      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить выбранные товары?</AlertDialogTitle>
++            <AlertDialogDescription>Будет удалено товаров: {bulk.count}. Это действие нельзя отменить.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
+     </div>
+   );
+ }
+diff --git a/src/pages/admin/AdminPromoCampaigns.tsx b/src/pages/admin/AdminPromoCampaigns.tsx
+index fa5b5a9..8035fb1 100644
+--- a/src/pages/admin/AdminPromoCampaigns.tsx
++++ b/src/pages/admin/AdminPromoCampaigns.tsx
+@@ -8,8 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { fetchPromoCampaigns, createPromoCampaign, updatePromoCampaign, deletePromoCampaign } from '@/lib/supabaseData';
+ import { uploadImageToStorage } from '@/lib/storageUpload';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import type { PromoCampaign } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -20,6 +23,9 @@ export default function AdminPromoCampaigns() {
+   const [open, setOpen] = useState(false);
+   const [editing, setEditing] = useState<PromoCampaign | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+   const [draft, setDraft] = useState<Partial<PromoCampaign>>({});
+ 
+   const load = () => {
+@@ -87,6 +93,37 @@ export default function AdminPromoCampaigns() {
+     }
+   };
+ 
++  const handleBulkDelete = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      await Promise.all(ids.map((id) => deletePromoCampaign(id)));
++      setItems((prev) => prev.filter((c) => !ids.includes(c.id)));
++      toast.success(`Удалено акций: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить некоторые акции');
++    } finally {
++      setBulkBusy(false);
++      setBulkDeleteOpen(false);
++    }
++  };
++
++  const handleBulkStatus = async (status: 'active' | 'inactive') => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => updatePromoCampaign(id, { status })));
++      setItems((prev) => prev.map((c) => updated.find((u) => u.id === c.id) || c));
++      toast.success(status === 'active' ? `Включено акций: ${ids.length}` : `Выключено акций: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить некоторые акции');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   const moveItem = async (id: string, dir: 'up' | 'down') => {
+     const idx = items.findIndex((c) => c.id === id);
+     if (dir === 'up' && idx === 0) return;
+@@ -120,6 +157,13 @@ export default function AdminPromoCampaigns() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={items.length > 0 && items.every((c) => bulk.isSelected(c.id))}
++                    onCheckedChange={() => bulk.toggleAll(items.map((c) => c.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Порядок</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Превью</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заголовок</th>
+@@ -130,7 +174,10 @@ export default function AdminPromoCampaigns() {
+             </thead>
+             <tbody>
+               {items.map((c, idx) => (
+-                <tr key={c.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={c.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.title}`} />
++                  </td>
+                   <td className="px-4 py-3">
+                     <div className="flex flex-col gap-1">
+                       <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveItem(c.id, 'up')} disabled={idx === 0}>
+@@ -179,7 +226,10 @@ export default function AdminPromoCampaigns() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {items.map((c, idx) => (
+-            <div key={c.id} className="p-4 flex gap-3">
++            <div key={c.id} className={`p-4 flex gap-3 ${bulk.isSelected(c.id) ? 'bg-primary/5' : ''}`}>
++              <div className="shrink-0 flex items-center">
++                <Checkbox checked={bulk.isSelected(c.id)} onCheckedChange={() => bulk.toggle(c.id)} aria-label={`Выбрать ${c.title}`} />
++              </div>
+               <div className="h-16 w-24 rounded-lg overflow-hidden bg-muted shrink-0">
+                 {c.image && <img src={c.image} alt={c.title} className="w-full h-full object-cover" />}
+               </div>
+@@ -225,6 +275,15 @@ export default function AdminPromoCampaigns() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
++        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
++          <Trash2 className="h-3.5 w-3.5 mr-1" />
++          Удалить
++        </Button>
++      </BulkActionsBar>
++
+       <Dialog open={open} onOpenChange={setOpen}>
+         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
+           <DialogHeader><DialogTitle>{editing ? 'Редактировать акцию' : 'Добавить акцию'}</DialogTitle></DialogHeader>
+@@ -307,6 +366,19 @@ export default function AdminPromoCampaigns() {
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
++
++      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить выбранные акции?</AlertDialogTitle>
++            <AlertDialogDescription>Будет удалено акций: {bulk.count}. Они пропадут со страницы рекламных акций.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
+     </div>
+   );
+ }
+diff --git a/src/pages/admin/AdminPromotions.tsx b/src/pages/admin/AdminPromotions.tsx
+index 113648a..c8a8fb6 100644
+--- a/src/pages/admin/AdminPromotions.tsx
++++ b/src/pages/admin/AdminPromotions.tsx
+@@ -7,7 +7,10 @@ import { Label } from '@/components/ui/label';
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { fetchPromotions, createPromotion, updatePromotion, deletePromotion } from '@/lib/supabaseData';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import type { Promotion } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -18,6 +21,9 @@ export default function AdminPromotions() {
+   const [open, setOpen] = useState(false);
+   const [editing, setEditing] = useState<Promotion | null>(null);
+   const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+   const [draft, setDraft] = useState<Partial<Promotion>>({});
+ 
+   const load = () => {
+@@ -84,6 +90,37 @@ export default function AdminPromotions() {
+     }
+   };
+ 
++  const handleBulkDelete = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      await Promise.all(ids.map((id) => deletePromotion(id)));
++      setItems((prev) => prev.filter((p) => !ids.includes(p.id)));
++      toast.success(`Удалено акций: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить некоторые акции');
++    } finally {
++      setBulkBusy(false);
++      setBulkDeleteOpen(false);
++    }
++  };
++
++  const handleBulkStatus = async (status: 'active' | 'inactive') => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => updatePromotion(id, { status })));
++      setItems((prev) => prev.map((p) => updated.find((u) => u.id === p.id) || p));
++      toast.success(status === 'active' ? `Включено акций: ${ids.length}` : `Выключено акций: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить некоторые акции');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   const isActive = (p: Promotion) => {
+     const now = new Date().toISOString().split('T')[0];
+     return p.status === 'active' && p.startDate <= now && p.endDate >= now;
+@@ -102,6 +139,13 @@ export default function AdminPromotions() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={items.length > 0 && items.every((p) => bulk.isSelected(p.id))}
++                    onCheckedChange={() => bulk.toggleAll(items.map((p) => p.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Акция</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Скидка</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Начало</th>
+@@ -113,7 +157,10 @@ export default function AdminPromotions() {
+             </thead>
+             <tbody>
+               {items.map((p) => (
+-                <tr key={p.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={p.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(p.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox checked={bulk.isSelected(p.id)} onCheckedChange={() => bulk.toggle(p.id)} aria-label={`Выбрать ${p.name}`} />
++                  </td>
+                   <td className="px-4 py-3 font-medium">{p.name}</td>
+                   <td className="px-4 py-3">
+                     <Badge className="bg-destructive/10 text-destructive font-bold">-{p.discount}%</Badge>
+@@ -150,9 +197,12 @@ export default function AdminPromotions() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {items.map((p) => (
+-            <div key={p.id} className="p-4 flex flex-col gap-2">
++            <div key={p.id} className={`p-4 flex flex-col gap-2 ${bulk.isSelected(p.id) ? 'bg-primary/5' : ''}`}>
+               <div className="flex items-center justify-between gap-2">
+-                <span className="font-medium">{p.name}</span>
++                <div className="flex items-center gap-2 min-w-0">
++                  <Checkbox checked={bulk.isSelected(p.id)} onCheckedChange={() => bulk.toggle(p.id)} aria-label={`Выбрать ${p.name}`} className="shrink-0" />
++                  <span className="font-medium truncate">{p.name}</span>
++                </div>
+                 <div className="flex items-center gap-1 shrink-0">
+                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
+                     <Pencil className="h-3.5 w-3.5" />
+@@ -185,6 +235,15 @@ export default function AdminPromotions() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
++        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
++          <Trash2 className="h-3.5 w-3.5 mr-1" />
++          Удалить
++        </Button>
++      </BulkActionsBar>
++
+       <Dialog open={open} onOpenChange={setOpen}>
+         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+           <DialogHeader><DialogTitle>{editing ? 'Редактировать акцию' : 'Добавить акцию'}</DialogTitle></DialogHeader>
+@@ -237,6 +296,19 @@ export default function AdminPromotions() {
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
++
++      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить выбранные акции?</AlertDialogTitle>
++            <AlertDialogDescription>Будет удалено акций: {bulk.count}. Это действие нельзя отменить.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
+     </div>
+   );
+ }
+diff --git a/src/pages/admin/AdminReviews.tsx b/src/pages/admin/AdminReviews.tsx
+index 971a6b7..4871316 100644
+--- a/src/pages/admin/AdminReviews.tsx
++++ b/src/pages/admin/AdminReviews.tsx
+@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Badge } from '@/components/ui/badge';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ import { fetchReviews, updateReviewStatus, deleteReview, updateReviewRating } from '@/lib/supabaseData';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import type { Review } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -21,6 +24,9 @@ export default function AdminReviews() {
+   const [search, setSearch] = useState('');
+   const [statusFilter, setStatusFilter] = useState('all');
+   const [deleteId, setDeleteId] = useState<string | null>(null);
++  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+   const [editingRatingId, setEditingRatingId] = useState<string | null>(null);
+   const [ratingDraft, setRatingDraft] = useState(0);
+ 
+@@ -63,6 +69,38 @@ export default function AdminReviews() {
+     }
+   };
+ 
++  const handleBulkDelete = async () => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      await Promise.all(ids.map((id) => deleteReview(id)));
++      setItems((prev) => prev.filter((r) => !ids.includes(r.id)));
++      toast.success(`Удалено отзывов: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось удалить некоторые отзывы');
++    } finally {
++      setBulkBusy(false);
++      setBulkDeleteOpen(false);
++    }
++  };
++
++  const handleBulkStatus = async (status: Review['status']) => {
++    const ids = Array.from(bulk.selected);
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => updateReviewStatus(id, status)));
++      setItems((prev) => prev.map((r) => updated.find((u) => u.id === r.id) || r));
++      const labels: Record<Review['status'], string> = { approved: 'Одобрено отзывов', pending: 'Отправлено на модерацию', rejected: 'Отклонено отзывов' };
++      toast.success(`${labels[status]}: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить некоторые отзывы');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   const startEditRating = (r: Review) => {
+     setEditingRatingId(r.id);
+     setRatingDraft(r.rating);
+@@ -104,14 +142,25 @@ export default function AdminReviews() {
+             <SelectItem value="rejected">Отклонены</SelectItem>
+           </SelectContent>
+         </Select>
++        {filtered.length > 0 && (
++          <label className="flex items-center gap-2 text-sm text-muted-foreground shrink-0 cursor-pointer">
++            <Checkbox
++              checked={filtered.every((r) => bulk.isSelected(r.id))}
++              onCheckedChange={() => bulk.toggleAll(filtered.map((r) => r.id))}
++              aria-label="Выбрать все"
++            />
++            Выбрать все
++          </label>
++        )}
+       </div>
+ 
+       <div className="flex flex-col gap-3">
+         {filtered.map((r) => (
+-          <div key={r.id} className="bg-card border border-border rounded-xl p-4 card-shadow">
++          <div key={r.id} className={`bg-card border border-border rounded-xl p-4 card-shadow ${bulk.isSelected(r.id) ? 'ring-2 ring-primary/30' : ''}`}>
+             <div className="flex items-start justify-between gap-3 flex-wrap">
+               <div className="flex-1 min-w-0">
+                 <div className="flex items-center gap-2 flex-wrap mb-1">
++                  <Checkbox checked={bulk.isSelected(r.id)} onCheckedChange={() => bulk.toggle(r.id)} aria-label={`Выбрать отзыв ${r.authorName}`} />
+                   <span className="font-semibold text-sm">{r.authorName}</span>
+                   <span className="text-xs text-muted-foreground">на</span>
+                   <span className="text-xs text-primary font-medium">{r.productName}</span>
+@@ -197,6 +246,15 @@ export default function AdminReviews() {
+         )}
+       </div>
+ 
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('approved')}>Одобрить</Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('rejected')}>Отклонить</Button>
++        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
++          <Trash2 className="h-3.5 w-3.5 mr-1" />
++          Удалить
++        </Button>
++      </BulkActionsBar>
++
+       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+         <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+           <AlertDialogHeader>
+@@ -209,6 +267,19 @@ export default function AdminReviews() {
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
++
++      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
++        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
++          <AlertDialogHeader>
++            <AlertDialogTitle>Удалить выбранные отзывы?</AlertDialogTitle>
++            <AlertDialogDescription>Будет удалено отзывов: {bulk.count}. Это действие нельзя отменить.</AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>Отмена</AlertDialogCancel>
++            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
+     </div>
+   );
+ }
+diff --git a/src/pages/admin/AdminStaff.tsx b/src/pages/admin/AdminStaff.tsx
+index c09b990..ad4e285 100644
+--- a/src/pages/admin/AdminStaff.tsx
++++ b/src/pages/admin/AdminStaff.tsx
+@@ -3,7 +3,10 @@ import { Search, ShieldCheck, ShieldOff, UserCog } from 'lucide-react';
+ import { Input } from '@/components/ui/input';
+ import { Button } from '@/components/ui/button';
+ import { Badge } from '@/components/ui/badge';
++import { Checkbox } from '@/components/ui/checkbox';
+ import { fetchAllStaffCandidates, setUserRole } from '@/lib/supabaseData';
++import { useBulkSelection } from '@/hooks/useBulkSelection';
++import BulkActionsBar from '@/components/admin/BulkActionsBar';
+ import type { StaffMember } from '@/types';
+ import { toast } from 'sonner';
+ 
+@@ -24,6 +27,8 @@ export default function AdminStaff() {
+   const [loading, setLoading] = useState(true);
+   const [search, setSearch] = useState('');
+   const [busyId, setBusyId] = useState<string | null>(null);
++  const [bulkBusy, setBulkBusy] = useState(false);
++  const bulk = useBulkSelection();
+ 
+   useEffect(() => {
+     fetchAllStaffCandidates().then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+@@ -48,6 +53,23 @@ export default function AdminStaff() {
+     }
+   };
+ 
++  const handleBulkRole = async (role: 'manager' | 'user') => {
++    // Роль администратора менять массово нельзя — исключаем такие строки, даже если чекбокс где-то остался отмечен
++    const ids = Array.from(bulk.selected).filter((id) => items.find((u) => u.id === id)?.role !== 'admin');
++    if (ids.length === 0) { bulk.clear(); return; }
++    setBulkBusy(true);
++    try {
++      const updated = await Promise.all(ids.map((id) => setUserRole(id, role)));
++      setItems((prev) => prev.map((u) => updated.find((x) => x.id === u.id) || u));
++      toast.success(role === 'manager' ? `Назначено менеджеров: ${ids.length}` : `Роль менеджера снята у: ${ids.length}`);
++      bulk.clear();
++    } catch (e: any) {
++      toast.error(e.message || 'Не удалось обновить роли некоторых пользователей');
++    } finally {
++      setBulkBusy(false);
++    }
++  };
++
+   return (
+     <div className="flex flex-col gap-4">
+       <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+@@ -66,6 +88,13 @@ export default function AdminStaff() {
+           <table className="w-full text-sm whitespace-nowrap">
+             <thead>
+               <tr className="bg-muted/50 border-b border-border">
++                <th className="w-10 px-4 py-3">
++                  <Checkbox
++                    checked={filtered.length > 0 && filtered.every((u) => u.role === 'admin' || bulk.isSelected(u.id))}
++                    onCheckedChange={() => bulk.toggleAll(filtered.filter((u) => u.role !== 'admin').map((u) => u.id))}
++                    aria-label="Выбрать все"
++                  />
++                </th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Пользователь</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Роль</th>
+                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Действия</th>
+@@ -73,7 +102,15 @@ export default function AdminStaff() {
+             </thead>
+             <tbody>
+               {filtered.map((u) => (
+-                <tr key={u.id} className="border-t border-border hover:bg-muted/30 transition-colors">
++                <tr key={u.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(u.id) ? 'bg-primary/5' : ''}`}>
++                  <td className="px-4 py-3">
++                    <Checkbox
++                      checked={bulk.isSelected(u.id)}
++                      onCheckedChange={() => bulk.toggle(u.id)}
++                      disabled={u.role === 'admin'}
++                      aria-label={`Выбрать ${u.fullName}`}
++                    />
++                  </td>
+                   <td className="px-4 py-3">
+                     <p className="font-medium">{u.fullName}</p>
+                     <p className="text-xs text-muted-foreground">{u.email}</p>
+@@ -109,11 +146,20 @@ export default function AdminStaff() {
+         {/* Мобильный — карточки вместо таблицы */}
+         <div className="md:hidden flex flex-col divide-y divide-border">
+           {filtered.map((u) => (
+-            <div key={u.id} className="p-4 flex flex-col gap-2">
++            <div key={u.id} className={`p-4 flex flex-col gap-2 ${bulk.isSelected(u.id) ? 'bg-primary/5' : ''}`}>
+               <div className="flex items-center justify-between gap-2">
+-                <div className="min-w-0">
+-                  <p className="font-medium truncate">{u.fullName}</p>
+-                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
++                <div className="flex items-center gap-2 min-w-0">
++                  <Checkbox
++                    checked={bulk.isSelected(u.id)}
++                    onCheckedChange={() => bulk.toggle(u.id)}
++                    disabled={u.role === 'admin'}
++                    aria-label={`Выбрать ${u.fullName}`}
++                    className="shrink-0"
++                  />
++                  <div className="min-w-0">
++                    <p className="font-medium truncate">{u.fullName}</p>
++                    <p className="text-xs text-muted-foreground truncate">{u.email}</p>
++                  </div>
+                 </div>
+                 <Badge className={`${ROLE_COLORS[u.role]} shrink-0`}>{ROLE_LABELS[u.role]}</Badge>
+               </div>
+@@ -145,6 +191,15 @@ export default function AdminStaff() {
+           <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
+         )}
+       </div>
++
++      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkRole('manager')}>
++          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Сделать менеджерами
++        </Button>
++        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkRole('user')}>
++          <ShieldOff className="h-3.5 w-3.5 mr-1" /> Снять роль менеджера
++        </Button>
++      </BulkActionsBar>
+     </div>
+   );
+ }

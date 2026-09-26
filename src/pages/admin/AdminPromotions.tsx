@@ -7,7 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { fetchPromotions, createPromotion, updatePromotion, deletePromotion } from '@/lib/supabaseData';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import type { Promotion } from '@/types';
 import { toast } from 'sonner';
 
@@ -18,6 +21,9 @@ export default function AdminPromotions() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Promotion | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulk = useBulkSelection();
   const [draft, setDraft] = useState<Partial<Promotion>>({});
 
   const load = () => {
@@ -84,6 +90,37 @@ export default function AdminPromotions() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deletePromotion(id)));
+      setItems((prev) => prev.filter((p) => !ids.includes(p.id)));
+      toast.success(`Удалено акций: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить некоторые акции');
+    } finally {
+      setBulkBusy(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const handleBulkStatus = async (status: 'active' | 'inactive') => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      const updated = await Promise.all(ids.map((id) => updatePromotion(id, { status })));
+      setItems((prev) => prev.map((p) => updated.find((u) => u.id === p.id) || p));
+      toast.success(status === 'active' ? `Включено акций: ${ids.length}` : `Выключено акций: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить некоторые акции');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const isActive = (p: Promotion) => {
     const now = new Date().toISOString().split('T')[0];
     return p.status === 'active' && p.startDate <= now && p.endDate >= now;
@@ -102,6 +139,13 @@ export default function AdminPromotions() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={items.length > 0 && items.every((p) => bulk.isSelected(p.id))}
+                    onCheckedChange={() => bulk.toggleAll(items.map((p) => p.id))}
+                    aria-label="Выбрать все"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Акция</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Скидка</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Начало</th>
@@ -113,7 +157,10 @@ export default function AdminPromotions() {
             </thead>
             <tbody>
               {items.map((p) => (
-                <tr key={p.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                <tr key={p.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(p.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox checked={bulk.isSelected(p.id)} onCheckedChange={() => bulk.toggle(p.id)} aria-label={`Выбрать ${p.name}`} />
+                  </td>
                   <td className="px-4 py-3 font-medium">{p.name}</td>
                   <td className="px-4 py-3">
                     <Badge className="bg-destructive/10 text-destructive font-bold">-{p.discount}%</Badge>
@@ -150,9 +197,12 @@ export default function AdminPromotions() {
         {/* Мобильный — карточки вместо таблицы */}
         <div className="md:hidden flex flex-col divide-y divide-border">
           {items.map((p) => (
-            <div key={p.id} className="p-4 flex flex-col gap-2">
+            <div key={p.id} className={`p-4 flex flex-col gap-2 ${bulk.isSelected(p.id) ? 'bg-primary/5' : ''}`}>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">{p.name}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Checkbox checked={bulk.isSelected(p.id)} onCheckedChange={() => bulk.toggle(p.id)} aria-label={`Выбрать ${p.name}`} className="shrink-0" />
+                  <span className="font-medium truncate">{p.name}</span>
+                </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
                     <Pencil className="h-3.5 w-3.5" />
@@ -184,6 +234,15 @@ export default function AdminPromotions() {
           <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
+
+      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
+        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" />
+          Удалить
+        </Button>
+      </BulkActionsBar>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
@@ -234,6 +293,19 @@ export default function AdminPromotions() {
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные акции?</AlertDialogTitle>
+            <AlertDialogDescription>Будет удалено акций: {bulk.count}. Это действие нельзя отменить.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

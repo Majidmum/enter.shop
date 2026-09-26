@@ -7,8 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { fetchBanners, createBanner, updateBanner, deleteBanner } from '@/lib/supabaseData';
 import { uploadImageToStorage } from '@/lib/storageUpload';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import type { Banner, BannerLayout } from '@/types';
 import { toast } from 'sonner';
 
@@ -26,6 +29,9 @@ export default function AdminBanners() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Banner | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulk = useBulkSelection();
   const [draft, setDraft] = useState<Partial<Banner>>({});
 
   const load = () => {
@@ -96,6 +102,37 @@ export default function AdminBanners() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deleteBanner(id)));
+      setItems((prev) => prev.filter((b) => !ids.includes(b.id)));
+      toast.success(`Удалено баннеров: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить некоторые баннеры');
+    } finally {
+      setBulkBusy(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const handleBulkStatus = async (status: 'active' | 'inactive') => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      const updated = await Promise.all(ids.map((id) => updateBanner(id, { status })));
+      setItems((prev) => prev.map((b) => updated.find((u) => u.id === b.id) || b));
+      toast.success(status === 'active' ? `Включено баннеров: ${ids.length}` : `Выключено баннеров: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить некоторые баннеры');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const moveItem = async (id: string, dir: 'up' | 'down') => {
     const idx = items.findIndex((b) => b.id === id);
     if (dir === 'up' && idx === 0) return;
@@ -129,6 +166,13 @@ export default function AdminBanners() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={items.length > 0 && items.every((b) => bulk.isSelected(b.id))}
+                    onCheckedChange={() => bulk.toggleAll(items.map((b) => b.id))}
+                    aria-label="Выбрать все"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Порядок</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Превью</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заголовок</th>
@@ -139,7 +183,10 @@ export default function AdminBanners() {
             </thead>
             <tbody>
               {items.map((b, idx) => (
-                <tr key={b.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                <tr key={b.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.title}`} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-1">
                       <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveItem(b.id, 'up')} disabled={idx === 0}>
@@ -188,7 +235,10 @@ export default function AdminBanners() {
         {/* Мобильный — карточки вместо таблицы */}
         <div className="md:hidden flex flex-col divide-y divide-border">
           {items.map((b, idx) => (
-            <div key={b.id} className="p-4 flex gap-3">
+            <div key={b.id} className={`p-4 flex gap-3 ${bulk.isSelected(b.id) ? 'bg-primary/5' : ''}`}>
+              <div className="shrink-0 flex items-center">
+                <Checkbox checked={bulk.isSelected(b.id)} onCheckedChange={() => bulk.toggle(b.id)} aria-label={`Выбрать ${b.title}`} />
+              </div>
               <div className="h-16 w-28 rounded-lg overflow-hidden bg-muted shrink-0">
                 {b.image && <img src={b.image} alt={b.title} className="w-full h-full object-cover" />}
               </div>
@@ -233,6 +283,15 @@ export default function AdminBanners() {
           <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
+
+      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('active')}>Включить</Button>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('inactive')}>Выключить</Button>
+        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" />
+          Удалить
+        </Button>
+      </BulkActionsBar>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
@@ -344,6 +403,19 @@ export default function AdminBanners() {
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные баннеры?</AlertDialogTitle>
+            <AlertDialogDescription>Будет удалено баннеров: {bulk.count}. Они будут удалены с главной страницы.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

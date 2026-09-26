@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { fetchReviews, updateReviewStatus, deleteReview, updateReviewRating } from '@/lib/supabaseData';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import type { Review } from '@/types';
 import { toast } from 'sonner';
 
@@ -21,6 +24,9 @@ export default function AdminReviews() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulk = useBulkSelection();
   const [editingRatingId, setEditingRatingId] = useState<string | null>(null);
   const [ratingDraft, setRatingDraft] = useState(0);
 
@@ -60,6 +66,38 @@ export default function AdminReviews() {
       toast.error(e.message || 'Не удалось удалить отзыв');
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deleteReview(id)));
+      setItems((prev) => prev.filter((r) => !ids.includes(r.id)));
+      toast.success(`Удалено отзывов: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось удалить некоторые отзывы');
+    } finally {
+      setBulkBusy(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const handleBulkStatus = async (status: Review['status']) => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      const updated = await Promise.all(ids.map((id) => updateReviewStatus(id, status)));
+      setItems((prev) => prev.map((r) => updated.find((u) => u.id === r.id) || r));
+      const labels: Record<Review['status'], string> = { approved: 'Одобрено отзывов', pending: 'Отправлено на модерацию', rejected: 'Отклонено отзывов' };
+      toast.success(`${labels[status]}: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить некоторые отзывы');
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -104,14 +142,25 @@ export default function AdminReviews() {
             <SelectItem value="rejected">Отклонены</SelectItem>
           </SelectContent>
         </Select>
+        {filtered.length > 0 && (
+          <label className="flex items-center gap-2 text-sm text-muted-foreground shrink-0 cursor-pointer">
+            <Checkbox
+              checked={filtered.every((r) => bulk.isSelected(r.id))}
+              onCheckedChange={() => bulk.toggleAll(filtered.map((r) => r.id))}
+              aria-label="Выбрать все"
+            />
+            Выбрать все
+          </label>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
         {filtered.map((r) => (
-          <div key={r.id} className="bg-card border border-border rounded-xl p-4 card-shadow">
+          <div key={r.id} className={`bg-card border border-border rounded-xl p-4 card-shadow ${bulk.isSelected(r.id) ? 'ring-2 ring-primary/30' : ''}`}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <Checkbox checked={bulk.isSelected(r.id)} onCheckedChange={() => bulk.toggle(r.id)} aria-label={`Выбрать отзыв ${r.authorName}`} />
                   <span className="font-semibold text-sm">{r.authorName}</span>
                   <span className="text-xs text-muted-foreground">на</span>
                   <span className="text-xs text-primary font-medium">{r.productName}</span>
@@ -197,6 +246,15 @@ export default function AdminReviews() {
         )}
       </div>
 
+      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('approved')}>Одобрить</Button>
+        <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => handleBulkStatus('rejected')}>Отклонить</Button>
+        <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" />
+          Удалить
+        </Button>
+      </BulkActionsBar>
+
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
           <AlertDialogHeader>
@@ -206,6 +264,19 @@ export default function AdminReviews() {
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные отзывы?</AlertDialogTitle>
+            <AlertDialogDescription>Будет удалено отзывов: {bulk.count}. Это действие нельзя отменить.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-white hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

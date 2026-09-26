@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { fetchOrders, updateOrderStatus } from '@/lib/supabaseData';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, type Order, type OrderStatus } from '@/types';
 import { toast } from 'sonner';
 
@@ -17,6 +20,9 @@ export default function AdminOrders() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewing, setViewing] = useState<Order | null>(null);
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus>('confirmed');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulk = useBulkSelection();
 
   useEffect(() => {
     fetchOrders().then(setOrders).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
@@ -37,6 +43,21 @@ export default function AdminOrders() {
       toast.success('Статус заказа обновлён');
     } catch (e: any) {
       toast.error(e.message || 'Не удалось обновить статус');
+    }
+  };
+
+  const handleBulkStatus = async () => {
+    const ids = Array.from(bulk.selected);
+    setBulkBusy(true);
+    try {
+      const updated = await Promise.all(ids.map((id) => updateOrderStatus(id, bulkStatus)));
+      setOrders((prev) => prev.map((o) => updated.find((u) => u.id === o.id) || o));
+      toast.success(`Статус обновлён для заказов: ${ids.length}`);
+      bulk.clear();
+    } catch (e: any) {
+      toast.error(e.message || 'Не удалось обновить статус некоторых заказов');
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -66,6 +87,13 @@ export default function AdminOrders() {
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={filtered.length > 0 && filtered.every((o) => bulk.isSelected(o.id))}
+                    onCheckedChange={() => bulk.toggleAll(filtered.map((o) => o.id))}
+                    aria-label="Выбрать все"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Заказ №</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Дата</th>
                 <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Клиент</th>
@@ -78,7 +106,10 @@ export default function AdminOrders() {
             </thead>
             <tbody>
               {filtered.map((order) => (
-                <tr key={order.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                <tr key={order.id} className={`border-t border-border hover:bg-muted/30 transition-colors ${bulk.isSelected(order.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox checked={bulk.isSelected(order.id)} onCheckedChange={() => bulk.toggle(order.id)} aria-label={`Выбрать заказ ${order.orderNumber}`} />
+                  </td>
                   <td className="px-4 py-3 font-medium text-primary">{order.orderNumber}</td>
                   <td className="px-4 py-3 text-muted-foreground">{order.date}</td>
                   <td className="px-4 py-3">
@@ -120,9 +151,12 @@ export default function AdminOrders() {
         {/* Мобильный — карточки вместо таблицы */}
         <div className="md:hidden flex flex-col divide-y divide-border">
           {filtered.map((order) => (
-            <div key={order.id} className="p-4 flex flex-col gap-2">
+            <div key={order.id} className={`p-4 flex flex-col gap-2 ${bulk.isSelected(order.id) ? 'bg-primary/5' : ''}`}>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-primary">{order.orderNumber}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Checkbox checked={bulk.isSelected(order.id)} onCheckedChange={() => bulk.toggle(order.id)} aria-label={`Выбрать заказ ${order.orderNumber}`} className="shrink-0" />
+                  <span className="font-medium text-primary truncate">{order.orderNumber}</span>
+                </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewing(order)}>
                   <Eye className="h-3.5 w-3.5" />
                 </Button>
@@ -162,6 +196,20 @@ export default function AdminOrders() {
           <div className="py-12 text-center text-muted-foreground text-sm">Загрузка...</div>
         )}
       </div>
+
+      <BulkActionsBar count={bulk.count} onClear={bulk.clear}>
+        <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as OrderStatus)}>
+          <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s} value={s} className="text-xs">{ORDER_STATUS_LABELS[s]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button size="sm" disabled={bulkBusy} onClick={handleBulkStatus} className="bg-primary hover:bg-primary/90 text-white">
+          Применить
+        </Button>
+      </BulkActionsBar>
 
       {/* Order detail dialog */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
