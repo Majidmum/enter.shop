@@ -30,6 +30,7 @@ import ContactsPage from '@/pages/ContactsPage';
 import SalePage from '@/pages/SalePage';
 import CampaignsPage from '@/pages/CampaignsPage';
 import OfficePage from '@/pages/OfficePage';
+import ComparePage from '@/pages/ComparePage';
 import NotFound from '@/pages/NotFound';
 
 // Admin pages
@@ -78,6 +79,7 @@ const App: React.FC = () => {
           <Route path="sale" element={<SalePage />} />
           <Route path="campaigns" element={<CampaignsPage />} />
           <Route path="office" element={<OfficePage />} />
+          <Route path="compare" element={<ComparePage />} />
         </Route>
 
         {/* ── Auth routes (no Header/Footer) ── */}

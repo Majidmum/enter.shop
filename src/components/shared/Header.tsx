@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, MapPin } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, MapPin, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
+import { useCompareStore } from '@/store/compareStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/components/theme-provider';
 import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromoCampaigns } from '@/lib/supabaseData';
@@ -124,6 +125,7 @@ export default function Header() {
 
   const cartCount = useCartStore((s) => s.items.length);
   const favCount = useFavoritesStore((s) => s.items.length);
+  const compareCount = useCompareStore((s) => s.items.length);
   const { isAuthenticated, user } = useAuthStore();
 
   const navLinks = [
@@ -393,6 +395,18 @@ export default function Header() {
               {favCount > 0 && (
                 <span className="absolute -top-0.5 left-4 lg:static lg:ml-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
                   {favCount}
+                </span>
+              )}
+            </Button>
+          </Link>
+
+          <Link to="/compare">
+            <Button variant="ghost" className="relative h-9 gap-1.5 px-2 lg:px-3">
+              <Scale className="h-5 w-5 shrink-0" />
+              <span className="hidden lg:inline text-sm font-medium">{t('common.compare')}</span>
+              {compareCount > 0 && (
+                <span className="absolute -top-0.5 left-4 lg:static lg:ml-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
+                  {compareCount}
                 </span>
               )}
             </Button>

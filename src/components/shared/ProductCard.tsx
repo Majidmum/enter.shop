@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Star, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Product } from '@/types';
 import { useCartStore } from '@/store/cartStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
+import { useCompareStore, MAX_COMPARE } from '@/store/compareStore';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -16,6 +17,8 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   const addToCart = useCartStore((s) => s.addItem);
   const { toggle, isFavorite } = useFavoritesStore();
   const fav = isFavorite(product.id);
+  const toggleCompare = useCompareStore((s) => s.toggle);
+  const compared = useCompareStore((s) => s.isCompared(product.id));
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -27,6 +30,14 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
     e.preventDefault();
     toggle(product);
     toast(fav ? 'Удалено из избранного' : 'Добавлено в избранное');
+  };
+
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const result = toggleCompare(product);
+    if (result === 'added') toast.success('Добавлено к сравнению');
+    else if (result === 'removed') toast('Убрано из сравнения');
+    else toast.error(`Можно сравнивать не больше ${MAX_COMPARE} товаров`);
   };
 
   return (
@@ -50,15 +61,27 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
         )}
       </div>
 
-      {/* Favorite button */}
-      <button
-        onClick={handleToggleFavorite}
-        className={`absolute top-1.5 right-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
-          fav ? 'bg-primary text-white' : 'bg-white/85 text-muted-foreground hover:text-primary hover:bg-white'
-        }`}
-      >
-        <Heart className={`h-3.5 w-3.5 ${fav ? 'fill-current' : ''}`} />
-      </button>
+      {/* Favorite + compare buttons */}
+      <div className="absolute top-1.5 right-1.5 z-10 flex flex-col gap-1.5">
+        <button
+          onClick={handleToggleFavorite}
+          aria-label="Добавить в избранное"
+          className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
+            fav ? 'bg-primary text-white' : 'bg-white/85 text-muted-foreground hover:text-primary hover:bg-white'
+          }`}
+        >
+          <Heart className={`h-3.5 w-3.5 ${fav ? 'fill-current' : ''}`} />
+        </button>
+        <button
+          onClick={handleToggleCompare}
+          aria-label="Добавить к сравнению"
+          className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
+            compared ? 'bg-primary text-white' : 'bg-white/85 text-muted-foreground hover:text-primary hover:bg-white'
+          }`}
+        >
+          <Scale className="h-3.5 w-3.5" />
+        </button>
+      </div>
 
       {/* Image */}
       <Link to={`/product/${product.slug}`} className="block">

@@ -24,6 +24,7 @@ import ContactsPage from '@/pages/ContactsPage';
 import SalePage from '@/pages/SalePage';
 import CampaignsPage from '@/pages/CampaignsPage';
 import OfficePage from '@/pages/OfficePage';
+import ComparePage from '@/pages/ComparePage';
 import NotFound from '@/pages/NotFound';
 
 // Admin pages
@@ -76,6 +77,7 @@ export const routes: RouteConfig[] = [
   { name: 'Sale',             path: '/sale',               element: <SalePage />,         public: true },
   { name: 'Campaigns',        path: '/campaigns',          element: <CampaignsPage />,    public: true },
   { name: 'Office',           path: '/office',             element: <OfficePage />,       public: true },
+  { name: 'Compare',          path: '/compare',            element: <ComparePage />,      public: true },
 
   // ── Admin layout wrapper ──
   { name: 'Admin',            path: '/admin',              element: <AdminLayout />,      public: true },

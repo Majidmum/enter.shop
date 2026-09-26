@@ -1,0 +1,369 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index d527d2f..65e548b 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -30,6 +30,7 @@ import ContactsPage from '@/pages/ContactsPage';
+ import SalePage from '@/pages/SalePage';
+ import CampaignsPage from '@/pages/CampaignsPage';
+ import OfficePage from '@/pages/OfficePage';
++import ComparePage from '@/pages/ComparePage';
+ import NotFound from '@/pages/NotFound';
+ 
+ // Admin pages
+@@ -78,6 +79,7 @@ const App: React.FC = () => {
+           <Route path="sale" element={<SalePage />} />
+           <Route path="campaigns" element={<CampaignsPage />} />
+           <Route path="office" element={<OfficePage />} />
++          <Route path="compare" element={<ComparePage />} />
+         </Route>
+ 
+         {/* ── Auth routes (no Header/Footer) ── */}
+diff --git a/src/components/shared/Header.tsx b/src/components/shared/Header.tsx
+index af175b6..7f66c93 100644
+--- a/src/components/shared/Header.tsx
++++ b/src/components/shared/Header.tsx
+@@ -1,12 +1,13 @@
+ import { useState, useEffect, useMemo } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+-import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, MapPin } from 'lucide-react';
++import { Search, ShoppingCart, Heart, User, Menu, X, Laptop, ChevronDown, Sun, Moon, Languages, Tag, Building2, Truck, Info, Phone, Sparkles, MapPin, Scale } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
++import { useCompareStore } from '@/store/compareStore';
+ import { useAuthStore } from '@/store/authStore';
+ import { useTheme } from '@/components/theme-provider';
+ import { fetchCategories, fetchBrands, fetchProducts, fetchActivePromoCampaigns } from '@/lib/supabaseData';
+@@ -124,6 +125,7 @@ export default function Header() {
+ 
+   const cartCount = useCartStore((s) => s.items.length);
+   const favCount = useFavoritesStore((s) => s.items.length);
++  const compareCount = useCompareStore((s) => s.items.length);
+   const { isAuthenticated, user } = useAuthStore();
+ 
+   const navLinks = [
+@@ -398,6 +400,18 @@ export default function Header() {
+             </Button>
+           </Link>
+ 
++          <Link to="/compare">
++            <Button variant="ghost" className="relative h-9 gap-1.5 px-2 lg:px-3">
++              <Scale className="h-5 w-5 shrink-0" />
++              <span className="hidden lg:inline text-sm font-medium">{t('common.compare')}</span>
++              {compareCount > 0 && (
++                <span className="absolute -top-0.5 left-4 lg:static lg:ml-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
++                  {compareCount}
++                </span>
++              )}
++            </Button>
++          </Link>
++
+           <Link to="/cart">
+             <Button variant="ghost" className="relative h-9 gap-1.5 px-2 lg:px-3">
+               <ShoppingCart className="h-5 w-5 shrink-0" />
+diff --git a/src/components/shared/ProductCard.tsx b/src/components/shared/ProductCard.tsx
+index 0318071..04ed018 100644
+--- a/src/components/shared/ProductCard.tsx
++++ b/src/components/shared/ProductCard.tsx
+@@ -1,10 +1,11 @@
+ import { Link } from 'react-router-dom';
+-import { Heart, ShoppingCart, Star } from 'lucide-react';
++import { Heart, ShoppingCart, Star, Scale } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Badge } from '@/components/ui/badge';
+ import type { Product } from '@/types';
+ import { useCartStore } from '@/store/cartStore';
+ import { useFavoritesStore } from '@/store/favoritesStore';
++import { useCompareStore, MAX_COMPARE } from '@/store/compareStore';
+ import { toast } from 'sonner';
+ 
+ interface ProductCardProps {
+@@ -16,6 +17,8 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
+   const addToCart = useCartStore((s) => s.addItem);
+   const { toggle, isFavorite } = useFavoritesStore();
+   const fav = isFavorite(product.id);
++  const toggleCompare = useCompareStore((s) => s.toggle);
++  const compared = useCompareStore((s) => s.isCompared(product.id));
+ 
+   const handleAddToCart = (e: React.MouseEvent) => {
+     e.preventDefault();
+@@ -29,6 +32,14 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
+     toast(fav ? 'Удалено из избранного' : 'Добавлено в избранное');
+   };
+ 
++  const handleToggleCompare = (e: React.MouseEvent) => {
++    e.preventDefault();
++    const result = toggleCompare(product);
++    if (result === 'added') toast.success('Добавлено к сравнению');
++    else if (result === 'removed') toast('Убрано из сравнения');
++    else toast.error(`Можно сравнивать не больше ${MAX_COMPARE} товаров`);
++  };
++
+   return (
+     <div className={`group relative flex flex-col rounded-lg bg-card border border-border hover:shadow-md hover:border-primary/30 transition-all duration-200 overflow-hidden ${className}`}>
+       {/* Badges */}
+@@ -50,15 +61,27 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
+         )}
+       </div>
+ 
+-      {/* Favorite button */}
+-      <button
+-        onClick={handleToggleFavorite}
+-        className={`absolute top-1.5 right-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
+-          fav ? 'bg-primary text-white' : 'bg-white/85 text-muted-foreground hover:text-primary hover:bg-white'
+-        }`}
+-      >
+-        <Heart className={`h-3.5 w-3.5 ${fav ? 'fill-current' : ''}`} />
+-      </button>
++      {/* Favorite + compare buttons */}
++      <div className="absolute top-1.5 right-1.5 z-10 flex flex-col gap-1.5">
++        <button
++          onClick={handleToggleFavorite}
++          aria-label="Добавить в избранное"
++          className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
++            fav ? 'bg-primary text-white' : 'bg-white/85 text-muted-foreground hover:text-primary hover:bg-white'
++          }`}
++        >
++          <Heart className={`h-3.5 w-3.5 ${fav ? 'fill-current' : ''}`} />
++        </button>
++        <button
++          onClick={handleToggleCompare}
++          aria-label="Добавить к сравнению"
++          className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
++            compared ? 'bg-primary text-white' : 'bg-white/85 text-muted-foreground hover:text-primary hover:bg-white'
++          }`}
++        >
++          <Scale className="h-3.5 w-3.5" />
++        </button>
++      </div>
+ 
+       {/* Image */}
+       <Link to={`/product/${product.slug}`} className="block">
+diff --git a/src/i18n/locales/ru.json b/src/i18n/locales/ru.json
+index 7002ff5..aefad08 100644
+--- a/src/i18n/locales/ru.json
++++ b/src/i18n/locales/ru.json
+@@ -3,6 +3,7 @@
+     "catalog": "Каталог",
+     "cart": "Корзина",
+     "favorites": "Избранное",
++    "compare": "Сравнение",
+     "profile": "Профиль",
+     "home": "Главная",
+     "search_placeholder": "Поиск товаров...",
+diff --git a/src/i18n/locales/tg.json b/src/i18n/locales/tg.json
+index 34aaafa..5eebc99 100644
+--- a/src/i18n/locales/tg.json
++++ b/src/i18n/locales/tg.json
+@@ -3,6 +3,7 @@
+     "catalog": "Каталог",
+     "cart": "Сабад",
+     "favorites": "Дӯстдоштаҳо",
++    "compare": "Муқоиса",
+     "profile": "Профил",
+     "home": "Асосӣ",
+     "search_placeholder": "Ҷустуҷӯи мол...",
+diff --git a/src/pages/ComparePage.tsx b/src/pages/ComparePage.tsx
+new file mode 100644
+index 0000000..3a0a391
+--- /dev/null
++++ b/src/pages/ComparePage.tsx
+@@ -0,0 +1,128 @@
++import { Link } from 'react-router-dom';
++import { Scale, X, ShoppingCart } from 'lucide-react';
++import { Button } from '@/components/ui/button';
++import PageMeta from '@/components/common/PageMeta';
++import { useCompareStore } from '@/store/compareStore';
++import { useCartStore } from '@/store/cartStore';
++import { toast } from 'sonner';
++
++export default function ComparePage() {
++  const { items, remove, clear } = useCompareStore();
++  const addToCart = useCartStore((s) => s.addItem);
++
++  const handleAddToCart = (productId: string) => {
++    const product = items.find((p) => p.id === productId);
++    if (!product) return;
++    addToCart(product);
++    toast.success(`${product.name} добавлен в корзину`);
++  };
++
++  // Список всех характеристик, которые есть хотя бы у одного из сравниваемых
++  // товаров — так таблица получается общей, даже если у товаров разный набор
++  // спецификаций (например, ноутбук и стул сравнивать вряд ли будут, но у
++  // товаров одной категории почти всегда пересекаются не все поля).
++  const allSpecLabels = Array.from(
++    new Set(items.flatMap((p) => p.specs.map((s) => s.label)))
++  );
++
++  return (
++    <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
++      <PageMeta
++        title="Сравнение товаров — ENTER.TJ"
++        description="Сравните характеристики выбранных товаров ENTER.TJ"
++        noIndex
++      />
++
++      <div className="flex items-center justify-between gap-3 mb-5">
++        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
++          <Scale className="h-6 w-6" /> Сравнение товаров
++        </h1>
++        {items.length > 0 && (
++          <Button variant="outline" size="sm" onClick={clear}>
++            Очистить всё
++          </Button>
++        )}
++      </div>
++
++      {items.length === 0 ? (
++        <div className="flex flex-col items-center justify-center text-center py-20 gap-4">
++          <Scale className="h-12 w-12 text-muted-foreground" />
++          <p className="text-muted-foreground max-w-sm">
++            Вы ещё не добавили товары к сравнению. Нажмите на значок весов на карточке товара в каталоге.
++          </p>
++          <Link to="/catalog">
++            <Button className="bg-primary hover:bg-primary/90 text-white">Перейти в каталог</Button>
++          </Link>
++        </div>
++      ) : (
++        <div className="overflow-x-auto -mx-4 px-4">
++          <table className="w-full border-collapse min-w-[640px]">
++            <thead>
++              <tr>
++                <th className="text-left align-bottom w-40 pb-3 text-sm text-muted-foreground font-medium">
++                  Характеристика
++                </th>
++                {items.map((p) => (
++                  <th key={p.id} className="align-bottom px-3 pb-3 min-w-[180px]">
++                    <div className="relative flex flex-col items-center text-center gap-2">
++                      <button
++                        onClick={() => remove(p.id)}
++                        aria-label="Убрать из сравнения"
++                        className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-muted hover:bg-destructive hover:text-white transition-colors"
++                      >
++                        <X className="h-3.5 w-3.5" />
++                      </button>
++                      <Link to={`/product/${p.slug}`} className="block w-20 h-20 rounded-lg overflow-hidden bg-muted">
++                        <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
++                      </Link>
++                      <Link to={`/product/${p.slug}`} className="text-sm font-medium text-foreground line-clamp-2 hover:text-primary transition-colors">
++                        {p.name}
++                      </Link>
++                      <div className="flex items-baseline gap-1.5">
++                        <span className="text-sm font-bold text-foreground">{p.price.toLocaleString()} сом.</span>
++                        {p.oldPrice && (
++                          <span className="text-[11px] text-destructive line-through">{p.oldPrice.toLocaleString()}</span>
++                        )}
++                      </div>
++                      <Button
++                        size="sm"
++                        onClick={() => handleAddToCart(p.id)}
++                        disabled={p.stock === 0}
++                        className="h-7 text-xs bg-primary hover:bg-primary/90 text-white w-full"
++                      >
++                        <ShoppingCart className="h-3.5 w-3.5 mr-1" />
++                        В корзину
++                      </Button>
++                    </div>
++                  </th>
++                ))}
++              </tr>
++            </thead>
++            <tbody>
++              {allSpecLabels.map((label, i) => (
++                <tr key={label} className={i % 2 === 0 ? 'bg-muted/40' : ''}>
++                  <td className="py-2.5 px-1 text-sm text-muted-foreground align-top">{label}</td>
++                  {items.map((p) => {
++                    const spec = p.specs.find((s) => s.label === label);
++                    return (
++                      <td key={p.id} className="py-2.5 px-3 text-sm text-foreground text-center align-top">
++                        {spec?.value || '—'}
++                      </td>
++                    );
++                  })}
++                </tr>
++              ))}
++              {allSpecLabels.length === 0 && (
++                <tr>
++                  <td colSpan={items.length + 1} className="py-6 text-center text-sm text-muted-foreground">
++                    У сравниваемых товаров нет заполненных характеристик
++                  </td>
++                </tr>
++              )}
++            </tbody>
++          </table>
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/src/routes.tsx b/src/routes.tsx
+index c116639..11bcaeb 100644
+--- a/src/routes.tsx
++++ b/src/routes.tsx
+@@ -24,6 +24,7 @@ import ContactsPage from '@/pages/ContactsPage';
+ import SalePage from '@/pages/SalePage';
+ import CampaignsPage from '@/pages/CampaignsPage';
+ import OfficePage from '@/pages/OfficePage';
++import ComparePage from '@/pages/ComparePage';
+ import NotFound from '@/pages/NotFound';
+ 
+ // Admin pages
+@@ -76,6 +77,7 @@ export const routes: RouteConfig[] = [
+   { name: 'Sale',             path: '/sale',               element: <SalePage />,         public: true },
+   { name: 'Campaigns',        path: '/campaigns',          element: <CampaignsPage />,    public: true },
+   { name: 'Office',           path: '/office',             element: <OfficePage />,       public: true },
++  { name: 'Compare',          path: '/compare',            element: <ComparePage />,      public: true },
+ 
+   // ── Admin layout wrapper ──
+   { name: 'Admin',            path: '/admin',              element: <AdminLayout />,      public: true },
+diff --git a/src/store/compareStore.ts b/src/store/compareStore.ts
+new file mode 100644
+index 0000000..a41d16d
+--- /dev/null
++++ b/src/store/compareStore.ts
+@@ -0,0 +1,41 @@
++import { create } from 'zustand';
++import { persist } from 'zustand/middleware';
++import type { Product } from '@/types';
++
++export const MAX_COMPARE = 4;
++
++interface CompareState {
++  items: Product[];
++  /** Добавляет/убирает товар из сравнения. Возвращает результат — по нему
++   *  вызывающий код показывает разный toast (добавлено / убрано / лимит). */
++  toggle: (product: Product) => 'added' | 'removed' | 'limit_reached';
++  remove: (productId: string) => void;
++  clear: () => void;
++  isCompared: (productId: string) => boolean;
++}
++
++export const useCompareStore = create<CompareState>()(
++  persist(
++    (set, get) => ({
++      items: [],
++      toggle: (product) => {
++        const exists = get().items.find((p) => p.id === product.id);
++        if (exists) {
++          set((state) => ({ items: state.items.filter((p) => p.id !== product.id) }));
++          return 'removed';
++        }
++        if (get().items.length >= MAX_COMPARE) {
++          return 'limit_reached';
++        }
++        set((state) => ({ items: [...state.items, product] }));
++        return 'added';
++      },
++      remove: (productId) => {
++        set((state) => ({ items: state.items.filter((p) => p.id !== productId) }));
++      },
++      clear: () => set({ items: [] }),
++      isCompared: (productId) => !!get().items.find((p) => p.id === productId),
++    }),
++    { name: 'enter-tj-compare' }
++  )
++);
