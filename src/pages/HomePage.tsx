@@ -50,6 +50,13 @@ export default function HomePage() {
   // "Новинки" — управляется администратором вручную (переключатель в форме товара)
   const newProducts = displayProducts.filter((p) => p.isNew && p.status === 'active').slice(0, 8);
 
+  // Товары со скидкой выше 20% — показываются рядом с баннером (на десктопе)
+  // или сразу под ним (на телефоне), по образцу карточек больших скидок asaxiy.uz.
+  const discountProducts = [...displayProducts]
+    .filter((p) => p.status === 'active' && (p.discount || 0) >= 20)
+    .sort((a, b) => (b.discount || 0) - (a.discount || 0))
+    .slice(0, 2);
+
   useEffect(() => {
     const t = setInterval(() => setBannerIdx((i) => (i + 1) % activeBanners.length), 5000);
     return () => clearInterval(t);
@@ -99,7 +106,8 @@ export default function HomePage() {
       <h1 className="sr-only">ENTER.TJ — компьютерная техника и офисная мебель в Душанбе</h1>
 
       <section className="container mx-auto px-4 pt-4 md:pt-6">
-        <div className="relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
+        <div className="flex flex-col lg:flex-row gap-3">
+        <div className={`relative w-full overflow-hidden rounded-2xl bg-secondary min-h-[220px] sm:min-h-[280px] md:min-h-[360px] ${discountProducts.length > 0 ? 'lg:flex-1 lg:min-w-0' : ''}`}>
           {activeBanners.map((banner, i) => {
             const shouldLoad = seenBannerIdx.has(i);
             const layout = banner.layout || 'split';
@@ -124,7 +132,7 @@ export default function HomePage() {
                       {/* На мобильном текст ложится поверх фото — тут нужно затемнение */}
                       <div className="md:hidden absolute inset-0 bg-gradient-to-t from-secondary via-secondary/60 to-transparent" />
                       <div className="md:hidden absolute inset-0 flex flex-col justify-end gap-3 px-5 py-6">
-                        <p className="text-2xl font-black text-white leading-tight text-balance">
+                        <p className="text-xl font-black text-white leading-tight text-balance">
                           {banner.title}
                         </p>
                         {banner.subtitle && (
@@ -141,7 +149,7 @@ export default function HomePage() {
                     </div>
                     {/* Текст — отдельная панель, только на десктопе (фото отдельно, текст отдельно) */}
                     <div className="hidden md:flex md:w-1/2 flex-col justify-center gap-4 px-10 lg:px-14 bg-secondary">
-                      <p className="text-3xl lg:text-4xl font-black text-white leading-tight text-balance">
+                      <p className="text-xl lg:text-2xl font-black text-white leading-tight text-balance">
                         {banner.title}
                       </p>
                       {banner.subtitle && (
@@ -170,7 +178,7 @@ export default function HomePage() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                     <div className="absolute inset-0 flex flex-col justify-end gap-3 px-5 py-6 md:px-12 md:py-10 md:max-w-xl">
-                      <p className="text-2xl md:text-4xl font-black text-white leading-tight text-balance">
+                      <p className="text-xl md:text-2xl font-black text-white leading-tight text-balance">
                         {banner.title}
                       </p>
                       {banner.subtitle && (
@@ -188,7 +196,7 @@ export default function HomePage() {
                 ) : layout === 'solid' ? (
                   // Без фото — просто цветной фон с текстом, для текстовых объявлений
                   <div className="relative w-full h-full bg-gradient-to-br from-secondary to-primary/80 flex flex-col justify-center gap-4 px-6 md:px-14 text-center md:text-left items-center md:items-start">
-                    <p className="text-2xl md:text-4xl font-black text-white leading-tight text-balance max-w-xl">
+                    <p className="text-xl md:text-2xl font-black text-white leading-tight text-balance max-w-xl">
                       {banner.title}
                     </p>
                     {banner.subtitle && (
@@ -237,6 +245,52 @@ export default function HomePage() {
               </div>
             </>
           )}
+        </div>
+
+        {/* Товары со скидкой > 20% — рядом с баннером на десктопе (вертикальный стек),
+            под баннером на телефоне (горизонтальный ряд), по образцу asaxiy.uz */}
+        {discountProducts.length > 0 && (
+          <div className="flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-visible lg:w-[280px] lg:shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {discountProducts.map((p) => (
+              <Link
+                key={p.id}
+                to={`/product/${p.slug}`}
+                className="group relative flex shrink-0 w-[150px] sm:w-[170px] lg:w-full lg:flex-1 flex-col lg:flex-row lg:items-center gap-0 lg:gap-3 rounded-2xl bg-muted hover:bg-muted/70 transition-colors overflow-hidden lg:p-3"
+              >
+                <span className="absolute top-2 left-2 z-10 rounded-full bg-red-500 text-white text-xs font-bold px-2 py-0.5">
+                  -{p.discount}%
+                </span>
+                <div className="relative w-full aspect-square lg:aspect-auto lg:h-20 lg:w-20 lg:shrink-0 lg:rounded-xl overflow-hidden bg-background">
+                  <img
+                    src={p.images[0]}
+                    alt={p.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  {/* На телефоне текст ложится поверх фото снизу, как в баннере */}
+                  <div className="lg:hidden absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pt-6 pb-2 px-2.5">
+                    <p className="text-xs font-medium text-white line-clamp-1">{p.name}</p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-sm font-bold text-white">{p.price.toLocaleString('ru-RU')} с.</span>
+                      {p.oldPrice && (
+                        <span className="text-[10px] text-white/70 line-through">{p.oldPrice.toLocaleString('ru-RU')} с.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="hidden lg:flex flex-col min-w-0 py-2 pr-2">
+                  <p className="text-sm font-medium text-foreground line-clamp-2 leading-snug">{p.name}</p>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="text-base font-bold text-primary">{p.price.toLocaleString('ru-RU')} с.</span>
+                    {p.oldPrice && (
+                      <span className="text-xs text-muted-foreground line-through">{p.oldPrice.toLocaleString('ru-RU')} с.</span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
         </div>
 
         {/* Плитки быстрых ссылок под баннером (по образцу Uzum) */}
