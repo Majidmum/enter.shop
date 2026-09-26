@@ -62,7 +62,7 @@ export default function AdminStaff() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -105,6 +105,39 @@ export default function AdminStaff() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {filtered.map((u) => (
+            <div key={u.id} className="p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{u.fullName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                </div>
+                <Badge className={`${ROLE_COLORS[u.role]} shrink-0`}>{ROLE_LABELS[u.role]}</Badge>
+              </div>
+              {u.role === 'admin' ? (
+                <span className="text-xs text-muted-foreground">Роль администратора меняется только напрямую в базе</span>
+              ) : (
+                <Button
+                  size="sm"
+                  variant={u.role === 'manager' ? 'outline' : 'default'}
+                  disabled={busyId === u.id}
+                  onClick={() => handleToggleManager(u)}
+                  className={u.role === 'manager' ? 'w-full' : 'w-full bg-primary hover:bg-primary/90 text-white'}
+                >
+                  {u.role === 'manager' ? (
+                    <><ShieldOff className="h-3.5 w-3.5 mr-1.5" /> Снять роль менеджера</>
+                  ) : (
+                    <><ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Сделать менеджером</>
+                  )}
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+
         {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Пользователи не найдены</div>
         )}

@@ -116,7 +116,7 @@ export default function AdminPromoCampaigns() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -175,6 +175,48 @@ export default function AdminPromoCampaigns() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {items.map((c, idx) => (
+            <div key={c.id} className="p-4 flex gap-3">
+              <div className="h-16 w-24 rounded-lg overflow-hidden bg-muted shrink-0">
+                {c.image && <img src={c.image} alt={c.title} className="w-full h-full object-cover" />}
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{c.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{c.description}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(c.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className={c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                    {c.status === 'active' ? 'Активна' : 'Неактивна'}
+                  </Badge>
+                  <div className="flex items-center gap-0.5 ml-auto">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveItem(c.id, 'up')} disabled={idx === 0}>
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <span className="text-xs font-medium text-muted-foreground w-4 text-center">{c.order}</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveItem(c.id, 'down')} disabled={idx === items.length - 1}>
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!loading && items.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Рекламных акций пока нет</div>
         )}

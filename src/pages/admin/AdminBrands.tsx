@@ -83,7 +83,7 @@ export default function AdminBrands() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -135,6 +135,44 @@ export default function AdminBrands() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {items.map((b) => (
+            <div key={b.id} className="p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                {b.logo ? (
+                  <div className="h-8 w-16 rounded bg-white border border-border flex items-center justify-center p-1 shrink-0">
+                    <img src={b.logo} alt={b.name} className="h-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="h-8 w-16 rounded bg-muted border border-border flex items-center justify-center text-xs text-muted-foreground shrink-0">
+                    Нет лого
+                  </div>
+                )}
+                <span className="font-medium flex-1">{b.name}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(b)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(b.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+              {b.description && (
+                <p className="text-xs text-muted-foreground line-clamp-2">{b.description}</p>
+              )}
+              <div className="flex items-center gap-2">
+                <Badge className="bg-primary/10 text-primary">{b.productCount} товаров</Badge>
+                <Badge className={b.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                  {b.status === 'active' ? 'Активен' : 'Неактивен'}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!loading && items.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Брендов пока нет</div>
         )}

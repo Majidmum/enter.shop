@@ -98,7 +98,7 @@ export default function AdminPromotions() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -146,6 +146,37 @@ export default function AdminPromotions() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {items.map((p) => (
+            <div key={p.id} className="p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium">{p.name}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(p.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">{p.startDate} — {p.endDate}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="bg-destructive/10 text-destructive font-bold">-{p.discount}%</Badge>
+                {isActive(p)
+                  ? <Badge className="bg-green-100 text-green-700">Активна</Badge>
+                  : <Badge className="bg-gray-100 text-gray-600">Неактивна</Badge>
+                }
+                <Badge className={p.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}>
+                  {p.status === 'active' ? 'Включена' : 'Выключена'}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!loading && items.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Акций пока нет</div>
         )}

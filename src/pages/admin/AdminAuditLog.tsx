@@ -145,7 +145,7 @@ export default function AdminAuditLog() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden card-shadow">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
@@ -178,6 +178,29 @@ export default function AdminAuditLog() {
             </tbody>
           </table>
         </div>
+
+        {/* Мобильный — карточки вместо таблицы */}
+        <div className="md:hidden flex flex-col divide-y divide-border">
+          {items.map((entry) => (
+            <div key={entry.id} className="p-4 flex flex-col gap-1.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{entry.actorName}</p>
+                  {entry.actorRole && <p className="text-xs text-muted-foreground">{ROLE_LABELS[entry.actorRole] || entry.actorRole}</p>}
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewing(entry)}>
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleString('ru-RU')}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className={ACTION_COLORS[entry.action]}>{ACTION_LABELS[entry.action]}</Badge>
+                <span className="text-xs text-muted-foreground">{TABLE_LABELS[entry.tableName] || entry.tableName}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!loading && items.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Изменений пока нет</div>
         )}
